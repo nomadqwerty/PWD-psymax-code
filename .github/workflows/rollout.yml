@@ -1,0 +1,53 @@
+name: PSYMAX ROLLOUT PRODUCTION DEPLOYMENT 
+on: 
+  workflow_dispatch:
+        inputs:
+            current_tag:
+                required: true
+                type: string
+            prev_tag:
+                required: true
+                type: string
+jobs:
+    init:
+      runs-on: production
+      steps:
+        - run: | 
+            echo "### Rollout PSYMAX-Application to ${{inputs.prev_tag}}  :date: $(date)" >> $GITHUB_STEP_SUMMARY 
+  
+    docker-down:
+      runs-on: production
+      needs: [init]
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            ref: ${{inputs.current_tag}}
+        - run: |
+              export APP_TAG=${GITHUB_SHA::7}
+              docker-compose down
+
+    remove-docker-image: 
+      needs: [docker-down]
+      uses: RRFOORG/gitops/.github/workflows/r-remove-docker-image.yml@main
+      with:
+        images: "['psymax_backend','psymax_frontend']"
+        runs-on: "production"
+        
+    docker-up:
+      runs-on: production
+      needs: [docker-down,remove-docker-image]
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            ref: ${{inputs.prev_tag}}
+        - run: | 
+            docker-compose up --build -d  
+    done:
+      needs: [docker-up]   
+      runs-on: production
+      steps:
+        - name:
+          run: |
+           echo "- ### Production Rollout deployment complete:rocket: :date: $(date)" >> $GITHUB_STEP_SUMMARY
+
+ 

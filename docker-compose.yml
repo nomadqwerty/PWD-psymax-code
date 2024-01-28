@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  frontend:
+    container_name: psymax-container-frontend
+    build:
+      context: ./frontend/
+      dockerfile: Dockerfile
+      args:
+        - API_HOST=psymax.de
+    ports:
+      - 3000:3000
+    depends_on:
+      - backend
+    networks:
+      - node-network 
+
+  backend:
+    container_name: psymax-container-backend
+    build:
+      context: ./backend/
+      dockerfile: Dockerfile
+    ports:
+      - 4000:4000
+    depends_on:
+      - mongodb
+
+  mongodb:
+    container_name: psymax-container-mongodb
+    image: mongo:4.4
+    ports:
+      - 27017:27017
+    volumes:
+      - ./data:/data/db
+
+networks:
+  node-network:
+    driver: bridge

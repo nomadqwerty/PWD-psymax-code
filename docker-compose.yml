@@ -13,7 +13,9 @@ services:
     depends_on:
       - backend
     networks:
-      - node-network 
+      - node-network
+    environment:
+      - WATCHPACK_POLLING=true
 
   backend:
     container_name: psymax-container-backend

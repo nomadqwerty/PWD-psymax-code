@@ -1,23 +1,8 @@
-// frontend/.eslintrc.js
 module.exports = {
-  env: {
-    browser: true,
-    es2021: true,
-  },
-  extends: [
-    'eslint:recommended',
-    'plugin:react/recommended',
-    'plugin:react-hooks/recommended',
-  ],
-  parserOptions: {
-    ecmaFeatures: {
-      jsx: true,
-    },
-    ecmaVersion: 12,
-    sourceType: 'module',
-  },
-  plugins: ['react', 'react-hooks'],
+  extends: 'next/core-web-vitals',
   rules: {
-    // Your frontend-specific ESLint rules
+    'no-undef': 'error',
+    'react/display-name': 'off',
   },
+  env: { es6: true },
 };

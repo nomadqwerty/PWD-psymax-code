@@ -1,3 +1,4 @@
+/* global document */
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const nodemailer = require('nodemailer');

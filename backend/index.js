@@ -5,6 +5,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authenticateJWT = require('./middleware/auth');
 const routes = require('./routes');
+const routesVault = require('./routesVault');
 const path = require('path');
 const { saveLogo } = require('./controllers/auth');
 const seedBriefData = require('./seeders/brief');
@@ -105,6 +106,7 @@ app.use(express.json());
 
 // Use the routes with the "/api" prefix
 app.use('/api', routes);
+app.use('/api', routesVault);
 
 // Use the request error logger middleware globally
 app.use(errorMiddleware);

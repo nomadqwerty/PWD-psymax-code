@@ -24,6 +24,7 @@ router.delete('/logout', authController.logout);
 router.get('/user/get', authController.get);
 router.post('/user/save', authController.save);
 
+
 /* Begruendungstexte */
 router.get('/begruendungstexte/getAll', begruendungstexteController.getAll);
 router.post('/begruendungstexte/save', begruendungstexteController.save);

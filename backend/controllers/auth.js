@@ -13,7 +13,7 @@ const { GlobalPointsSchema } = require('../models/globalPointsModel');
 
 const register = async (req, res, next) => {
   try {
-    const { email, password, inviteCode } = req.body;
+    const { email, password, inviteCode, emergencyPassword } = req.body;
     const passwordStrength = zxcvbn(password);
 
     if (passwordStrength?.score < 3) {
@@ -29,9 +29,9 @@ const register = async (req, res, next) => {
       password: Joi.string().required(),
       confirmPassword: Joi.string().required().valid(Joi.ref('password')),
       inviteCode: Joi.string().required(),
+      emergencyPassword: Joi.string(),
     });
     const { error } = registrationSchema.validate(req.body);
-
     if (error) {
       let response = {
         status_code: 400,
@@ -39,7 +39,6 @@ const register = async (req, res, next) => {
       };
       return res.status(400).send(response);
     }
-
     const checkExist = await UserSchema.findOne({
       email: email,
       status: { $in: [0, 1, 2] },
@@ -54,6 +53,8 @@ const register = async (req, res, next) => {
     }
 
     const encryptedPassword = await bcrypt.hash(password, 10);
+    const encryptedEmergencyPassword = await bcrypt.hash(emergencyPassword, 10);
+
 
     const getInvitedUser = UserSchema.findOne({ inviteCode: inviteCode });
 
@@ -66,6 +67,7 @@ const register = async (req, res, next) => {
       inviteCode: randomCode,
       invitedUserId: getInvitedUser?._id ? getInvitedUser?._id : null,
       isAdmin: 0,
+      emergencyPassword: encryptedEmergencyPassword
     });
     await user.save();
     if (user) {
@@ -74,6 +76,7 @@ const register = async (req, res, next) => {
         value: GLOBAL_POINT_VALUE,
       });
       await globalPointsSchema.save();
+      // TODO: create User vault.
     }
 
     let response = {
@@ -251,6 +254,7 @@ const get = async (req, res, next) => {
   }
 };
 
+// TODO:
 const save = async (req, res, next) => {
   try {
     const requestBody = req.body;
@@ -380,6 +384,10 @@ const save = async (req, res, next) => {
       user.Authentifizierungscode = requestBody?.Authentifizierungscode;
       user.isAdmin = 0;
       // user.isFirst = 0;
+      // TODO: save user vault to storage.
+      
+
+      // TODO: Create user Access Key Document.
       user.save();
 
       let response = {

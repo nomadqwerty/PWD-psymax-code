@@ -154,6 +154,11 @@ const userAppSchema = new Schema({
   deletedAt: {
     type: Date,
   },
+  emergencyPassword: {
+    type: String,
+    required:[true, 'emergency password required']
+  },
+ 
 });
 
 const UserSchema = mongoose.model('users', userAppSchema);

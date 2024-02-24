@@ -1,12 +1,12 @@
-import { AppBar, Box, Drawer, Grid, IconButton, Toolbar } from "@mui/material";
-import React, { useContext, useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { AppBar, Box, Drawer, Grid, IconButton, Toolbar } from '@mui/material';
+import React, { useContext, useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   getRemainingTime,
   resetInactivityTimer,
-} from "../utils/inactivityTimer";
-import MenuIcon from "@mui/icons-material/Menu";
-import { AuthContext } from "../context/auth.context";
+} from '../utils/inactivityTimer';
+import MenuIcon from '@mui/icons-material/Menu';
+import { AuthContext } from '../context/auth.context';
 
 const Sidebar = () => {
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -19,7 +19,7 @@ const Sidebar = () => {
 
   const router = useRouter();
   const pathname = usePathname();
-  const [remainingTimeString, setRemainingTimeString] = useState("10:00");
+  const [remainingTimeString, setRemainingTimeString] = useState('10:00');
 
   useEffect(() => {
     const updateRemainingTime = () => {
@@ -27,16 +27,16 @@ const Sidebar = () => {
 
       if (remainingTime <= 0) {
         // Redirect to login route when time is up
-        router.push("/logout");
+        router.push('/logout');
         return;
       }
 
       const minutes = Math.floor(remainingTime / 60000);
       const seconds = Math.floor((remainingTime % 60000) / 1000);
       setRemainingTimeString(
-        `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(
           2,
-          "0"
+          '0'
         )}`
       );
     };
@@ -105,7 +105,7 @@ const Sidebar = () => {
           </p>
           <p
             className="flex items-center cursor-pointer"
-            onClick={() => router.push("/logout")}
+            onClick={() => router.push('/logout')}
           >
             <svg
               width="16"
@@ -144,9 +144,9 @@ const Sidebar = () => {
 
       <div
         className={`${
-          pathname.startsWith("/dashboard") ? "isActive" : "sidebar-svg"
+          pathname.startsWith('/dashboard') ? 'isActive' : 'sidebar-svg'
         } flex items-center mt-8 pt-2.5 pb-2.5 pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]`}
-        onClick={() => router.push("/dashboard")}
+        onClick={() => router.push('/dashboard')}
       >
         <svg
           width="24"
@@ -227,11 +227,11 @@ const Sidebar = () => {
 
         <div
           className={`${
-            pathname.startsWith("/dashboard/klientinnen")
-              ? "isActive"
-              : "sidebar-svg"
+            pathname.startsWith('/dashboard/klientinnen')
+              ? 'isActive'
+              : 'sidebar-svg'
           } sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]`}
-          onClick={() => router.push("/dashboard/klientinnen")}
+          onClick={() => router.push('/dashboard/klientinnen')}
         >
           <svg
             width="24"
@@ -357,11 +357,11 @@ const Sidebar = () => {
 
         <div
           className={`${
-            pathname.startsWith("/dashboard/dokumentenvorlage")
-              ? "isActive"
-              : "sidebar-svg"
+            pathname.startsWith('/dashboard/dokumentenvorlage')
+              ? 'isActive'
+              : 'sidebar-svg'
           } sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]`}
-          onClick={() => router.push("/dashboard/dokumentenvorlage")}
+          onClick={() => router.push('/dashboard/dokumentenvorlage')}
         >
           <svg
             width="24"
@@ -399,11 +399,11 @@ const Sidebar = () => {
 
         <div
           className={`${
-            pathname.startsWith("/dashboard/begruendungstexte")
-              ? "isActive"
-              : "sidebar-svg"
+            pathname.startsWith('/dashboard/begruendungstexte')
+              ? 'isActive'
+              : 'sidebar-svg'
           } sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]`}
-          onClick={() => router.push("/dashboard/begruendungstexte")}
+          onClick={() => router.push('/dashboard/begruendungstexte')}
         >
           <svg
             width="24"
@@ -433,11 +433,11 @@ const Sidebar = () => {
 
         <div
           className={`${
-            pathname.startsWith("/dashboard/leistungen")
-              ? "isActive"
-              : "sidebar-svg"
+            pathname.startsWith('/dashboard/leistungen')
+              ? 'isActive'
+              : 'sidebar-svg'
           } sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]`}
-          onClick={() => router.push("/dashboard/leistungen")}
+          onClick={() => router.push('/dashboard/leistungen')}
         >
           <svg
             width="24"
@@ -526,11 +526,11 @@ const Sidebar = () => {
 
         <div
           className={`${
-            pathname.startsWith("/dashboard/kontoeinstellungen")
-              ? "isActive"
-              : "sidebar-svg"
+            pathname.startsWith('/dashboard/kontoeinstellungen')
+              ? 'isActive'
+              : 'sidebar-svg'
           } sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]`}
-          onClick={() => router.push("/dashboard/kontoeinstellungen")}
+          onClick={() => router.push('/dashboard/kontoeinstellungen')}
         >
           <svg
             width="24"
@@ -641,9 +641,9 @@ const Sidebar = () => {
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-          bgcolor: "white",
-          color: "#3C3C3C",
-          boxShadow: "unset",
+          bgcolor: 'white',
+          color: '#3C3C3C',
+          boxShadow: 'unset',
         }}
         className="xs:block sm:hidden"
       >
@@ -655,9 +655,9 @@ const Sidebar = () => {
             onClick={handleDrawerToggle}
             sx={{
               mr: 2,
-              display: { sm: "none" },
-              "&:hover": {
-                color: "#2b86fc",
+              display: { sm: 'none' },
+              '&:hover': {
+                color: '#2b86fc',
               },
             }}
           >
@@ -708,7 +708,7 @@ const Sidebar = () => {
             </div>
             <div
               className="float-right flex cursor-pointer"
-              onClick={() => router.push("/login")}
+              onClick={() => router.push('/login')}
             >
               <svg
                 width="24"
@@ -749,9 +749,9 @@ const Sidebar = () => {
             keepMounted: true, // Better open performance on mobile.
           }}
           sx={{
-            display: { xs: "block", sm: "none" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
               width: drawerWidth,
             },
           }}
@@ -761,9 +761,9 @@ const Sidebar = () => {
         <Drawer
           variant="permanent"
           sx={{
-            display: { xs: "none", sm: "block" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
+            display: { xs: 'none', sm: 'block' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
               width: drawerWidth,
             },
           }}

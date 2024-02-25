@@ -176,17 +176,14 @@ const AccountSettingsPage = React.memo(() => {
         console.log(iv);
         console.log(ivBackUp);
         if (masterKey && iv && operations) {
-          let passwordDirectory = await encryptData(
-            operations,
-            masterKey,
-            iv,
-            []
-          );
+          let passwordDirectory = await encryptData(operations, masterKey, iv, [
+            { file_name: 'secret.txt', password: 'aPassword' },
+          ]);
           let backUpPasswordDirectory = await encryptData(
             operations,
             masterKeyBackUp,
             ivBackUp,
-            []
+            [{ file_name: 'secret.txt', password: 'aPassword' }]
           );
           userVault = {
             userId: state.userData._id,
@@ -224,22 +221,28 @@ const AccountSettingsPage = React.memo(() => {
         Authentifizierungscode: finalData?.Authentifizierungscode,
         IBAN: finalData?.IBAN,
         password: finalData?.password,
+        userVault: userVault,
       };
 
-      // const response = await axiosInstance.post("/user/save", finalDatas);
+      if (operations) {
+        const response = await axiosInstance.post('/user/save', finalDatas);
 
-      // if (response?.status === 200) {
-      //   const responseData = response?.data?.data;
-      //   localStorage.setItem("psymax-loggedin", true);
-      //   localStorage.setItem("psymax-token", responseData?.token);
-      //   localStorage.setItem("psymax-user-data", JSON.stringify(responseData));
-      //   localStorage.setItem("psymax-is-admin", responseData?.isAdmin);
-      //   dispatch({
-      //     type: "LOGIN",
-      //     payload: { isLoggedin: true, userData: responseData },
-      //   });
-      //   router.push("/dashboard");
-      // }
+        if (response?.status === 200) {
+          const responseData = response?.data?.data;
+          localStorage.setItem('psymax-loggedin', true);
+          localStorage.setItem('psymax-token', responseData?.token);
+          localStorage.setItem(
+            'psymax-user-data',
+            JSON.stringify(responseData)
+          );
+          localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
+          dispatch({
+            type: 'LOGIN',
+            payload: { isLoggedin: true, userData: responseData },
+          });
+          router.push('/dashboard');
+        }
+      }
     } catch (error) {
       handleApiError(error, router);
     }

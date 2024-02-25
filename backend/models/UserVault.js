@@ -10,10 +10,10 @@ const userVaultSchema = new Schema({
         default: 'aj8U@eWAWIPKXd4Ow8?ND!9u',
       },
       passwords:{
-        type:Array,
+        type:String,
       },
       backupPasswords:{
-        type:Array,
+        type:String,
       }
 });
 

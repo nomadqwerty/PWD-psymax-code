@@ -47,7 +47,10 @@ const encryptData = async (
       encKey,
       code
     );
-    return encrypted;
+    let decoder = new TextDecoder();
+    let decodeEnc = decoder.decode(encrypted);
+    console.log(typeof decodeEnc);
+    return decodeEnc;
   } catch (error) {
     console.log(error.message, ':- encryption error');
   }

@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { UserSchema } = require('../models/userModel');
 const Joi = require('joi');
+const UserVault = require('../models/UserVault');
 const {
   TimeForTokenExpire,
   GLOBAL_POINT_VALUE,
@@ -76,7 +77,6 @@ const register = async (req, res, next) => {
         value: GLOBAL_POINT_VALUE,
       });
       await globalPointsSchema.save();
-      // TODO: create User vault.
     }
 
     let response = {
@@ -270,7 +270,8 @@ const save = async (req, res, next) => {
         return res.status(400).send(response);
       }
     }
-
+    let userVault = requestBody.userVault;
+    delete requestBody.userVault;
     const userDetailsSchema = Joi.object({
       Anrede: Joi.string().required(),
       Titel: Joi.string(),
@@ -385,7 +386,13 @@ const save = async (req, res, next) => {
       user.isAdmin = 0;
       // user.isFirst = 0;
       // TODO: save user vault to storage.
+      let existingVault = await UserVault.findOne({userId: userVault.userId})
       
+      if(!existingVault){
+        console.log('not found')
+        let newVault = await UserVault.create(userVault)
+        console.log(newVault)
+      }
 
       // TODO: Create user Access Key Document.
       user.save();

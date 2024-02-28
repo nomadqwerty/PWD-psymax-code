@@ -187,12 +187,11 @@ const AccountSettingsPage = React.memo(() => {
           );
           console.log(passwordDirectory);
           console.log(backUpPasswordDirectory);
-          // TODO: test decrypt
 
           userVault = {
             userId: state.userData._id,
-            passwords: passwordDirectory,
-            backupPasswords: backUpPasswordDirectory,
+            passwords: Array.from(passwordDirectory),
+            backupPasswords: Array.from(backUpPasswordDirectory),
           };
         }
       }

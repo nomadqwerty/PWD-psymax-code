@@ -94,7 +94,7 @@ const login = async (req, res, next) => {
     // Get user input
 
     const { email, password } = req.body;
-    console.log('incoming', email, password);
+    // console.log('incoming', email, password);
     const loginSchema = Joi.object({
       email: Joi.string().email().required(),
       password: Joi.string().required(),
@@ -113,7 +113,7 @@ const login = async (req, res, next) => {
     const user = await UserSchema.findOne({
       email: email,
     }).select(' -__v');
-    console.log(user);
+    // console.log(user);
     if (!user) {
       let response = {
         status_code: 400,

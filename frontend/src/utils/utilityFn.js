@@ -39,39 +39,19 @@ const encryptData = async (
   algoName = 'AES-GCM'
 ) => {
   try {
-    console.log(data);
+    //////////////////////////////////
     let stringData = JSON.stringify(data);
     let encoder = new TextEncoder();
     let code = encoder.encode(stringData);
 
     //////////////////////////////////////
-    console.log(code, 'encoded');
     const encrypted = await operations.encrypt(
       { name: algoName, iv },
       encKey,
       code
     );
     const uint8 = new Uint8Array(encrypted);
-    console.log(uint8, 'encrypted');
-
-    ////////////////////////////
-    const decrypted = await operations.decrypt(
-      {
-        name: algoName,
-        iv,
-      },
-      encKey,
-      uint8
-    );
-    console.log(decrypted, 'decrypted');
-    const uint8Dec = new Uint8Array(decrypted);
-    console.log(uint8Dec, 'decrypted but encoded');
-
-    let decoder = new TextDecoder();
-    let decodeDec = decoder.decode(uint8Dec);
-    console.log(decodeDec, 'decrypted data');
-
-    // return decodeEnc;
+    return uint8;
   } catch (error) {
     console.log(error.message, ':- encryption error');
   }
@@ -85,9 +65,7 @@ const decryptData = async (
   algoName = 'AES-GCM'
 ) => {
   try {
-    let encoder = new TextEncoder();
-    let code = encoder.encode(data);
-    console.log(code, 'decryption...');
+    ////////////////////////////
     const decrypted = await operations.decrypt(
       {
         name: algoName,
@@ -96,11 +74,12 @@ const decryptData = async (
       decKey,
       data
     );
+    const uint8Dec = new Uint8Array(decrypted);
 
     let decoder = new TextDecoder();
-    let decodeDec = decoder.decode(decrypted);
-    console.log(decodeDec, 'decrypted data');
-    return decodeDec;
+    let decodeDec = decoder.decode(uint8Dec);
+    let decData = JSON.parse(decodeDec);
+    return decData;
   } catch (error) {
     console.log(error.message);
   }

@@ -2,6 +2,7 @@
 import Typography from '@mui/material/Typography';
 import { Grid } from '@mui/material';
 import { AuthContext } from '../../context/auth.context';
+import vaultContext from '@/context/vault.context';
 import { useRouter } from 'next/navigation';
 import PrivateRoute from '../../components/PrivateRoute';
 import { useContext, useEffect } from 'react';
@@ -35,8 +36,9 @@ import {
 
 const DashboardPage = () => {
   const { state } = useContext(AuthContext);
+  const { vaultState } = useContext(vaultContext);
+  const { userVault, setUserVault, serverVault, setServerVault } = vaultState;
   const router = useRouter();
-
   useEffect(() => {
     const userLocalStorageData = localStorage.getItem('psymax-user-data');
     if (userLocalStorageData !== 'undefined') {
@@ -46,6 +48,10 @@ const DashboardPage = () => {
       }
     }
   }, []);
+
+  useEffect(() => {
+    console.log(userVault);
+  }, [userVault]);
 
   return (
     <AppLayout>

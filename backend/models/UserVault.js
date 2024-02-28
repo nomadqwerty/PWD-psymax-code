@@ -3,7 +3,8 @@ const { Schema, model } = require("mongoose");
 const userVaultSchema = new Schema({
   userId:{
     type: String,
-    required: [true, 'user vault needs use id']
+    required: [true, 'user vault needs use id'],
+    unique: true
   },
     documentPassword: {
         type: String,

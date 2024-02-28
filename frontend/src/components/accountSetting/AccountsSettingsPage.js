@@ -11,7 +11,7 @@ import AppLayout from '../../components/AppLayout';
 import { handleApiError } from '../../utils/apiHelpers';
 import PrivateRoute from '../../components/PrivateRoute';
 import kontoContext from '../../context/konto.context';
-import { psyMaxKDF, encryptData } from '@/utils/utilityFn';
+import { psyMaxKDF, encryptData, decryptData } from '@/utils/utilityFn';
 
 // components
 import TitleInput from '../../components/accountSetting/TitleInput';
@@ -185,6 +185,10 @@ const AccountSettingsPage = React.memo(() => {
             ivBackUp,
             [{ file_name: 'secret.txt', password: 'aPassword' }]
           );
+          console.log(passwordDirectory);
+          console.log(backUpPasswordDirectory);
+          // TODO: test decrypt
+
           userVault = {
             userId: state.userData._id,
             passwords: passwordDirectory,

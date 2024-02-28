@@ -1,0 +1,9 @@
+Build a payment processor:
+
+Mollie payments processor.
+
+Subscription based, 30 day cycle.
+
+Modularity so it can be reused, It should be dynamic.
+
+Make use of functional paradigm( create a bunch of utility functions);

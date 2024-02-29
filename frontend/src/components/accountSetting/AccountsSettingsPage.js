@@ -290,7 +290,7 @@ const AccountSettingsPage = React.memo(() => {
 
   useEffect(() => {
     const operations = window.crypto.subtle || window.crypto.webkitSubtle;
-
+    console.log(state);
     if (!operations) {
       alert('Web Crypto is not supported on this browser');
       console.warn('Web Crypto API not supported');

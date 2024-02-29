@@ -28,6 +28,7 @@ const LoginPage = () => {
       console.log(process.env.NEXT_PUBLIC_API_HOST);
       const response = await axiosInstance.post(`/login`, data);
       const responseData = response?.data?.data;
+      console.log(responseData);
       if (response?.status === 200) {
         let id = responseData._id;
         // TODO: get user vault, store in context
@@ -36,10 +37,12 @@ const LoginPage = () => {
         if (vaultRes?.status === 200) {
           const vaultResData = vaultRes?.data?.data;
           console.log(vaultResData);
+          const responseDataJson = JSON.stringify(responseData);
           if (vaultResData) {
             console.log(vaultResData);
 
             localStorage.setItem('userVault', JSON.stringify(vaultResData));
+            localStorage.setItem('userData', JSON.stringify(responseDataJson));
           }
         }
 

@@ -35,22 +35,31 @@ import {
   AccountSetting,
 } from '../../components/dashboard/AccountOptions';
 
-import { deriveAllKeys } from '@/utils/utilityFn';
+import { deriveAllKeys, decryptData } from '@/utils/utilityFn';
 
 const DashboardPage = () => {
   const { state } = useContext(AuthContext);
   const { vaultState } = useContext(vaultContext);
   const [userData, setUserData] = useState();
   const [credentials, setCredentials] = useState();
+  const [operations, setOperations] = useState();
 
   const { userVault, setUserVault, serverVault, setServerVault } = vaultState;
 
   const router = useRouter();
   useEffect(() => {
+    const crypto = window.crypto.subtle || window.crypto.webkitSubtle;
     const userLocalStorageData = localStorage.getItem('psymax-user-data');
-    const userPasswordVault = JSON.parse(localStorage.getItem('userVault'));
-    let userLoginData = JSON.parse(localStorage.getItem('userData'));
+    let userPasswordVault = localStorage.getItem('userVault');
+    let userLoginData = localStorage.getItem('userData');
 
+    if (userLoginData !== undefined) {
+      userLoginData = JSON.parse(userLoginData);
+    }
+
+    if (userPasswordVault !== 'undefined') {
+      userPasswordVault = JSON.parse(userPasswordVault);
+    }
     axiosInstance
       .get(`/vault/server`)
       .then((res) => {
@@ -61,11 +70,13 @@ const DashboardPage = () => {
       })
       .catch((err) => {});
 
-    if (userPasswordVault && userLoginData) {
+    if (userPasswordVault && userLoginData && crypto) {
       if (typeof userLoginData === 'string') {
         userLoginData = JSON.parse(userLoginData);
         setUserData(userLoginData);
       }
+
+      setOperations(crypto);
       setUserVault(userPasswordVault);
       // TODO: remove userVault and userData from localStorage.
     }
@@ -79,13 +90,12 @@ const DashboardPage = () => {
   }, []);
 
   useEffect(() => {
-    console.log(serverVault);
-    console.log(userVault);
-    console.log(userData);
     if (serverVault && userVault && userData) {
+      console.log(userVault);
       let { password, emergencyPassword } = userData;
       let { dualKeySalt, masterKeySalt } = serverVault;
       if (password && emergencyPassword && dualKeySalt && masterKeySalt) {
+        console.log('dashboard');
         deriveAllKeys(
           password,
           emergencyPassword,
@@ -95,12 +105,29 @@ const DashboardPage = () => {
         )
           .then((res) => {
             console.log(res);
+            setCredentials(res);
           })
           .catch((err) => {});
       }
     }
   }, [serverVault, userVault, userData]);
 
+  useEffect(() => {
+    if (credentials && operations && userVault?.passwords) {
+      const { masterKey, iv, backUpMasterKey } = credentials;
+      let passwordDirectory = userVault.passwords.data;
+      passwordDirectory = new Uint8Array(passwordDirectory);
+      console.log(passwordDirectory);
+
+      decryptData(operations, backUpMasterKey, iv, passwordDirectory)
+        .then((res) => {
+          console.log(res);
+        })
+        .catch((err) => {
+          console.log(err.message);
+        });
+    }
+  }, [credentials, operations, userVault]);
   return (
     <AppLayout>
       <WelcomeHeader state={state} />

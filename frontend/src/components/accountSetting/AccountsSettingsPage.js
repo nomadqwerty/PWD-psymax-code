@@ -176,10 +176,6 @@ const AccountSettingsPage = React.memo(() => {
       delete finalData?.newPassword;
       let userVault;
       if (state?.userData?._id) {
-        console.log(masterKey);
-        console.log(masterKeyBackUp);
-        console.log(iv);
-        console.log(ivBackUp);
         if (masterKey && iv && operations) {
           let passwordDirectory = await encryptData(operations, masterKey, iv, [
             { file_name: 'secret.txt', password: 'aPassword' },
@@ -190,18 +186,25 @@ const AccountSettingsPage = React.memo(() => {
             ivBackUp,
             [{ file_name: 'secret.txt', password: 'aPassword' }]
           );
-          console.log(passwordDirectory);
-          console.log(backUpPasswordDirectory);
+          console.log(backUpPasswordDirectory, passwordDirectory);
 
           userVault = {
             userId: state.userData._id,
-            passwords: Array.from(passwordDirectory),
-            backupPasswords: Array.from(backUpPasswordDirectory),
+            passwords: passwordDirectory,
+            backupPasswords: backUpPasswordDirectory,
           };
+
+          let dec = await decryptData(
+            operations,
+            masterKey,
+            iv,
+            userVault.passwords
+          );
+          console.log(new Uint8Array(userVault.passwords));
+          console.log(dec);
         }
       }
 
-      console.log(userVault);
       const finalDatas = {
         Anrede: finalData?.Anrede,
         Titel: finalData?.Titel,
@@ -248,7 +251,7 @@ const AccountSettingsPage = React.memo(() => {
             type: 'LOGIN',
             payload: { isLoggedin: true, userData: responseData },
           });
-          router.push('/dashboard');
+          // router.push('/dashboard');
         }
       }
     } catch (error) {
@@ -290,24 +293,32 @@ const AccountSettingsPage = React.memo(() => {
 
   useEffect(() => {
     const operations = window.crypto.subtle || window.crypto.webkitSubtle;
-    console.log(state);
     if (!operations) {
       alert('Web Crypto is not supported on this browser');
       console.warn('Web Crypto API not supported');
     } else {
       (async () => {
         // TODO: request server vault.
+        let userLoginData = localStorage.getItem('userData');
+
+        if (userLoginData !== undefined) {
+          userLoginData = JSON.parse(userLoginData);
+          if (typeof userLoginData === 'string') {
+            userLoginData = JSON.parse(userLoginData);
+          }
+        }
         const response = await axiosInstance.get(`/vault/server`);
         let vault = response.data.data;
-        let userData = state.userData;
+        let userData = userLoginData;
         let pass = userData.password;
         let ePass = userData.emergencyPassword;
         let dualKeySalt = vault.dualKeySalt;
         let masterKeySalt = vault.masterKeySalt;
+        console.log(userData);
 
         if (ePass) {
           // TODO: derive dualkeys and master keys.
-
+          console.log('accounts set');
           let allKeys = await deriveAllKeys(
             pass,
             ePass,
@@ -318,7 +329,6 @@ const AccountSettingsPage = React.memo(() => {
           let keysLength = Object.keys(allKeys).length;
 
           if (keysLength > 0) {
-            console.log(allKeys);
             const {
               masterKey,
               backUpMasterKey,

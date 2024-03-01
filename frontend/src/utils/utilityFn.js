@@ -43,15 +43,14 @@ const encryptData = async (
     let stringData = JSON.stringify(data);
     let encoder = new TextEncoder();
     let code = encoder.encode(stringData);
-
     //////////////////////////////////////
     const encrypted = await operations.encrypt(
       { name: algoName, iv },
       encKey,
       code
     );
-    const uint8 = new Uint8Array(encrypted);
-    return uint8;
+
+    return encrypted;
   } catch (error) {
     console.log(error.message, ':- encryption error');
   }
@@ -92,6 +91,7 @@ const deriveAllKeys = async (
   masterKeySalt,
   window
 ) => {
+  console.log(pass);
   // TODO: derive dualkeys and master keys.
   const dualKeyOne = await psyMaxKDF(pass, dualKeySalt);
   const dualKeyTwo = await psyMaxKDF(ePass, dualKeySalt);
@@ -116,11 +116,13 @@ const deriveAllKeys = async (
     true,
     ['encrypt', 'decrypt']
   );
-
   let masterKey = await masterKeyMain;
   let backUpMasterKey = await masterKeyBackUp;
+  console.log(masterKey, backUpMasterKey, 'keys master');
   let iv = masterKeyOneEnc;
   let backUpIv = masterKeyTwoEnc;
+  console.log(iv, backUpIv, 'ivs');
+  console.log(dualKeyOne, dualKeyTwo, 'dual keys');
   const requirements = {
     masterKey,
     backUpMasterKey,

@@ -26,7 +26,7 @@ exports.getUserVault = async (req, res, next) => {
         let id = req.params.userId
         console.log(id)
         let vault = await UserVault.findOne({userId:id})
-        console.log(vault,'vault')
+        console.log(vault,'vaultHere')
         if(vault){
             let response = {
                 status_code: 200,

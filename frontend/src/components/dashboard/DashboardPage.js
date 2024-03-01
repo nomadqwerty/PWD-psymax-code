@@ -37,10 +37,18 @@ import {
 const DashboardPage = () => {
   const { state } = useContext(AuthContext);
   const { vaultState } = useContext(vaultContext);
+
   const { userVault, setUserVault, serverVault, setServerVault } = vaultState;
+
   const router = useRouter();
   useEffect(() => {
     const userLocalStorageData = localStorage.getItem('psymax-user-data');
+    const userPasswordVault = JSON.parse(localStorage.getItem('userVault'));
+
+    if (userPasswordVault) {
+      setUserVault(userPasswordVault);
+      // TODO: remove userVault from localStorage.
+    }
     if (userLocalStorageData !== 'undefined') {
       const userData = JSON.parse(userLocalStorageData);
       if (!userData?.Chiffre) {
@@ -48,10 +56,6 @@ const DashboardPage = () => {
       }
     }
   }, []);
-
-  useEffect(() => {
-    console.log(userVault);
-  }, [userVault]);
 
   return (
     <AppLayout>

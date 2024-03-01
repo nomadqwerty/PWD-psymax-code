@@ -92,7 +92,7 @@ app.use('*', (req, res, next) => {
 const publicUploadsDirectory = path.join(__dirname, 'public', 'uploads');
 app.use('/uploads', express.static(publicUploadsDirectory));
 
-app.use(authenticateJWT);
+// app.use(authenticateJWT);
 
 // Use the setupLogoStorage function to set up multer for logo uploads
 const upload = setupLogoStorage();

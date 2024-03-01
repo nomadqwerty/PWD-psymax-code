@@ -11,7 +11,12 @@ import AppLayout from '../../components/AppLayout';
 import { handleApiError } from '../../utils/apiHelpers';
 import PrivateRoute from '../../components/PrivateRoute';
 import kontoContext from '../../context/konto.context';
-import { psyMaxKDF, encryptData, decryptData } from '@/utils/utilityFn';
+import {
+  psyMaxKDF,
+  encryptData,
+  decryptData,
+  deriveAllKeys,
+} from '@/utils/utilityFn';
 
 // components
 import TitleInput from '../../components/accountSetting/TitleInput';
@@ -302,54 +307,36 @@ const AccountSettingsPage = React.memo(() => {
 
         if (ePass) {
           // TODO: derive dualkeys and master keys.
-          const dualKeyOne = await psyMaxKDF(pass, dualKeySalt);
-          const dualKeyTwo = await psyMaxKDF(ePass, dualKeySalt);
-          const masterKeyOne = await psyMaxKDF(dualKeyOne, masterKeySalt);
-          const masterKeyTwo = await psyMaxKDF(dualKeyTwo, masterKeySalt);
 
-          let encoder = new TextEncoder();
-          let masterKeyOneEnc = encoder.encode(masterKeyOne.slice(0, 16));
-          let masterKeyTwoEnc = encoder.encode(masterKeyTwo.slice(0, 16));
-
-          let masterKeyMain = window.crypto.subtle.importKey(
-            'raw',
-            masterKeyOneEnc,
-            'AES-GCM',
-            true,
-            ['encrypt', 'decrypt']
+          let allKeys = await deriveAllKeys(
+            pass,
+            ePass,
+            dualKeySalt,
+            masterKeySalt,
+            window
           );
-          let masterKeyBackUp = window.crypto.subtle.importKey(
-            'raw',
-            masterKeyTwoEnc,
-            'AES-GCM',
-            true,
-            ['encrypt', 'decrypt']
-          );
+          let keysLength = Object.keys(allKeys).length;
 
-          masterKeyMain
-            .then((res) => {
-              setMasterKey(res);
-            })
-            .catch((err) => {
-              console.log(err.message);
-            });
-          masterKeyBackUp
-            .then((res) => {
-              setMasterKeyBackUp(res);
-            })
-            .catch((err) => {
-              console.log(err.message);
-            });
-
-          setIv(masterKeyOneEnc);
-          setIvBackUp(masterKeyTwoEnc);
-          setOperations(operations);
+          if (keysLength > 0) {
+            console.log(allKeys);
+            const {
+              masterKey,
+              backUpMasterKey,
+              iv,
+              backUpIv,
+              dualKeyOne,
+              dualKeyTwo,
+            } = allKeys;
+            setMasterKey(masterKey);
+            setMasterKeyBackUp(backUpMasterKey);
+            setIv(iv);
+            setIvBackUp(backUpIv);
+            setOperations(operations);
+          }
         }
       })();
     }
   }, [state]);
-
-  useEffect(() => {}, [masterKey, masterKeyBackUp, iv, ivBackUp]);
 
   useEffect(() => {
     async function fetchData() {

@@ -85,4 +85,57 @@ const decryptData = async (
   }
 };
 
-export { passwordGenerator, psyMaxKDF, encryptData, decryptData };
+const deriveAllKeys = async (
+  pass,
+  ePass,
+  dualKeySalt,
+  masterKeySalt,
+  window
+) => {
+  // TODO: derive dualkeys and master keys.
+  const dualKeyOne = await psyMaxKDF(pass, dualKeySalt);
+  const dualKeyTwo = await psyMaxKDF(ePass, dualKeySalt);
+  const masterKeyOne = await psyMaxKDF(dualKeyOne, masterKeySalt);
+  const masterKeyTwo = await psyMaxKDF(dualKeyTwo, masterKeySalt);
+
+  let encoder = new TextEncoder();
+  let masterKeyOneEnc = encoder.encode(masterKeyOne.slice(0, 16));
+  let masterKeyTwoEnc = encoder.encode(masterKeyTwo.slice(0, 16));
+
+  let masterKeyMain = window.crypto.subtle.importKey(
+    'raw',
+    masterKeyOneEnc,
+    'AES-GCM',
+    true,
+    ['encrypt', 'decrypt']
+  );
+  let masterKeyBackUp = window.crypto.subtle.importKey(
+    'raw',
+    masterKeyTwoEnc,
+    'AES-GCM',
+    true,
+    ['encrypt', 'decrypt']
+  );
+
+  let masterKey = await masterKeyMain;
+  let backUpMasterKey = await masterKeyBackUp;
+  let iv = masterKeyOneEnc;
+  let backUpIv = masterKeyTwoEnc;
+  const requirements = {
+    masterKey,
+    backUpMasterKey,
+    iv,
+    backUpIv,
+    dualKeyOne,
+    dualKeyTwo,
+  };
+  return requirements;
+};
+
+export {
+  passwordGenerator,
+  psyMaxKDF,
+  encryptData,
+  decryptData,
+  deriveAllKeys,
+};

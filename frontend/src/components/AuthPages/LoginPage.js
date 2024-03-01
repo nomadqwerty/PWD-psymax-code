@@ -8,7 +8,6 @@ import axiosInstance from '../../utils/axios';
 import { SOMETHING_WRONG } from '../../utils/constants';
 import { useContext } from 'react';
 import { AuthContext } from '../../context/auth.context';
-import vaultContext from '@/context/vault.context';
 import { useRouter } from 'next/navigation';
 import Layout from '../../components/Layout';
 import { handleApiError } from '../../utils/apiHelpers';
@@ -21,9 +20,9 @@ const LoginPage = () => {
   } = useForm();
 
   const { dispatch } = useContext(AuthContext);
-  const { vaultState } = useContext(vaultContext);
-  const { userVault, setUserVault, serverVault, setServerVault } = vaultState;
+
   const router = useRouter();
+
   const onSubmit = async (data) => {
     try {
       console.log(process.env.NEXT_PUBLIC_API_HOST);
@@ -39,7 +38,8 @@ const LoginPage = () => {
           console.log(vaultResData);
           if (vaultResData) {
             console.log(vaultResData);
-            setUserVault(vaultResData);
+
+            localStorage.setItem('userVault', JSON.stringify(vaultResData));
           }
         }
 

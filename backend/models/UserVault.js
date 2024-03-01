@@ -6,15 +6,19 @@ const userVaultSchema = new Schema({
     required: [true, 'user vault needs use id'],
     unique: true
   },
+  isEncrypted:{
+    type:Boolean,
+    required:[true, 'indicate if vault is encrypted']
+  },
     documentPassword: {
         type: String,
         default: 'aj8U@eWAWIPKXd4Ow8?ND!9u',
       },
       passwords:{
-        type:String,
+        type:Buffer,
       },
       backupPasswords:{
-        type:String,
+        type:Buffer,
       }
 });
 

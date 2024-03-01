@@ -29,10 +29,20 @@ const Register = () => {
       data.emergencyPassword = passwordGenerator();
       // TODO:
       console.log(data);
-
+      // isEncrypted: false - pass
       const response = await axiosInstance.post(`/register`, data);
       const responseData = response?.data;
       if (response?.status === 200) {
+        let user_id = responseData.data.userId;
+        console.log(user_id);
+        const resVault = await axiosInstance.post(`/vault/user`, {
+          userId: user_id,
+          isEncrypted: false,
+
+          passwords: '',
+          backupPasswords: '',
+        });
+        console.log(resVault);
         dispatch({ type: 'INITIAL_STATE' });
         router.push('/login');
         toast.success(responseData?.message);

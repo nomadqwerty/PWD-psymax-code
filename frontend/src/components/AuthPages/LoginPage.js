@@ -11,6 +11,7 @@ import { AuthContext } from '../../context/auth.context';
 import { useRouter } from 'next/navigation';
 import Layout from '../../components/Layout';
 import { handleApiError } from '../../utils/apiHelpers';
+import { decryptData, deriveAllKeys, encryptData } from '@/utils/utilityFn';
 
 const LoginPage = () => {
   const {
@@ -29,23 +30,139 @@ const LoginPage = () => {
       const response = await axiosInstance.post(`/login`, data);
       const responseData = response?.data?.data;
       if (response?.status === 200) {
-        let id = responseData._id;
-        // TODO: get user vault, store in context
-        const vaultRes = await axiosInstance.get(`/vault/user/${id}`);
+        console.log(responseData);
+        const user_id = responseData._id;
+        const vaultRes = await axiosInstance.get(`/vault/user/${user_id}`);
         if (vaultRes?.status === 200) {
           const vaultResData = vaultRes?.data?.data;
-          const responseDataJson = JSON.stringify(responseData);
-          if (vaultResData !== undefined) {
-            localStorage.setItem('userVault', JSON.stringify(vaultResData));
-          }
-          if (responseData !== undefined) {
-            localStorage.setItem('userData', JSON.stringify(responseDataJson));
+          console.log(vaultResData);
+          const operations = window.crypto.subtle || window.crypto.webkitSubtle;
+          if (!vaultResData.isEncrypted) {
+            console.log(vaultResData.isEncrypted);
+
+            if (!operations) {
+              alert('Web Crypto is not supported on this browser');
+              console.warn('Web Crypto API not supported');
+            } else {
+              // TODO: request server vault.
+              let userData = responseData;
+              const response = await axiosInstance.get(`/vault/server`);
+              let vault = response.data.data;
+              let pass = userData.password;
+              let ePass = userData.emergencyPassword;
+              let dualKeySalt = vault.dualKeySalt;
+              let masterKeySalt = vault.masterKeySalt;
+
+              if (ePass) {
+                // TODO: derive dualkeys and master keys.
+                console.log('login');
+                let allKeys = await deriveAllKeys(
+                  pass,
+                  ePass,
+                  dualKeySalt,
+                  masterKeySalt,
+                  window
+                );
+                let keysLength = Object.keys(allKeys).length;
+
+                if (keysLength > 0) {
+                  console.log(allKeys);
+                  const {
+                    masterKey,
+                    backUpMasterKey,
+                    iv,
+                    backUpIv,
+                    dualKeyOne,
+                    dualKeyTwo,
+                  } = allKeys;
+
+                  const passwordDirectory = {
+                    fileName: '',
+                    fileReference: '',
+                    fileKey: '',
+                  };
+                  const backUpPasswordDirectory = { ...passwordDirectory };
+                  const passDirEnc = await encryptData(
+                    operations,
+                    masterKey,
+                    iv,
+                    passwordDirectory
+                  );
+                  const backUpPassDirEnc = await encryptData(
+                    operations,
+                    backUpMasterKey,
+                    backUpIv,
+                    backUpPasswordDirectory
+                  );
+                  console.log(passDirEnc, backUpPassDirEnc);
+                  const passUintArr = new Uint8Array(passDirEnc);
+                  const backUpPassUintArr = new Uint8Array(backUpPassDirEnc);
+                  let encVault = { ...vaultResData };
+                  encVault.passwords = Array.from(passUintArr);
+                  encVault.backupPasswords = Array.from(backUpPassUintArr);
+                  encVault.isEncrypted = true;
+                  console.log(encVault);
+                  const resVault = await axiosInstance.post(
+                    `/vault/user/update`,
+                    encVault
+                  );
+                  console.log(resVault);
+                  // TODO: add (dec) vault to state, add keys to ram.
+                }
+              }
+            }
+          } else {
+            if (!operations) {
+              alert('Web Crypto is not supported on this browser');
+              console.warn('Web Crypto API not supported');
+            } else {
+              console.log('vault encrypted');
+              let userData = responseData;
+              const response = await axiosInstance.get(`/vault/server`);
+              let vault = response.data.data;
+              let pass = userData.password;
+              let ePass = userData.emergencyPassword;
+              let dualKeySalt = vault.dualKeySalt;
+              let masterKeySalt = vault.masterKeySalt;
+              if (ePass) {
+                // TODO: derive dualkeys and master keys.
+                console.log('login');
+                let allKeys = await deriveAllKeys(
+                  pass,
+                  ePass,
+                  dualKeySalt,
+                  masterKeySalt,
+                  window
+                );
+                let keysLength = Object.keys(allKeys).length;
+
+                if (keysLength > 0) {
+                  console.log(allKeys);
+                  const {
+                    masterKey,
+                    backUpMasterKey,
+                    iv,
+                    backUpIv,
+                    dualKeyOne,
+                    dualKeyTwo,
+                  } = allKeys;
+                  const encPassDir = new Uint8Array(
+                    vaultResData.passwords.data
+                  );
+                  console.log(encPassDir);
+                  let passDirDec = await decryptData(
+                    operations,
+                    masterKey,
+                    iv,
+                    encPassDir
+                  );
+                  console.log(passDirDec);
+                  // TODO: add vault to state, add keys to ram.
+                }
+              }
+            }
           }
         }
-
-        // TODO: derive dual keys
-        // TODO: store keys in ram
-
         localStorage.setItem('psymax-loggedin', true);
         localStorage.setItem('psymax-token', responseData?.token);
         localStorage.setItem('psymax-user-data', JSON.stringify(responseData));
@@ -54,11 +171,11 @@ const LoginPage = () => {
           type: 'LOGIN',
           payload: { isLoggedin: true, userData: responseData },
         });
-        if (responseData?.isAdmin === 1) {
-          router.push('/admin');
-        } else {
-          router.push('/dashboard');
-        }
+        // if (responseData?.isAdmin === 1) {
+        //   router.push('/admin');
+        // } else {
+        //   router.push('/dashboard');
+        // }
       } else {
         toast.error(SOMETHING_WRONG);
       }
@@ -287,3 +404,4 @@ export default LoginPage;
 //     })();
 //   }
 // }, [state]);
+////////////////////////////////

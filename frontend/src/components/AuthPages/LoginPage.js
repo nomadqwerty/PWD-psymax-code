@@ -230,3 +230,60 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
+// useEffect(() => {
+//   const operations = window.crypto.subtle || window.crypto.webkitSubtle;
+//   if (!operations) {
+//     alert('Web Crypto is not supported on this browser');
+//     console.warn('Web Crypto API not supported');
+//   } else {
+//     (async () => {
+//       // TODO: request server vault.
+//       let userLoginData = localStorage.getItem('userData');
+
+//       if (userLoginData !== undefined) {
+//         userLoginData = JSON.parse(userLoginData);
+//         if (typeof userLoginData === 'string') {
+//           userLoginData = JSON.parse(userLoginData);
+//         }
+//       }
+//       const response = await axiosInstance.get(`/vault/server`);
+//       let vault = response.data.data;
+//       let userData = userLoginData;
+//       let pass = userData.password;
+//       let ePass = userData.emergencyPassword;
+//       let dualKeySalt = vault.dualKeySalt;
+//       let masterKeySalt = vault.masterKeySalt;
+//       console.log(userData);
+
+//       if (ePass) {
+//         // TODO: derive dualkeys and master keys.
+//         console.log('accounts set');
+//         let allKeys = await deriveAllKeys(
+//           pass,
+//           ePass,
+//           dualKeySalt,
+//           masterKeySalt,
+//           window
+//         );
+//         let keysLength = Object.keys(allKeys).length;
+
+//         if (keysLength > 0) {
+//           const {
+//             masterKey,
+//             backUpMasterKey,
+//             iv,
+//             backUpIv,
+//             dualKeyOne,
+//             dualKeyTwo,
+//           } = allKeys;
+//           setMasterKey(masterKey);
+//           setMasterKeyBackUp(backUpMasterKey);
+//           setIv(iv);
+//           setIvBackUp(backUpIv);
+//           setOperations(operations);
+//         }
+//       }
+//     })();
+//   }
+// }, [state]);

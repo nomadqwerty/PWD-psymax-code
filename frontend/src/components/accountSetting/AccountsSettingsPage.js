@@ -11,12 +11,6 @@ import AppLayout from '../../components/AppLayout';
 import { handleApiError } from '../../utils/apiHelpers';
 import PrivateRoute from '../../components/PrivateRoute';
 import kontoContext from '../../context/konto.context';
-import {
-  psyMaxKDF,
-  encryptData,
-  decryptData,
-  deriveAllKeys,
-} from '@/utils/utilityFn';
 
 // components
 import TitleInput from '../../components/accountSetting/TitleInput';
@@ -83,11 +77,6 @@ const AccountSettingsPage = React.memo(() => {
   const [oldPassword, setOldPassword] = useState('');
   const [logoName, setLogoName] = useState('');
   const [iban, setIban] = useState('');
-  let [operations, setOperations] = useState(null);
-  let [iv, setIv] = useState(null);
-  let [ivBackUp, setIvBackUp] = useState(null);
-  let [masterKey, setMasterKey] = useState(null);
-  let [masterKeyBackUp, setMasterKeyBackUp] = useState(null);
   const router = useRouter();
   const { state, dispatch } = useContext(AuthContext);
   const handleChange = (e) => {
@@ -174,36 +163,6 @@ const AccountSettingsPage = React.memo(() => {
       delete finalData?._id;
       delete finalData?.status;
       delete finalData?.newPassword;
-      let userVault;
-      if (state?.userData?._id) {
-        if (masterKey && iv && operations) {
-          let passwordDirectory = await encryptData(operations, masterKey, iv, [
-            { file_name: 'secret.txt', password: 'aPassword' },
-          ]);
-          let backUpPasswordDirectory = await encryptData(
-            operations,
-            masterKeyBackUp,
-            ivBackUp,
-            [{ file_name: 'secret.txt', password: 'aPassword' }]
-          );
-          console.log(backUpPasswordDirectory, passwordDirectory);
-
-          userVault = {
-            userId: state.userData._id,
-            passwords: passwordDirectory,
-            backupPasswords: backUpPasswordDirectory,
-          };
-
-          let dec = await decryptData(
-            operations,
-            masterKey,
-            iv,
-            userVault.passwords
-          );
-          console.log(new Uint8Array(userVault.passwords));
-          console.log(dec);
-        }
-      }
 
       const finalDatas = {
         Anrede: finalData?.Anrede,
@@ -232,7 +191,6 @@ const AccountSettingsPage = React.memo(() => {
         Authentifizierungscode: finalData?.Authentifizierungscode,
         IBAN: finalData?.IBAN,
         password: finalData?.password,
-        userVault: userVault,
       };
 
       if (operations) {
@@ -290,63 +248,6 @@ const AccountSettingsPage = React.memo(() => {
     }
     return true;
   };
-
-  useEffect(() => {
-    const operations = window.crypto.subtle || window.crypto.webkitSubtle;
-    if (!operations) {
-      alert('Web Crypto is not supported on this browser');
-      console.warn('Web Crypto API not supported');
-    } else {
-      (async () => {
-        // TODO: request server vault.
-        let userLoginData = localStorage.getItem('userData');
-
-        if (userLoginData !== undefined) {
-          userLoginData = JSON.parse(userLoginData);
-          if (typeof userLoginData === 'string') {
-            userLoginData = JSON.parse(userLoginData);
-          }
-        }
-        const response = await axiosInstance.get(`/vault/server`);
-        let vault = response.data.data;
-        let userData = userLoginData;
-        let pass = userData.password;
-        let ePass = userData.emergencyPassword;
-        let dualKeySalt = vault.dualKeySalt;
-        let masterKeySalt = vault.masterKeySalt;
-        console.log(userData);
-
-        if (ePass) {
-          // TODO: derive dualkeys and master keys.
-          console.log('accounts set');
-          let allKeys = await deriveAllKeys(
-            pass,
-            ePass,
-            dualKeySalt,
-            masterKeySalt,
-            window
-          );
-          let keysLength = Object.keys(allKeys).length;
-
-          if (keysLength > 0) {
-            const {
-              masterKey,
-              backUpMasterKey,
-              iv,
-              backUpIv,
-              dualKeyOne,
-              dualKeyTwo,
-            } = allKeys;
-            setMasterKey(masterKey);
-            setMasterKeyBackUp(backUpMasterKey);
-            setIv(iv);
-            setIvBackUp(backUpIv);
-            setOperations(operations);
-          }
-        }
-      })();
-    }
-  }, [state]);
 
   useEffect(() => {
     async function fetchData() {

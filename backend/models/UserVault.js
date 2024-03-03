@@ -17,7 +17,13 @@ const userVaultSchema = new Schema({
       passwords:{
         type:Buffer,
       },
+      clients:{
+        type:Buffer,
+      },
       backupPasswords:{
+        type:Buffer,
+      },
+      backupClients:{
         type:Buffer,
       }
 });

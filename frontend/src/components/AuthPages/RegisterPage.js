@@ -40,7 +40,9 @@ const Register = () => {
           isEncrypted: false,
 
           passwords: '',
+          clients: '',
           backupPasswords: '',
+          backupClients: '',
         });
         console.log(resVault);
         dispatch({ type: 'INITIAL_STATE' });

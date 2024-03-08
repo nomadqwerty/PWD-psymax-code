@@ -134,10 +134,81 @@ const deriveAllKeys = async (
   return requirements;
 };
 
+
+/////////////////////////////////////////////////
+// File encryption.
+let downloadFile = (file, fileName, ext) => {
+  file = new Blob([file]);
+  let elem = window.document.createElement("a");
+  elem.href = window.URL.createObjectURL(file);
+  elem.download = `${fileName}.${ext}`;
+  console.log("here");
+  elem.click();
+};
+
+const cleanFile = async (uploadedFile) => {
+  const fileText = await uploadedFile.text();
+  const cleanText = xss(fileText);
+  let isClean = fileText.includes(cleanText);
+  return isClean;
+};
+
+let compressFile = async (uploadedFile) => {
+  try {
+    // sanitize file contents: striping invalid chars from file before upload.
+    const zip = new JSZip();
+    let fileType = uploadedFile.type;
+
+    if (fileType === "text/plain") {
+      const fileText = await uploadedFile.text();
+      const cleanText = xss(fileText);
+
+      console.log(cleanText);
+    }
+
+    zip.file(uploadedFile.name, uploadedFile);
+    const arrayBufferData = await zip.generateAsync({ type: "arraybuffer" });
+    return arrayBufferData;
+  } catch (error) {
+    console.log(error.message, ":- compression error");
+  }
+};
+
+const encryptFile = async (zipFile, testKey) => {
+  try {
+    const encrypted = await operations.encrypt(
+      { name: algoName, iv },
+      testKey,
+      zipFile
+    );
+    return encrypted;
+  } catch (error) {
+    console.log(error.message, ":- encryption error");
+  }
+};
+
+const decryptFile = async (encrypted, testKey) => {
+  const decryptedData = await operations.decrypt(
+    {
+      name: algoName,
+      iv,
+    },
+    testKey,
+    encrypted
+  );
+
+  return decryptedData;
+};
+
 export {
   passwordGenerator,
   psyMaxKDF,
   encryptData,
   decryptData,
   deriveAllKeys,
+  downloadFile,
+  cleanFile,
+  compressFile,
+  encryptFile,
+  decryptFile
 };

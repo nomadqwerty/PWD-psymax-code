@@ -1,5 +1,5 @@
-const { default: MyAppWrap } = require("../../AppWrap");
-import JustificationPage from "@/components/Justification/JustificationPage";
+const { default: MyAppWrap } = require('../../AppWrap');
+import JustificationPage from '../../../components/Justification/JustificationPage';
 
 const Begruendungstexte = () => {
   return (

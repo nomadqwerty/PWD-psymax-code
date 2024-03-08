@@ -5,7 +5,6 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authenticateJWT = require('./middleware/auth');
 const routes = require('./routes');
-const routesVault = require('./routesVault');
 const path = require('path');
 const { saveLogo } = require('./controllers/auth');
 const seedBriefData = require('./seeders/brief');
@@ -17,7 +16,10 @@ const {
   errorMiddleware,
 } = require('./utils/logger');
 
-dotenv.config();
+dotenv.config({
+  path: path.join(__dirname, './config.env'),
+});
+
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger/swagger');
 
@@ -34,9 +36,7 @@ app.use((err, req, res, next) => {
 
 async function connectToDatabase() {
   try {
-    // TODO: fix DB url string.
-    let newDB_URL = DB_URL.replace('/mongodb:', '/localhost:');
-    await mongoose.connect(newDB_URL, {
+    await mongoose.connect(DB_URL, {
       useNewUrlParser: true,
     });
     console.log(`Connected to ${DB_URL}`);
@@ -86,13 +86,13 @@ app.use(
 
 // app.use('/public', express.static(__dirname + '/public'));
 app.use('*', (req, res, next) => {
-  console.log('here');
+  console.log('Pymax API.');
   next();
 });
 const publicUploadsDirectory = path.join(__dirname, 'public', 'uploads');
 app.use('/uploads', express.static(publicUploadsDirectory));
 
-// app.use(authenticateJWT);
+app.use(authenticateJWT);
 
 // Use the setupLogoStorage function to set up multer for logo uploads
 const upload = setupLogoStorage();
@@ -106,7 +106,6 @@ app.use(express.json());
 
 // Use the routes with the "/api" prefix
 app.use('/api', routes);
-app.use('/api', routesVault);
 
 // Use the request error logger middleware globally
 app.use(errorMiddleware);

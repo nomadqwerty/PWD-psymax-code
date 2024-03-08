@@ -1,5 +1,5 @@
-const { default: MyAppWrap } = require("../AppWrap");
-import RegisterPage from "@/components/AuthPages/RegisterPage";
+const { default: MyAppWrap } = require('../AppWrap');
+import RegisterPage from '../../components/AuthPages/RegisterPage';
 
 const Register = () => {
   return (

@@ -1,0 +1,158 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="./emailStyles.css" />
+  </head>
+
+  <body>
+    <table
+      width="100%"
+      border="0"
+      cellspacing="0"
+      cellpadding="0"
+      align="center"
+    >
+      <tr>
+        <td
+          class="defaultlink"
+          style="
+            font-weight: 400;
+            color: #3c3c3c;
+            font-size: 18px;
+            line-height: 26px;
+            padding-top: 20px;
+          "
+        >
+          <img src="cid:emailLogo" style="height: 22px" />
+        </td>
+      </tr>
+
+      <tr>
+        <td
+          class="defaultlink"
+          style="
+            font-weight: 400;
+            color: #3c3c3c;
+            font-size: 18px;
+            line-height: 26px;
+            padding-top: 40px;
+            padding-bottom: 25px;
+          "
+        >
+          Hallo {{Klient_Titel}} {{Klient_Vorname}} {{Klient_Nachname}}
+        </td>
+      </tr>
+
+      <tr>
+        <td
+          class="defaultlink"
+          style="
+            font-weight: 400;
+            color: #3c3c3c;
+            font-size: 18px;
+            line-height: 26px;
+            padding-bottom: 25px;
+          "
+        >
+          anbei übersende ich Ihnen den Zugangslink für ihren Fragebogen. Der
+          Fragebogen ist nur begrenzt bearbeitbar. Der Link löscht sich
+          automatisch.
+        </td>
+      </tr>
+
+      <tr>
+        <td
+          class="defaultlink"
+          style="
+            font-weight: 400;
+            color: #2b86fc;
+            font-size: 18px;
+            line-height: 26px;
+            padding-bottom: 25px;
+          "
+        >
+          <a>https://psymax.de/f/{{Code}}</a>
+        </td>
+      </tr>
+
+      <tr>
+        <td
+          class="defaultlink"
+          style="
+            font-weight: 400;
+            color: #3c3c3c;
+            font-size: 18px;
+            line-height: 26px;
+            padding-bottom: 25px;
+          "
+        >
+          Sie können den Fragebogen auch über
+          <a style="font-weight: 400; color: #2b86fc">https://psymax.de/f</a>
+          mit folgendem Zugangscode abrufen:
+        </td>
+      </tr>
+
+      <tr>
+        <td
+          class="defaultlink"
+          style="
+            font-weight: 400;
+            color: #3c3c3c;
+            font-size: 18px;
+            line-height: 26px;
+            padding-bottom: 25px;
+          "
+        >
+          {{Code}}
+        </td>
+      </tr>
+
+      <tr>
+        <td
+          class="defaultlink"
+          style="
+            font-weight: 400;
+            color: #3c3c3c;
+            font-size: 18px;
+            line-height: 26px;
+            padding-bottom: 35px;
+          "
+        >
+          Freundliche Gr&uuml;&szlig;e<br />
+          {{Titel}} {{Vorname}} {{Nachname}}
+        </td>
+      </tr>
+
+      <tr>
+        <td
+          class="defaultlink"
+          style="
+            font-weight: 400;
+            color: #2b86fc;
+            font-size: 14px;
+            line-height: 26px;
+          "
+        >
+          {{Praxistitel}} {{Praxisbezeichnung}}
+        </td>
+      </tr>
+      <tr>
+        <td
+          class="defaultlink"
+          style="
+            font-weight: 400;
+            color: #707070;
+            font-size: 14px;
+            line-height: 26px;
+            padding-bottom: 35px;
+          "
+        >
+          {{Titel}} {{Vorname}} {{Nachname}}<br />
+          {{Strasse_und_Hausnummer}}<br />
+          {{Ort}} {{PLZ}}<br />
+          Telefon {{Telefon}}<br />
+          {{Email}} {{Website}}
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

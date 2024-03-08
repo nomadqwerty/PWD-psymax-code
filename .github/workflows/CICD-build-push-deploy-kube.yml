@@ -1,0 +1,76 @@
+name: Push updates to registry and staging kube
+
+on:
+  push:
+    paths:
+      - 'env.yaml'
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    #strategy:
+    #  matrix:
+    #    arch: [arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Check for string
+        id: check-string
+        run: |
+          if grep -q "enabled: true" env.yaml; then
+            echo "Deployment is enabled!"
+            echo "::set-output name=enabled::true"
+          else
+            echo "String not found."
+            echo "::set-output name=enabled::false"
+          fi
+
+      - name: Login to Registry server
+        if: steps.check-string.outputs.enabled == 'true'
+        uses: docker/login-action@v1
+        with:
+          registry: registry.rrfo.de
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Use version from env file
+        if: steps.check-string.outputs.enabled == 'true'
+        run: |
+          APP_VERSION=$(grep -oP 'version: \K.*' env.yaml)
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
+      - name: Build and push frontend Docker image
+        if: steps.check-string.outputs.enabled == 'true'
+        run: |
+          docker buildx create --use --platform=linux/arm64 --name multi-platform-builder
+          docker buildx build --platform=linux/arm64 --push -t registry.rrfo.de/psymax/frontend:${{ env.APP_VERSION }} frontend/
+
+      - name: Build and push backend Docker image
+        if: steps.check-string.outputs.enabled == 'true'
+        run: |
+          docker buildx build --platform=linux/arm64 --push -t registry.rrfo.de/psymax/backend:${{ env.APP_VERSION }} backend/
+
+      - name: Copy file using SSH
+        if: steps.check-string.outputs.enabled == 'true'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: 'env.yaml'
+          target: '/tmp/psymax_staging'
+
+      - name: SSH into Host and Run Helm Upgrade
+        if: steps.check-string.outputs.enabled == 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            helm upgrade --install psymax-staging oci://registry.rrfo.de/psymax/helm-default --values /tmp/psymax_staging/env.yaml

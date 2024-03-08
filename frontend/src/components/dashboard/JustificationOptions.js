@@ -68,6 +68,9 @@ const QuestionnaireEditor = ({ router }) => {
           borderRadius: '4px',
           wordWrap: 'anywhere',
         }}
+        onClick={() => {
+          router.push('/dashboard/questionnaire/edit');
+        }}
       >
         <button
           type="button"

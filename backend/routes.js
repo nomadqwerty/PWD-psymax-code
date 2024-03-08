@@ -6,24 +6,17 @@ const arztController = require('./controllers/arzt');
 const templatesController = require('./controllers/templates');
 const briefController = require('./controllers/brief');
 const leistungenController = require('./controllers/leistungen');
+const questionnaireController = require('./controllers/questionnaire');
 
 const router = express.Router();
 
 /* Auth */
 router.post('/register', authController.register);
-router.post(
-  '/login',
-  (req, res, next) => {
-    console.log('here login');
-    next();
-  },
-  authController.login
-);
+router.post('/login', authController.login);
 router.post('/refreshToken', authController.refreshToken);
 router.delete('/logout', authController.logout);
 router.get('/user/get', authController.get);
 router.post('/user/save', authController.save);
-
 
 /* Begruendungstexte */
 router.get('/begruendungstexte/getAll', begruendungstexteController.getAll);
@@ -45,6 +38,10 @@ router.put('/klient/update', klientController.update);
 router.delete('/klient/remove/:id', klientController.remove);
 router.post('/klient/getChiffre', klientController.getChiffre);
 router.put('/klient/changeStatus', klientController.changeStatus);
+router.put(
+  '/klient/excludeInQuestionnaire',
+  klientController.updateExcludeInQuestionnaire
+);
 
 /* Arzt */
 router.get('/arzt/getAll', arztController.getAll);
@@ -103,5 +100,36 @@ router.put(
 
 /* Templates */
 router.get('/templates/getBriefAll', templatesController.getBriefAll);
+
+/* Questionnaire */
+router
+  .route('/questionnaires')
+  .get(questionnaireController.getAll)
+  .post(questionnaireController.save);
+
+// updating many questionnaires assignment options
+router.put('/questionnaires/updateMany', questionnaireController.updateMany);
+
+router
+  .route('/questionnaires/:id')
+  .get(questionnaireController.getOne)
+  .put(questionnaireController.update)
+  .delete(questionnaireController.remove);
+
+/* QuestionnaireResponse */
+router
+  .route('/questionnaire-responses')
+  .get(questionnaireController.getAllResponses)
+  .put(questionnaireController.saveResponse);
+
+router.get(
+  '/questionnaire-responses/:accessCode',
+  questionnaireController.getOneResponse
+);
+
+router.post(
+  '/questionnaire-responses/download',
+  questionnaireController.downloadResponsePDFs
+);
 
 module.exports = router;

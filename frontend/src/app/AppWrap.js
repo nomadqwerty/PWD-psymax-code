@@ -5,11 +5,10 @@ import { Toaster } from 'react-hot-toast';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import Head from 'next/head';
-import { AuthProvider } from '@/context/auth.context';
-import { KlientProvider } from '@/context/klient.context';
-import { ProviderKonto } from '@/context/konto.context';
-import { VaultProvider } from '@/context/vault.context';
-
+import { AuthProvider } from '../context/auth.context';
+import { KlientProvider } from '../context/klient.context';
+import { ProviderKonto } from '../context/konto.context';
+('');
 import '../../public/styles/globals.css';
 import '../../public/styles/custom.css';
 
@@ -42,21 +41,19 @@ function MyAppWrap({ Component, pageProps, children }) {
         <Toaster position="top-right" />
         <KlientProvider>
           <AuthProvider>
-            <VaultProvider>
-              <ProviderKonto>
-                <Head>
-                  <meta charSet="utf-8" />
-                  <link rel="icon" href="/favicon.svg" />
-                  <meta
-                    name="viewport"
-                    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-                  />
-                  <meta name="description" content="Psymax" />
-                  <title>Psymax</title>
-                </Head>
-                {children}
-              </ProviderKonto>
-            </VaultProvider>
+            <ProviderKonto>
+              <Head>
+                <meta charSet="utf-8" />
+                <link rel="icon" href="/favicon.svg" />
+                <meta
+                  name="viewport"
+                  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+                />
+                <meta name="description" content="Psymax" />
+                <title>Psymax</title>
+              </Head>
+              {children}
+            </ProviderKonto>
           </AuthProvider>
         </KlientProvider>
       </LocalizationProvider>

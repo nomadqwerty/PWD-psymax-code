@@ -1,5 +1,5 @@
-const { default: MyAppWrap } = require("../AppWrap");
-import LogoutPage from "@/components/AuthPages/LogoutPage";
+const { default: MyAppWrap } = require('../AppWrap');
+import LogoutPage from '../../components/AuthPages/LogoutPage';
 
 const Logout = () => {
   return (

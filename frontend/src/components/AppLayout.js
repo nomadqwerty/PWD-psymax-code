@@ -1,10 +1,10 @@
-import { Box } from "@mui/material";
-import Sidebar from "./Sidebar";
-import CustomBreadcrumbs from "./BreadCrumbs";
+import { Box } from '@mui/material';
+import Sidebar from './Sidebar';
+import CustomBreadcrumbs from './BreadCrumbs';
 
-const AppLayout = ({ children, params }) => {
+const AppLayout = ({ children }) => {
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: 'flex' }}>
       <Sidebar />
       <Box
         component="main"

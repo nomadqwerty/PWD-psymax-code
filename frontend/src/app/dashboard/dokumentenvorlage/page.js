@@ -1,5 +1,5 @@
-const { default: MyAppWrap } = require("../../AppWrap");
-import DocumentTemplatePage from "@/components/documentTemplate/DocumentTemplatePage";
+const { default: MyAppWrap } = require('../../AppWrap');
+import DocumentTemplatePage from '../../../components/documentTemplate/DocumentTemplatePage';
 
 const Dokumentenvorlage = () => {
   return (

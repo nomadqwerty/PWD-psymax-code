@@ -1,5 +1,5 @@
-const { default: MyAppWrap } = require("../AppWrap");
-import LoginPage from "@/components/AuthPages/LoginPage";
+const { default: MyAppWrap } = require('../AppWrap');
+import LoginPage from '../../components/AuthPages/LoginPage';
 
 const Login = () => {
   return (

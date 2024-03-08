@@ -746,6 +746,58 @@ const changeStatus = async (req, res, next) => {
   }
 };
 
+const updateExcludeInQuestionnaire = async (req, res, next) => {
+  try {
+    const requestArray = req.body;
+
+    const klientSchema = Joi.object({
+      id: Joi.string().required(),
+      excludeInQuestionnaire: Joi.boolean().required(),
+    });
+
+    const { error } = Joi.array().items(klientSchema).validate(requestArray);
+
+    if (error) {
+      let response = {
+        status_code: 400,
+        message: error?.details[0]?.message,
+        data: error,
+      };
+      return res.status(400).send(response);
+    }
+
+    const updatePromises = requestArray.map(async (requestItem) => {
+      const CheckKlientExist = await KlientSchema.findOne({
+        _id: requestItem.id,
+      }).exec();
+
+      if (CheckKlientExist) {
+        // Update klient
+        CheckKlientExist.excludeInQuestionnaire =
+          requestItem.excludeInQuestionnaire;
+
+        await CheckKlientExist.save();
+      } else {
+        let response = {
+          status_code: 400,
+          message: `Klient with ID ${requestItem.id} not found`,
+        };
+        return res.status(400).send(response);
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    let response = {
+      status_code: 200,
+      message: 'Klient(s) Aktualisiert',
+    };
+    return res.status(200).send(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getActive,
   getArchived,
@@ -757,4 +809,5 @@ module.exports = {
   remove,
   getChiffre,
   changeStatus,
+  updateExcludeInQuestionnaire,
 };

@@ -471,7 +471,10 @@ const Sidebar = () => {
           </span>
         </div>
 
-        <div className="sidebar-svg flex items-center pt-2.5 pb-2.5 pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]">
+        <div
+          className="sidebar-svg flex items-center pt-2.5 pb-2.5 pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]"
+          onClick={() => router.push('/dashboard/questionnaire/edit')}
+        >
           <svg
             width="25"
             height="24"

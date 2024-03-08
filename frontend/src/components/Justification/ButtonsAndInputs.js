@@ -2,7 +2,7 @@ import { Grid } from '@mui/material';
 import CssTextField from '../CssTextField';
 import Button from '../common/Button';
 
-const AddJustification = ({ addJustification }) => {
+const AddJustification = () => {
   return (
     <Grid item xs={6} sm={6} md={6} lg={3} className="newJustificationBtn">
       <button

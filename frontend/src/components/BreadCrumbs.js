@@ -1,12 +1,12 @@
-import NavigateNextIcon from "@mui/icons-material/NavigateNext";
-import { Breadcrumbs, Link, Typography } from "@mui/material";
-import { useRouter, usePathname } from "next/navigation";
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import { Breadcrumbs, Link, Typography } from '@mui/material';
+import { useRouter, usePathname } from 'next/navigation';
 
 const CustomBreadcrumbs = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const routeArray = pathname.split("/").filter((segment) => segment !== "");
+  const routeArray = pathname.split('/').filter((segment) => segment !== '');
   const segments = routeArray.slice(1, 2);
 
   const breadCrumbs = [
@@ -14,7 +14,7 @@ const CustomBreadcrumbs = () => {
       className="cursor-pointer"
       key="1"
       color="inherit"
-      onClick={() => router.push("/dashboard")}
+      onClick={() => router.push('/dashboard')}
     >
       <svg
         width="16"
@@ -50,17 +50,27 @@ const CustomBreadcrumbs = () => {
 
   if (segments?.length > 0) {
     segments?.map((item, i) => {
-      let val = "Übersicht";
-      if (item === "klientinnen") {
-        val = "Klient:innen";
-      } else if (item === "dokumentenvorlage") {
-        val = "Dokumentenvorlage";
-      } else if (item === "begruendungstexte") {
-        val = "Begründungstexte";
-      } else if (item === "leistungen") {
-        val = "Leistungen";
-      } else if (item === "kontoeinstellungen") {
-        val = "Kontoeinstellungen";
+      let val = 'Übersicht';
+      if (item === 'klientinnen') {
+        val = 'Klient:innen';
+      } else if (item === 'dokumentenvorlage') {
+        val = 'Dokumentenvorlage';
+      } else if (item === 'begruendungstexte') {
+        val = 'Begründungstexte';
+      } else if (item === 'leistungen') {
+        val = 'Leistungen';
+      } else if (item === 'kontoeinstellungen') {
+        val = 'Kontoeinstellungen';
+      } else if (item === 'questionnaire') {
+        val = 'Fragebogen';
+      } else if (item === 'edit') {
+        val = 'Editor';
+      } else if (item === 'evaluation') {
+        val = 'Auswertung';
+      } else if (item === 'assignment') {
+        val = 'Zuweisung';
+      } else if (item === '[questionnaireId]') {
+        val = 'Detail';
       }
       breadCrumbs.push(
         <Typography

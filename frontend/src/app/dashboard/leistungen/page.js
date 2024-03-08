@@ -1,5 +1,5 @@
-const { default: MyAppWrap } = require("../../AppWrap");
-import Servicespage from "@/components/Services/Servicespage";
+const { default: MyAppWrap } = require('../../AppWrap');
+import Servicespage from '../../../components/Services/Servicespage';
 
 const Leistungen = () => {
   return (

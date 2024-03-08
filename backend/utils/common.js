@@ -1,4 +1,3 @@
-/* global document */
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
@@ -117,6 +116,7 @@ const generatePDF = async (
 
     return pdf_name;
   } catch (error) {
+    console.log(error, 'Error generating PDF');
     return false;
   }
 };
@@ -154,21 +154,4 @@ const sendSMTPMail = async (
   return info?.messageId;
 };
 
-const addDoc = async(model,object)=>{
-  const mongoose = require("mongoose");
-
-    // TODO: fix DB url string.
-    let DB_URL = 'mongodb://localhost:27017/psymax'
-    let newDB_URL = DB_URL.replace('/mongodb:', '/localhost:');
-    await mongoose.connect(newDB_URL, {
-      useNewUrlParser: true,
-    });
-    console.log(`Connected to ${DB_URL}`);
-    // Run seeder after connecting to the database
-    console.log('Seeder executed successfully');
-
-
-  await model.create(object)
-}
-
-module.exports = { getFormattedDate, randomCodeStr, generatePDF, sendSMTPMail, addDoc };
+module.exports = { getFormattedDate, randomCodeStr, generatePDF, sendSMTPMail };

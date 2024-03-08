@@ -11,19 +11,11 @@ const router = express.Router();
 
 /* Auth */
 router.post('/register', authController.register);
-router.post(
-  '/login',
-  (req, res, next) => {
-    console.log('here login');
-    next();
-  },
-  authController.login
-);
+router.post('/login', authController.login);
 router.post('/refreshToken', authController.refreshToken);
 router.delete('/logout', authController.logout);
 router.get('/user/get', authController.get);
 router.post('/user/save', authController.save);
-
 
 /* Begruendungstexte */
 router.get('/begruendungstexte/getAll', begruendungstexteController.getAll);

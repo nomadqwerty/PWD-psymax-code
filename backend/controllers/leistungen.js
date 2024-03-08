@@ -59,7 +59,6 @@ const getAllAbrechnung = async (req, res, next) => {
 
 const saveAbrechnung = async (req, res, next) => {
   try {
-    console.log('here');
     const requestBody = req.body;
     const leistungObjectSchema = Joi.object({
       Leistung: Joi.string().required(),

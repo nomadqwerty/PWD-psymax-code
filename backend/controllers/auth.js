@@ -2,7 +2,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { UserSchema } = require('../models/userModel');
 const Joi = require('joi');
-const UserVault = require('../models/UserVault');
 const {
   TimeForTokenExpire,
   GLOBAL_POINT_VALUE,
@@ -14,7 +13,7 @@ const { GlobalPointsSchema } = require('../models/globalPointsModel');
 
 const register = async (req, res, next) => {
   try {
-    const { email, password, inviteCode, emergencyPassword } = req.body;
+    const { email, password, inviteCode } = req.body;
     const passwordStrength = zxcvbn(password);
 
     if (passwordStrength?.score < 3) {
@@ -30,9 +29,9 @@ const register = async (req, res, next) => {
       password: Joi.string().required(),
       confirmPassword: Joi.string().required().valid(Joi.ref('password')),
       inviteCode: Joi.string().required(),
-      emergencyPassword: Joi.string(),
     });
     const { error } = registrationSchema.validate(req.body);
+
     if (error) {
       let response = {
         status_code: 400,
@@ -40,6 +39,7 @@ const register = async (req, res, next) => {
       };
       return res.status(400).send(response);
     }
+
     const checkExist = await UserSchema.findOne({
       email: email,
       status: { $in: [0, 1, 2] },
@@ -54,8 +54,6 @@ const register = async (req, res, next) => {
     }
 
     const encryptedPassword = await bcrypt.hash(password, 10);
-    const encryptedEmergencyPassword = await bcrypt.hash(emergencyPassword, 10);
-
 
     const getInvitedUser = UserSchema.findOne({ inviteCode: inviteCode });
 
@@ -68,7 +66,6 @@ const register = async (req, res, next) => {
       inviteCode: randomCode,
       invitedUserId: getInvitedUser?._id ? getInvitedUser?._id : null,
       isAdmin: 0,
-      emergencyPassword: encryptedEmergencyPassword
     });
     await user.save();
     if (user) {
@@ -82,7 +79,6 @@ const register = async (req, res, next) => {
     let response = {
       status_code: 200,
       message: 'Registrierung erfolgreich.',
-      data:{userId: user?._id,}
     };
     return res.status(200).send(response);
   } catch (error) {
@@ -93,9 +89,8 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     // Get user input
-
     const { email, password } = req.body;
-    // console.log('incoming', email, password);
+
     const loginSchema = Joi.object({
       email: Joi.string().email().required(),
       password: Joi.string().required(),
@@ -114,7 +109,7 @@ const login = async (req, res, next) => {
     const user = await UserSchema.findOne({
       email: email,
     }).select(' -__v');
-    // console.log(user);
+
     if (!user) {
       let response = {
         status_code: 400,
@@ -255,7 +250,6 @@ const get = async (req, res, next) => {
   }
 };
 
-// TODO:
 const save = async (req, res, next) => {
   try {
     const requestBody = req.body;
@@ -271,7 +265,7 @@ const save = async (req, res, next) => {
         return res.status(400).send(response);
       }
     }
-    
+
     const userDetailsSchema = Joi.object({
       Anrede: Joi.string().required(),
       Titel: Joi.string(),
@@ -385,9 +379,6 @@ const save = async (req, res, next) => {
       user.Authentifizierungscode = requestBody?.Authentifizierungscode;
       user.isAdmin = 0;
       // user.isFirst = 0;
-     
-
-      // TODO: Create user Access Key Document.
       user.save();
 
       let response = {

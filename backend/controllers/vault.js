@@ -87,15 +87,15 @@ let response = {
   }
   exports.updateUserVault=async (req,res)=>{
     try {
-       // TODO: save user vault to storage.
        let userVault = req.body?.fileVault;
        let clientVault = req.body?.clientVault;
       
-       let existingVault = await UserVault.findOne({userId: userVault[0].userId})
+       let existingVault = await UserVault.find({userId: userVault[0].userId})
 
-       let existingClientVault = await ClientVault.findOne({userId: userVault[0].userId})
+       let existingClientVault = await ClientVault.find({userId: userVault[0].userId})
       // TODO: check if all vaults exist.
-       if(existingVault && existingClientVault){
+      console.log(existingClientVault.length,existingVault.length)
+       if(existingVault.length === 3 && existingClientVault.length === 3){
          console.log('found')
 
          userVault.forEach(async (e)=>{

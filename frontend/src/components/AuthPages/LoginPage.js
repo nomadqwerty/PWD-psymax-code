@@ -211,85 +211,130 @@ const LoginPage = () => {
                 }
               }
             }
+          } else {
+            if (!operations) {
+              alert('Web Crypto is not supported on this browser');
+              console.warn('Web Crypto API not supported');
+            } else {
+              console.log('vault encrypted');
+              let userData = responseData;
+              const response = await axiosInstance.get(`/vault/server`);
+              let vault = response.data.data;
+              let pass = userData.password;
+              let ePass = userData.emergencyPassword;
+              let dualKeySalt = vault.dualKeySalt;
+              let masterKeySalt = vault.masterKeySalt;
+              if (ePass) {
+                // TODO: derive dualkeys and master keys.
+                console.log('login');
+                let allKeys = await deriveAllKeys(
+                  pass,
+                  ePass,
+                  dualKeySalt,
+                  masterKeySalt,
+                  window
+                );
+                let keysLength = Object.keys(allKeys).length;
+                if (keysLength > 0) {
+                  const { masterKey, iv, dualKeyOne, dualKeyTwo } = allKeys;
+                  console.log(allKeys);
+
+                  let fileUintArr = [];
+
+                  fileVault.forEach((e) => {
+                    if (e.type === 'update') {
+                      let fileUpdateVault = new Uint8Array(e.passwords.data);
+                      fileUintArr.push({ data: fileUpdateVault, type: e.type });
+                    }
+                    if (e.type === 'main') {
+                      let fileMainVault = new Uint8Array(e.passwords.data);
+                      fileUintArr.push({ data: fileMainVault, type: e.type });
+                    }
+                    if (e.type === 'archive') {
+                      let fileArchiveVault = new Uint8Array(e.passwords.data);
+                      fileUintArr.push({
+                        data: fileArchiveVault,
+                        type: e.type,
+                      });
+                    }
+                  });
+
+                  let clientUintArr = [];
+
+                  clientVault.forEach((e) => {
+                    if (e.type === 'update') {
+                      let clientUpdateVault = new Uint8Array(e.clients.data);
+                      clientUintArr.push({
+                        data: clientUpdateVault,
+                        type: e.type,
+                      });
+                    }
+                    if (e.type === 'main') {
+                      let clientMainVault = new Uint8Array(e.clients.data);
+                      clientUintArr.push({
+                        data: clientMainVault,
+                        type: e.type,
+                      });
+                    }
+                    if (e.type === 'archive') {
+                      let clientArchiveVault = new Uint8Array(e.clients.data);
+                      clientUintArr.push({
+                        data: clientArchiveVault,
+                        type: e.type,
+                      });
+                    }
+                  });
+
+                  let encryptedVaults = [...fileUintArr, ...clientUintArr];
+
+                  let decryptedVaults = [];
+
+                  encryptedVaults.forEach(async (e) => {
+                    console.log(e.type);
+                    let dataDec = await decryptData(
+                      operations,
+                      masterKey,
+                      iv,
+                      e.data
+                    );
+
+                    dataDec.type = e.type;
+                    console.log(dataDec);
+                  });
+                  // console.log(encPassDir);
+                  // let passDirDec = await decryptData(
+                  //   operations,
+                  //   masterKey,
+                  //   iv,
+                  //   encPassDir
+                  // );
+                  // let clientsDec = await decryptData(
+                  //   operations,
+                  //   masterKey,
+                  //   iv,
+                  //   encClients
+                  // );
+                  // let backUpPassDirDec = await decryptData(
+                  //   operations,
+                  //   backUpMasterKey,
+                  //   backUpIv,
+                  //   encBackUpPassDir
+                  // );
+                  // let backUpClientsDec = await decryptData(
+                  //   operations,
+                  //   backUpMasterKey,
+                  //   backUpIv,
+                  //   encBackUpClients
+                  // );
+                  // // TODO: add vault to state, add keys to ram.
+                  // let passwordVault = { passDirDec, backUpPassDirDec };
+                  // let clientVault = { clientsDec, backUpClientsDec };
+                  // console.log(passwordVault);
+                  // console.log(clientVault);
+                }
+              }
+            }
           }
-          // else {
-          //   if (!operations) {
-          //     alert('Web Crypto is not supported on this browser');
-          //     console.warn('Web Crypto API not supported');
-          //   } else {
-          //     console.log('vault encrypted');
-          //     let userData = responseData;
-          //     const response = await axiosInstance.get(`/vault/server`);
-          //     let vault = response.data.data;
-          //     let pass = userData.password;
-          //     let ePass = userData.emergencyPassword;
-          //     let dualKeySalt = vault.dualKeySalt;
-          //     let masterKeySalt = vault.masterKeySalt;
-          //     if (ePass) {
-          //       // TODO: derive dualkeys and master keys.
-          //       console.log('login');
-          //       let allKeys = await deriveAllKeys(
-          //         pass,
-          //         ePass,
-          //         dualKeySalt,
-          //         masterKeySalt,
-          //         window
-          //       );
-          //       let keysLength = Object.keys(allKeys).length;
-          //       if (keysLength > 0) {
-          //         console.log(allKeys);
-          //         const {
-          //           masterKey,
-          //           backUpMasterKey,
-          //           iv,
-          //           backUpIv,
-          //           dualKeyOne,
-          //           dualKeyTwo,
-          //         } = allKeys;
-          //         const encPassDir = new Uint8Array(
-          //           vaultResData.passwords.data
-          //         );
-          //         const encClients = new Uint8Array(vaultResData.clients.data);
-          //         const encBackUpPassDir = new Uint8Array(
-          //           vaultResData.backupPasswords.data
-          //         );
-          //         const encBackUpClients = new Uint8Array(
-          //           vaultResData.backupClients.data
-          //         );
-          //         console.log(encPassDir);
-          //         let passDirDec = await decryptData(
-          //           operations,
-          //           masterKey,
-          //           iv,
-          //           encPassDir
-          //         );
-          //         let clientsDec = await decryptData(
-          //           operations,
-          //           masterKey,
-          //           iv,
-          //           encClients
-          //         );
-          //         let backUpPassDirDec = await decryptData(
-          //           operations,
-          //           backUpMasterKey,
-          //           backUpIv,
-          //           encBackUpPassDir
-          //         );
-          //         let backUpClientsDec = await decryptData(
-          //           operations,
-          //           backUpMasterKey,
-          //           backUpIv,
-          //           encBackUpClients
-          //         );
-          //         // TODO: add vault to state, add keys to ram.
-          //         let passwordVault = { passDirDec, backUpPassDirDec };
-          //         let clientVault = { clientsDec, backUpClientsDec };
-          //         console.log(passwordVault);
-          //         console.log(clientVault);
-          //       }
-          //     }
-          //   }
-          // }
         }
         localStorage.setItem('psymax-loggedin', true);
         localStorage.setItem('psymax-token', responseData?.token);

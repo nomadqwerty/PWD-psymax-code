@@ -275,6 +275,15 @@ button:hover {
 
 /* Footer End */
 
+.registration {
+  text-align: center;
+  margin-top: 70px;
+  color: #0e0e0e;
+  font-family: Inter Tight;
+  font-size: 32px;
+  font-weight: 600;
+}
+
 .form-middle {
   max-width: 1320px;
   padding: 24px;
@@ -354,7 +363,7 @@ button:hover {
 }
 
 .app-main-content {
-  padding: 50px 400px 50px 400px !important;
+  padding: 50px 400px 50px 400px;
 }
 
 .sidebar-icon > svg rect {
@@ -370,7 +379,7 @@ button:hover {
 }
 
 .MuiDrawer-paper {
-  border-right: 2px solid rgba(0, 0, 0, 0.12);
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
 }
 /* .MuiInputLabel-root {
   left: 8px;
@@ -445,7 +454,7 @@ button:hover {
   }
 
   .app-main-content {
-    padding: 50px 10px 50px 10px !important;
+    padding: 50px 10px 50px 10px;
   }
 
   .sidebar-icon {
@@ -468,7 +477,7 @@ button:hover {
   }
 
   .app-main-content {
-    padding: 50px 30px 50px 30px !important;
+    padding: 50px 30px 50px 30px;
   }
 
   .sidebar-icon {
@@ -491,7 +500,7 @@ button:hover {
   }
 
   .app-main-content {
-    padding: 50px 50px 50px 50px !important;
+    padding: 50px 50px 50px 50px;
   }
 
   .newJustificationBtn {
@@ -510,19 +519,19 @@ button:hover {
   }
 
   .app-main-content {
-    padding: 50px 80px 50px 80px !important;
+    padding: 50px 80px 50px 80px;
   }
 }
 
 @media (min-width: 1281px) and (max-width: 1699px) {
   .app-main-content {
-    padding: 50px 100px 50px 100px !important;
+    padding: 50px 100px 50px 100px;
   }
 }
 
 @media (min-width: 1700px) and (max-width: 2000px) {
   .app-main-content {
-    padding: 50px 150px 50px 150px !important;
+    padding: 50px 150px 50px 150px;
   }
 }
 

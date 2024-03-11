@@ -89,7 +89,6 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     // Get user input
-
     const { email, password } = req.body;
 
     const loginSchema = Joi.object({
@@ -110,6 +109,7 @@ const login = async (req, res, next) => {
     const user = await UserSchema.findOne({
       email: email,
     }).select(' -__v');
+
     if (!user) {
       let response = {
         status_code: 400,

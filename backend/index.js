@@ -16,10 +16,7 @@ const {
   errorMiddleware,
 } = require('./utils/logger');
 
-dotenv.config({
-  path: path.join(__dirname, './config.env'),
-});
-
+dotenv.config();
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger/swagger');
 
@@ -56,8 +53,7 @@ app.use(requestLoggerMiddleware);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:4000',
-  'https://psymax.de',
-  'https://psymax.de/api/',
+  'https://psymax.com',
 ];
 
 const corsOptions = {
@@ -77,7 +73,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(
-  '/api/api-docs',
+  '/api-docs',
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec, {
     customSiteTitle: 'Psymax API Documentation',
@@ -85,10 +81,7 @@ app.use(
 );
 
 // app.use('/public', express.static(__dirname + '/public'));
-app.use('*', (req, res, next) => {
-  console.log('Pymax API.');
-  next();
-});
+
 const publicUploadsDirectory = path.join(__dirname, 'public', 'uploads');
 app.use('/uploads', express.static(publicUploadsDirectory));
 

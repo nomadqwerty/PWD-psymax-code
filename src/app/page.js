@@ -34,6 +34,7 @@ export default function Home() {
     "application/pdf": true,
     "image/jpeg": true,
     "image/png": true,
+    "audio/mp4": true,
     size: 15000000,
   };
 
@@ -137,13 +138,14 @@ export default function Home() {
     console.log("size: ", uploadedFile.size > acceptedTypes.size);
     console.log("type: ", type);
     const isAllowed = acceptedTypes[type];
+    console.log(uploadedFile);
     if (isAllowed && !isTooBig) {
       let name = uploadedFile.name.split(".")[0];
       let isClean = true;
       if (type === "text/plain") {
         isClean = cleanFile(uploadedFile);
       }
-
+      console.log(isClean);
       if (operations && testKey && iv && isClean) {
         console.log("compressing uploaded file");
         const zipFile = await compressFile(uploadedFile);

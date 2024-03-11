@@ -134,10 +134,21 @@ const deriveAllKeys = async (
   return requirements;
 };
 
+const isEncrypted = (vaultArray) => {
+  let count = 0;
+  for (let i = 0; i < vaultArray.length; i++) {
+    if (vaultArray[i].isEncrypted) {
+      count = count + 1;
+    }
+  }
+  return count === vaultArray.length ? true : false;
+};
+
 export {
   passwordGenerator,
   psyMaxKDF,
   encryptData,
   decryptData,
   deriveAllKeys,
+  isEncrypted,
 };

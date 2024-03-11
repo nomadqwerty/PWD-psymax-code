@@ -1,5 +1,6 @@
 const ServerVault = require('../models/ServerVault')
 const UserVault = require('../models/UserVault')
+const ClientVault = require('../models/ClientVault')
 
 exports.getServerVault = async (req, res, next) => {
     try {
@@ -27,17 +28,45 @@ exports.getServerVault = async (req, res, next) => {
        // TODO: save user vault to storage.
        let userVault = req.body;
        console.log(userVault)
+
        let existingVault = await UserVault.findOne({userId: userVault.userId})
+       let existingClientVault = await ClientVault.findOne({userId: userVault.userId})
       
-       if(!existingVault){
+       if(!existingVault && !existingClientVault){
          console.log('not found')
-         let newVault = await UserVault.create(userVault)
-         console.log(newVault)
-         let response = {
-          status_code: 200,
-         
-          data: newVault,
-        };
+         let fileVault = {...userVault};
+         let clientVault = {...userVault};
+
+         delete fileVault.clients;
+         delete clientVault.passwords;
+
+         let newVault = await UserVault.create(fileVault)
+         let newClientVault = await ClientVault.create(clientVault)
+          console.log('main...')
+          fileVault.type = 'update';
+          clientVault.type = 'update';
+
+          let newUpdateVault = await UserVault.create(fileVault)
+          let newClientUpdateVault = await ClientVault.create(clientVault)
+
+          console.log('update...')
+          fileVault.type = 'archive';
+          clientVault.type = 'archive';
+
+          let newArchiveVault = await UserVault.create(fileVault)
+          let newClientArchiveVault = await ClientVault.create(clientVault)
+          console.log('archive...')
+
+
+let response = {
+  status_code: 204,
+  
+  message:'vaults created',
+          };
+
+          console.log(newVault,newClientVault)
+          console.log(newUpdateVault,newClientUpdateVault) 
+          console.log(newArchiveVault,newClientArchiveVault) 
 
         return res.status(200).json(response);
        }else{
@@ -59,18 +88,28 @@ exports.getServerVault = async (req, res, next) => {
   exports.updateUserVault=async (req,res)=>{
     try {
        // TODO: save user vault to storage.
-       let userVault = req.body;
-       console.log(userVault)
-       let existingVault = await UserVault.findOne({userId: userVault.userId})
+       let userVault = req.body?.fileVault;
+       let clientVault = req.body?.clientVault;
       
-       if(existingVault){
+       let existingVault = await UserVault.findOne({userId: userVault[0].userId})
+
+       let existingClientVault = await ClientVault.findOne({userId: userVault[0].userId})
+      // TODO: check if all vaults exist.
+       if(existingVault && existingClientVault){
          console.log('found')
-         let updatedVault = await UserVault.findOneAndUpdate({userId: userVault.userId},userVault,{new:true});
-         console.log(updatedVault);
+
+         userVault.forEach(async (e)=>{
+            let updateVault = await UserVault.findOneAndUpdate({userId: e.userId,type:e.type},e,{new:true});
+          })
+
+          clientVault.forEach(async (e)=>{
+            let updateVault = await ClientVault.findOneAndUpdate({userId: e.userId,type:e.type},e,{new:true});
+         })
+        
          let response = {
           status_code: 200,
          
-          data: updatedVault,
+          data: "updated Vaults",
         };
 
         return res.status(200).json(response);
@@ -91,17 +130,21 @@ exports.getServerVault = async (req, res, next) => {
       });
     }
   }
+
 exports.getUserVault = async (req, res, next) => {
     try {
         let id = req.params.userId
         console.log(id)
-        let vault = await UserVault.findOne({userId:id})
-        console.log(vault,'vaultHere')
-        if(vault){
+        let vault = await UserVault.find({userId:id})
+        let clientVault = await ClientVault.find({userId:id})
+        if(vault.length === 3 && clientVault.length === 3){
             let response = {
                 status_code: 200,
                 message: '',
-                data: vault,
+                data: {
+                  vaults:vault,
+                  clientVaults: clientVault
+                },
               };
             res.status(200).json(response);
         }else{

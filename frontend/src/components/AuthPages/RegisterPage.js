@@ -37,12 +37,11 @@ const Register = () => {
         console.log(user_id);
         const resVault = await axiosInstance.post(`/vault/user`, {
           userId: user_id,
+          type: 'main',
           isEncrypted: false,
 
           passwords: '',
           clients: '',
-          backupPasswords: '',
-          backupClients: '',
         });
         console.log(resVault);
         dispatch({ type: 'INITIAL_STATE' });

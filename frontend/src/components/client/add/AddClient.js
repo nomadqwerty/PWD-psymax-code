@@ -146,6 +146,10 @@ const ClientAddEdit = React.memo(() => {
   const onSubmit = async (data) => {
     try {
       let response;
+      // TODO: encrypt client data fields.
+      // perform checks if data exists.
+      // encrypt client using client password+client salt.
+      // store client password in vault.
       if (isEdit) {
         data.id = params?.id;
         delete data?.Chiffre;

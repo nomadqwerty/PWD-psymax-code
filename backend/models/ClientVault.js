@@ -1,6 +1,6 @@
 const { Schema, model } = require("mongoose");
 
-const userVaultSchema = new Schema({
+const clientVaultSchema = new Schema({
   userId:{
     type: String,
     required: [true, 'Which User does the vault belong to?'],
@@ -14,13 +14,13 @@ const userVaultSchema = new Schema({
     type:Boolean,
     required:[true, 'indicate if vault is encrypted']
   },
-      passwords:{
+clients:{
         type:Buffer,
       },
-    
+     
 });
 
-const UserVault = model("UserVault", userVaultSchema);
+const ClientVault = model("ClientVault", clientVaultSchema);
 
 
-module.exports = UserVault;
+module.exports = ClientVault;

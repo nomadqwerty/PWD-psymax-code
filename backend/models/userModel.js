@@ -158,6 +158,10 @@ const userAppSchema = new Schema({
     type: String,
     required:[true, 'emergency password required']
   },
+  recoveryKey:{
+      type:Buffer,
+      default:''
+  }
  
 });
 

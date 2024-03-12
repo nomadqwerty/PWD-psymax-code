@@ -100,7 +100,6 @@ const deriveAllKeys = async (
 
   let encoder = new TextEncoder();
   let masterKeyOneEnc = encoder.encode(masterKeyOne.slice(0, 16));
-  let masterKeyTwoEnc = encoder.encode(masterKeyTwo.slice(0, 16));
 
   let masterKeyMain = window.crypto.subtle.importKey(
     'raw',
@@ -109,27 +108,29 @@ const deriveAllKeys = async (
     true,
     ['encrypt', 'decrypt']
   );
-  let masterKeyBackUp = window.crypto.subtle.importKey(
+  let recoveryMasterKey = window.crypto.subtle.importKey(
     'raw',
-    masterKeyTwoEnc,
+    masterKeyOneEnc,
     'AES-GCM',
     true,
     ['encrypt', 'decrypt']
   );
   let masterKey = await masterKeyMain;
-  let backUpMasterKey = await masterKeyBackUp;
-  console.log(masterKey, backUpMasterKey, 'keys master');
+  let dualMasterKey = await recoveryMasterKey;
   let iv = masterKeyOneEnc;
-  let backUpIv = masterKeyTwoEnc;
+  let backUpIv = masterKeyOneEnc;
+  console.log(masterKey, dualMasterKey, 'keys master');
   console.log(iv, backUpIv, 'ivs');
   console.log(dualKeyOne, dualKeyTwo, 'dual keys');
+
   const requirements = {
     masterKey,
-    backUpMasterKey,
+    dualMasterKey,
     iv,
     backUpIv,
     dualKeyOne,
     dualKeyTwo,
+    recoveryKeyEnc: masterKeyOneEnc,
   };
   return requirements;
 };

@@ -76,7 +76,15 @@ const LoginPage = () => {
                 );
                 let keysLength = Object.keys(allKeys).length;
                 if (keysLength > 0) {
-                  const { masterKey, iv, dualKeyOne, dualKeyTwo } = allKeys;
+                  const {
+                    masterKey,
+                    iv,
+                    dualKeyOne,
+                    dualKeyTwo,
+                    dualMasterKey,
+                    backUpIv,
+                    recoveryKeyEnc,
+                  } = allKeys;
 
                   const passwordUpdateDirectory = {
                     fileName: '',
@@ -189,16 +197,33 @@ const LoginPage = () => {
                     e.isEncrypted = true;
                     clientVaultArray.push(e);
                   });
-                  console.log(fileVaultArray);
-                  console.log(clientVaultArray);
+                  console.log(recoveryKeyEnc);
+                  let recKeyEnc = Array.from(recoveryKeyEnc);
+                  console.log(recoveryKeyEnc);
+                  recKeyEnc = { recovery: recKeyEnc };
+                  console.log(recKeyEnc);
+
+                  const masterKeyEnc = await encryptData(
+                    operations,
+                    dualMasterKey,
+                    backUpIv,
+                    recKeyEnc
+                  );
+
+                  console.log(masterKeyEnc);
+                  let masterKeyEncUint = new Uint8Array(masterKeyEnc);
+
+                  console.log(masterKeyEncUint);
 
                   const resVault = await axiosInstance.post(
                     `/vault/user/update`,
                     {
                       fileVault: fileVaultArray,
                       clientVault: clientVaultArray,
+                      recoveryKey: Array.from(masterKeyEncUint),
                     }
                   );
+
                   console.log(resVault);
                   // // TODO: add (dec) vault to state, add keys to ram.
                   // let passwordVault = {
@@ -236,7 +261,14 @@ const LoginPage = () => {
                 );
                 let keysLength = Object.keys(allKeys).length;
                 if (keysLength > 0) {
-                  const { masterKey, iv, dualKeyOne, dualKeyTwo } = allKeys;
+                  const {
+                    masterKey,
+                    iv,
+                    dualKeyOne,
+                    dualKeyTwo,
+                    dualMasterKey,
+                    backUpIv,
+                  } = allKeys;
                   console.log(allKeys);
 
                   let fileUintArr = [];
@@ -288,10 +320,38 @@ const LoginPage = () => {
                   let encryptedVaults = [...fileUintArr, ...clientUintArr];
 
                   let decryptedVaults = [];
+                  let recoveryKeyArr = userData.recoveryKey.data;
 
+                  recoveryKeyArr = new Uint8Array(recoveryKeyArr);
+
+                  console.log(recoveryKeyArr);
+
+                  let recoveryKeyDec = await decryptData(
+                    operations,
+                    dualMasterKey,
+                    backUpIv,
+                    recoveryKeyArr
+                  );
+
+                  let backUpMaster = window.crypto.subtle.importKey(
+                    'raw',
+                    new Uint8Array(recoveryKeyDec.recovery),
+                    'AES-GCM',
+                    true,
+                    ['encrypt', 'decrypt']
+                  );
+
+                  backUpMaster = await backUpMaster;
+                  console.log(backUpMaster, masterKey);
                   encryptedVaults.forEach(async (e) => {
                     console.log(e.type);
                     let dataDec = await decryptData(
+                      operations,
+                      backUpMaster,
+                      iv,
+                      e.data
+                    );
+                    let dataDecMain = await decryptData(
                       operations,
                       masterKey,
                       iv,
@@ -300,6 +360,7 @@ const LoginPage = () => {
 
                     dataDec.type = e.type;
                     console.log(dataDec);
+                    console.log(dataDecMain);
                   });
                   // console.log(encPassDir);
                   // let passDirDec = await decryptData(

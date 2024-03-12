@@ -1,6 +1,7 @@
 const ServerVault = require('../models/ServerVault')
 const UserVault = require('../models/UserVault')
 const ClientVault = require('../models/ClientVault')
+const { UserSchema } = require('../models/userModel');
 
 exports.getServerVault = async (req, res, next) => {
     try {
@@ -89,23 +90,30 @@ let response = {
     try {
        let userVault = req.body?.fileVault;
        let clientVault = req.body?.clientVault;
+       let recoveryKey = req.body?.recoveryKey;
       
+       let user = await UserSchema.findOne({_id:userVault[0].userId})
+
        let existingVault = await UserVault.find({userId: userVault[0].userId})
 
        let existingClientVault = await ClientVault.find({userId: userVault[0].userId})
       // TODO: check if all vaults exist.
-      console.log(existingClientVault.length,existingVault.length)
-       if(existingVault.length === 3 && existingClientVault.length === 3){
+      
+       if(existingVault.length === 3 && existingClientVault.length === 3 && user){
          console.log('found')
 
          userVault.forEach(async (e)=>{
-            let updateVault = await UserVault.findOneAndUpdate({userId: e.userId,type:e.type},e,{new:true});
+             await UserVault.findOneAndUpdate({userId: e.userId,type:e.type},e,{new:true});
           })
 
           clientVault.forEach(async (e)=>{
-            let updateVault = await ClientVault.findOneAndUpdate({userId: e.userId,type:e.type},e,{new:true});
+             await ClientVault.findOneAndUpdate({userId: e.userId,type:e.type},e,{new:true});
          })
+         
+        user.recoveryKey = recoveryKey;
         
+        await user.save();
+
          let response = {
           status_code: 200,
          

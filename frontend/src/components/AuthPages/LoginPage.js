@@ -439,7 +439,7 @@ const LoginPage = () => {
                         userId: userData._id,
                         type: 'main',
                         passwords: Array.from(mergeUint),
-                        vault: 'file',
+                        vault: 'client',
                       });
                     }
                   });

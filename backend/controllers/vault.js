@@ -1,172 +1,228 @@
-const ServerVault = require('../models/ServerVault')
-const UserVault = require('../models/UserVault')
-const ClientVault = require('../models/ClientVault')
+const ServerVault = require('../models/ServerVault');
+const UserVault = require('../models/UserVault');
+const ClientVault = require('../models/ClientVault');
 const { UserSchema } = require('../models/userModel');
 
 exports.getServerVault = async (req, res, next) => {
-    try {
-        let vault = await ServerVault.find()
-        
-        if(vault[0]){
-            let response = {
-                status_code: 200,
-                message: '',
-                data: vault[0],
-              };
-            res.status(200).json(response);
-        }
-        
-    } catch (error) {
-      res.status(405).json({
-        status: "fail",
-        message: error.message,
-      });
+  try {
+    let vault = await ServerVault.find();
+
+    if (vault[0]) {
+      let response = {
+        status_code: 200,
+        message: '',
+        data: vault[0],
+      };
+      res.status(200).json(response);
     }
-  };
-
-  exports.createUserVault=async (req,res)=>{
-    try {
-       // TODO: save user vault to storage.
-       let userVault = req.body;
-
-       let existingVault = await UserVault.findOne({userId: userVault.userId})
-       let existingClientVault = await ClientVault.findOne({userId: userVault.userId})
-      
-       if(!existingVault && !existingClientVault){
-         console.log('not found')
-         let fileVault = {...userVault};
-         let clientVault = {...userVault};
-
-         delete fileVault.clients;
-         delete clientVault.passwords;
-
-         let newVault = await UserVault.create(fileVault)
-         let newClientVault = await ClientVault.create(clientVault)
-          console.log('main...')
-          fileVault.type = 'update';
-          clientVault.type = 'update';
-
-          let newUpdateVault = await UserVault.create(fileVault)
-          let newClientUpdateVault = await ClientVault.create(clientVault)
-
-          console.log('update...')
-          fileVault.type = 'archive';
-          clientVault.type = 'archive';
-
-          let newArchiveVault = await UserVault.create(fileVault)
-          let newClientArchiveVault = await ClientVault.create(clientVault)
-          console.log('archive...')
-
-
-let response = {
-  status_code: 204,
-  
-  message:'vaults created',
-          };
-
-          console.log(newVault,newClientVault)
-          console.log(newUpdateVault,newClientUpdateVault) 
-          console.log(newArchiveVault,newClientArchiveVault) 
-
-        return res.status(200).json(response);
-       }else{
-        let response = {
-          status_code: 200,
-         
-          message:'user vault already exists'
-        };
-
-         return res.status(200).json(response);
-       }
-    } catch (error) {
-      return res.status(405).json({
-        status: "fail",
-        message: error.message,
-      });
-    }
+  } catch (error) {
+    res.status(405).json({
+      status: 'fail',
+      message: error.message,
+    });
   }
-  exports.updateUserVault=async (req,res)=>{
-    try {
-       let userVault = req.body?.fileVault;
-       let clientVault = req.body?.clientVault;
-       let recoveryKey = req.body?.recoveryKey;
-      
-       let user = await UserSchema.findOne({_id:userVault[0].userId})
+};
 
-       let existingVault = await UserVault.find({userId: userVault[0].userId})
+exports.createUserVault = async (req, res) => {
+  try {
+    // TODO: save user vault to storage.
+    let userVault = req.body;
 
-       let existingClientVault = await ClientVault.find({userId: userVault[0].userId})
-      // TODO: check if all vaults exist.
-      
-       if(existingVault.length === 3 && existingClientVault.length === 3 && user){
-         console.log('found')
+    let existingVault = await UserVault.findOne({ userId: userVault.userId });
+    let existingClientVault = await ClientVault.findOne({
+      userId: userVault.userId,
+    });
 
-         userVault.forEach(async (e)=>{
-             await UserVault.findOneAndUpdate({userId: e.userId,type:e.type},e,{new:true});
-          })
+    if (!existingVault && !existingClientVault) {
+      console.log('not found');
+      let fileVault = { ...userVault };
+      let clientVault = { ...userVault };
 
-          clientVault.forEach(async (e)=>{
-             await ClientVault.findOneAndUpdate({userId: e.userId,type:e.type},e,{new:true});
-         })
-         
-        user.recoveryKey = recoveryKey;
-        
-        await user.save();
+      delete fileVault.clients;
+      delete clientVault.passwords;
 
-         let response = {
-          status_code: 200,
-         
-          data: "updated Vaults",
-        };
+      let newVault = await UserVault.create(fileVault);
+      let newClientVault = await ClientVault.create(clientVault);
+      console.log('main...');
+      fileVault.type = 'update';
+      clientVault.type = 'update';
 
-        return res.status(200).json(response);
-       }else{
-        let response = {
-          status_code: 404,
-         
-          message:'user vault does not exists'
-        };
+      let newUpdateVault = await UserVault.create(fileVault);
+      let newClientUpdateVault = await ClientVault.create(clientVault);
 
-         return res.status(404).json(response);
-       }
-    } catch (error) {
-      console.log(error)
-      return res.status(405).json({
-        status: "fail",
-        message: error.message,
-      });
+      console.log('update...');
+      fileVault.type = 'archive';
+      clientVault.type = 'archive';
+
+      let newArchiveVault = await UserVault.create(fileVault);
+      let newClientArchiveVault = await ClientVault.create(clientVault);
+      console.log('archive...');
+
+      let response = {
+        status_code: 204,
+
+        message: 'vaults created',
+      };
+
+      console.log(newVault, newClientVault);
+      console.log(newUpdateVault, newClientUpdateVault);
+      console.log(newArchiveVault, newClientArchiveVault);
+
+      return res.status(200).json(response);
+    } else {
+      let response = {
+        status_code: 200,
+
+        message: 'user vault already exists',
+      };
+
+      return res.status(200).json(response);
     }
+  } catch (error) {
+    return res.status(405).json({
+      status: 'fail',
+      message: error.message,
+    });
   }
+};
+exports.updateUserVault = async (req, res) => {
+  try {
+    let userVault = req.body?.fileVault;
+    let clientVault = req.body?.clientVault;
+    let recoveryKey = req.body?.recoveryKey;
+
+    let user = await UserSchema.findOne({ _id: userVault[0].userId });
+
+    let existingVault = await UserVault.find({ userId: userVault[0].userId });
+
+    let existingClientVault = await ClientVault.find({
+      userId: userVault[0].userId,
+    });
+    // TODO: check if all vaults exist.
+
+    if (
+      existingVault.length === 3 &&
+      existingClientVault.length === 3 &&
+      user
+    ) {
+      console.log('found');
+
+      userVault.forEach(async (e) => {
+        await UserVault.findOneAndUpdate(
+          { userId: e.userId, type: e.type },
+          e,
+          { new: true }
+        );
+      });
+
+      clientVault.forEach(async (e) => {
+        await ClientVault.findOneAndUpdate(
+          { userId: e.userId, type: e.type },
+          e,
+          { new: true }
+        );
+      });
+
+      user.recoveryKey = recoveryKey;
+
+      await user.save();
+
+      let response = {
+        status_code: 200,
+
+        data: 'updated Vaults',
+      };
+
+      return res.status(200).json(response);
+    } else {
+      let response = {
+        status_code: 404,
+
+        message: 'user vault does not exists',
+      };
+
+      return res.status(404).json(response);
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(405).json({
+      status: 'fail',
+      message: error.message,
+    });
+  }
+};
 
 exports.getUserVault = async (req, res, next) => {
-    try {
-        let id = req.params.userId
-        console.log(id)
-        let vault = await UserVault.find({userId:id})
-        let clientVault = await ClientVault.find({userId:id})
-        if(vault.length === 3 && clientVault.length === 3){
-            let response = {
-                status_code: 200,
-                message: '',
-                data: {
-                  vaults:vault,
-                  clientVaults: clientVault
-                },
-              };
-            res.status(200).json(response);
-        }else{
-          let response = {
-            status_code: 200,
-            message: '',
-            
-          };
-        res.status(200).json(response);
-        }
-        
-    } catch (error) {
-      res.status(405).json({
-        status: "fail",
-        message: error.message,
-      });
+  try {
+    let id = req.params.userId;
+    console.log(id);
+    let vault = await UserVault.find({ userId: id });
+    let clientVault = await ClientVault.find({ userId: id });
+    if (vault.length === 3 && clientVault.length === 3) {
+      let response = {
+        status_code: 200,
+        message: '',
+        data: {
+          vaults: vault,
+          clientVaults: clientVault,
+        },
+      };
+      res.status(200).json(response);
+    } else {
+      let response = {
+        status_code: 200,
+        message: '',
+      };
+      res.status(200).json(response);
     }
-  };
+  } catch (error) {
+    res.status(405).json({
+      status: 'fail',
+      message: error.message,
+    });
+  }
+};
+
+exports.updateMainVault = async (req, res, next) => {
+  try {
+    let reqBody = req.body;
+    console.log(reqBody);
+    let vaultType = reqBody.vault;
+    reqBody.vault = undefined;
+    if (vaultType === 'file') {
+      let fileVault = await UserVault.findOneAndUpdate(
+        {
+          userId: reqBody.userId,
+          type: reqBody.type,
+        },
+        reqBody,
+        { new: true }
+      );
+      console.log(fileVault);
+    }
+    if (vaultType === 'client') {
+      let clientVault = await ClientVault.findOneAndUpdate(
+        {
+          userId: reqBody.userId,
+          type: reqBody.type,
+        },
+        reqBody,
+        { new: true }
+      );
+      console.log(clientVault);
+    }
+    // let clientVault = await ClientVault.findOne({
+    //   userId: reqBody.userId,
+    //   type: reqBody.type,
+    // });
+
+    res.status(200).json({
+      status: 'success',
+    });
+  } catch (error) {
+    res.status(405).json({
+      status: 'fail',
+      message: error.message,
+    });
+  }
+};

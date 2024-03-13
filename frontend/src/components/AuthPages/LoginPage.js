@@ -375,7 +375,15 @@ const LoginPage = () => {
                         iv,
                         newMainVault
                       );
-                      console.log(encMainVault);
+
+                      let mergeUint = new Uint8Array(encMainVault);
+                      // update main vault
+                      await axiosInstance.post(`/vault/user/update/main`, {
+                        userId: userData._id,
+                        type: 'main',
+                        passwords: Array.from(mergeUint),
+                        vault: 'file',
+                      });
                     }
                   });
 
@@ -414,15 +422,25 @@ const LoginPage = () => {
                         updateVault,
                         mainVault
                       );
+
                       let newMainVault = { data: mergedVaults, type: 'main' };
+
                       console.log(newMainVault);
+
                       const encMainVault = await encryptData(
                         operations,
                         masterKey,
                         iv,
                         newMainVault
                       );
-                      console.log(encMainVault);
+                      let mergeUint = new Uint8Array(encMainVault);
+                      // update main vault
+                      await axiosInstance.post(`/vault/user/update/main`, {
+                        userId: userData._id,
+                        type: 'main',
+                        passwords: Array.from(mergeUint),
+                        vault: 'file',
+                      });
                     }
                   });
 

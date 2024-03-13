@@ -14,7 +14,7 @@ const { GlobalPointsSchema } = require('../models/globalPointsModel');
 
 const register = async (req, res, next) => {
   try {
-    const { email, password, inviteCode, emergencyPassword } = req.body;
+    const { email, password, inviteCode, emergencyPassword, recoveryPhrase } = req.body;
     const passwordStrength = zxcvbn(password);
 
     if (passwordStrength?.score < 3) {
@@ -31,7 +31,9 @@ const register = async (req, res, next) => {
       confirmPassword: Joi.string().required().valid(Joi.ref('password')),
       inviteCode: Joi.string().required(),
       emergencyPassword: Joi.string(),
+      recoveryPhrase: Joi.string(),
     });
+    
     const { error } = registrationSchema.validate(req.body);
     if (error) {
       let response = {
@@ -55,6 +57,7 @@ const register = async (req, res, next) => {
 
     const encryptedPassword = await bcrypt.hash(password, 10);
     const encryptedEmergencyPassword = await bcrypt.hash(emergencyPassword, 10);
+    const encryptedRecoveryPhrase = await bcrypt.hash(recoveryPhrase, 10);
 
 
     const getInvitedUser = UserSchema.findOne({ inviteCode: inviteCode });
@@ -68,7 +71,8 @@ const register = async (req, res, next) => {
       inviteCode: randomCode,
       invitedUserId: getInvitedUser?._id ? getInvitedUser?._id : null,
       isAdmin: 0,
-      emergencyPassword: encryptedEmergencyPassword
+      emergencyPassword: encryptedEmergencyPassword,
+      recoveryPhrase: encryptedRecoveryPhrase
     });
     await user.save();
     if (user) {

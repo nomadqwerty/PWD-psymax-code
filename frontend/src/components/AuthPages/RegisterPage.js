@@ -25,23 +25,35 @@ const Register = () => {
   const router = useRouter();
 
   const onSubmit = async (data) => {
+    console.log(errors);
     try {
       data.emergencyPassword = passwordGenerator();
       // TODO:
       console.log(data);
       // isEncrypted: false - pass
+
       const response = await axiosInstance.post(`/register`, data);
       const responseData = response?.data;
+      console.log(responseData);
       if (response?.status === 200) {
         let user_id = responseData.data.userId;
         console.log(user_id);
+        let fileVault = JSON.stringify({
+          data: [{ fileName: '', fileReference: '', fileKey: '' }],
+        });
+        let clientVault = JSON.stringify({
+          data: [{ clientId: '', clientKey: '' }],
+        });
+
+        console.log(fileVault);
+        console.log(clientVault);
         const resVault = await axiosInstance.post(`/vault/user`, {
           userId: user_id,
           type: 'main',
           isEncrypted: false,
 
-          passwords: '',
-          clients: '',
+          passwords: fileVault,
+          clients: clientVault,
         });
         console.log(resVault);
         dispatch({ type: 'INITIAL_STATE' });
@@ -197,6 +209,39 @@ const Register = () => {
                   variant="outlined"
                   {...register('inviteCode', { required: true })}
                   error={!!errors.inviteCode}
+                  inputProps={{
+                    className: 'interFonts',
+                  }}
+                />
+                {errors?.inviteCode && (
+                  <p className="validationErr">
+                    Dieses Feld ist ein Pflichtfeld
+                  </p>
+                )}
+              </Grid>
+              <Grid item sm={2.5} md={4.25} xl={4.25} />
+            </Grid>
+
+            <Grid container>
+              <Grid item sm={2.5} md={4.25} xl={4.25} />
+              <Grid
+                item
+                xs={12}
+                md={3.5}
+                sm={7}
+                xl={3.5}
+                sx={{ textAlign: 'center', mt: 3 }}
+              >
+                <CssTextField
+                  fullWidth
+                  name="recoveryPhrase"
+                  type="text"
+                  focusColor="#3C3C3C"
+                  id="recoveryPhrase"
+                  label="Wiederherstellungssatz"
+                  variant="outlined"
+                  {...register('recoveryPhrase', { required: true })}
+                  error={!!errors.recoveryPhrase}
                   inputProps={{
                     className: 'interFonts',
                   }}

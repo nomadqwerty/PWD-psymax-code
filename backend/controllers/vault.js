@@ -6,7 +6,7 @@ const { UserSchema } = require('../models/userModel');
 exports.getServerVault = async (req, res, next) => {
     try {
         let vault = await ServerVault.find()
-        console.log(vault[0],'vault')
+        
         if(vault[0]){
             let response = {
                 status_code: 200,
@@ -28,7 +28,6 @@ exports.getServerVault = async (req, res, next) => {
     try {
        // TODO: save user vault to storage.
        let userVault = req.body;
-       console.log(userVault)
 
        let existingVault = await UserVault.findOne({userId: userVault.userId})
        let existingClientVault = await ClientVault.findOne({userId: userVault.userId})

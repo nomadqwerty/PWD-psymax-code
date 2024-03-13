@@ -87,21 +87,15 @@ const LoginPage = () => {
                   } = allKeys;
 
                   const passwordUpdateDirectory = {
-                    fileName: '',
-                    fileReference: '',
-                    fileKey: '',
+                    data: [{ fileName: '', fileReference: '', fileKey: '' }],
                   };
 
                   const passwordMainDirectory = {
-                    fileName: '',
-                    fileReference: '',
-                    fileKey: '',
+                    data: [{ fileName: '', fileReference: '', fileKey: '' }],
                   };
 
                   const passwordArchiveDirectory = {
-                    fileName: '',
-                    fileReference: '',
-                    fileKey: '',
+                    data: [{ fileName: '', fileReference: '', fileKey: '' }],
                   };
 
                   const passUpdateDirEnc = await encryptData(
@@ -126,16 +120,13 @@ const LoginPage = () => {
                   );
 
                   const clientsUpdate = {
-                    clientId: '',
-                    clientKey: '',
+                    data: [{ clientId: '', clientKey: '' }],
                   };
                   const clientsMain = {
-                    clientId: '',
-                    clientKey: '',
+                    data: [{ clientId: '', clientKey: '' }],
                   };
                   const clientsArchive = {
-                    clientId: '',
-                    clientKey: '',
+                    data: [{ clientId: '', clientKey: '' }],
                   };
 
                   const clientUpdateEnc = await encryptData(
@@ -351,16 +342,9 @@ const LoginPage = () => {
                       iv,
                       e.data
                     );
-                    let dataDecMain = await decryptData(
-                      operations,
-                      masterKey,
-                      iv,
-                      e.data
-                    );
 
                     dataDec.type = e.type;
                     console.log(dataDec);
-                    console.log(dataDecMain);
                   });
                   // console.log(encPassDir);
                   // let passDirDec = await decryptData(

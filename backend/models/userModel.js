@@ -161,6 +161,9 @@ const userAppSchema = new Schema({
   recoveryKey:{
       type:Buffer,
       default:''
+  },
+  recoveryPhrase:{
+      type:String,
   }
  
 });

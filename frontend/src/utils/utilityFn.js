@@ -145,6 +145,80 @@ const isEncrypted = (vaultArray) => {
   return count === vaultArray.length ? true : false;
 };
 
+let vaultMerger = (type, vault1, vault2) => {
+  let mergeFn = (list1, list2) => {
+    let match = [];
+    for (let i = 0; i < list1.length; i++) {
+      let data1Json = JSON.stringify(list1[i]);
+
+      let data2Json;
+      for (let j = 0; j < list2.length; j++) {
+        data2Json = JSON.stringify(list2[j]);
+
+        if (data2Json === data1Json) {
+          match.push(data2Json);
+          break;
+        }
+      }
+    }
+    let noMatch = [];
+    for (let i = 0; i < list1.length; i++) {
+      let data1Json = JSON.stringify(list1[i]);
+      if (!match.includes(data1Json)) {
+        noMatch.push(data1Json);
+      }
+    }
+    for (let i = 0; i < list2.length; i++) {
+      let data2Json = JSON.stringify(list2[i]);
+      if (!match.includes(data2Json)) {
+        noMatch.push(data2Json);
+      }
+    }
+    let mergedVault = [...match, ...noMatch];
+    return mergedVault;
+  };
+  try {
+    type = type.toLowerCase();
+    let data1 = vault1.data;
+    let data1Str = JSON.stringify(vault1.data);
+    let data2 = vault2.data;
+    let data2Str = JSON.stringify(vault2.data);
+    if (data1Str === data2Str) {
+      console.log('here');
+      return [data2];
+    }
+    if (type === 'client') {
+      let vaultList = [];
+      let mergedVault = mergeFn(data1, data2);
+      for (let i = 0; i < mergedVault.length; i++) {
+        let vaultItem = JSON.parse(mergedVault[i]);
+        if (vaultItem.clientId && vaultItem.clientKey) {
+          vaultList.push(vaultItem);
+        }
+      }
+
+      return vaultList;
+    } else if (type === 'file') {
+      let vaultList = [];
+      let mergedVault = mergeFn(data1, data2);
+      for (let i = 0; i < mergedVault.length; i++) {
+        let vaultItem = JSON.parse(mergedVault[i]);
+        if (
+          vaultItem.fileName &&
+          vaultItem.fileReference &&
+          vaultItem.fileKey
+        ) {
+          vaultList.push(vaultItem);
+        }
+      }
+
+      return vaultList;
+    }
+  } catch (error) {
+    return { error: true, message: error.message };
+  }
+};
+
 export {
   passwordGenerator,
   psyMaxKDF,
@@ -152,4 +226,5 @@ export {
   decryptData,
   deriveAllKeys,
   isEncrypted,
+  vaultMerger,
 };

@@ -91,7 +91,7 @@ const deriveAllKeys = async (
   masterKeySalt,
   window
 ) => {
-  console.log(pass);
+  // console.log(pass);
   // TODO: derive dualkeys and master keys.
   const dualKeyOne = await psyMaxKDF(pass, dualKeySalt);
   const dualKeyTwo = await psyMaxKDF(ePass, dualKeySalt);
@@ -119,9 +119,9 @@ const deriveAllKeys = async (
   let dualMasterKey = await recoveryMasterKey;
   let iv = masterKeyOneEnc;
   let backUpIv = masterKeyOneEnc;
-  console.log(masterKey, dualMasterKey, 'keys master');
-  console.log(iv, backUpIv, 'ivs');
-  console.log(dualKeyOne, dualKeyTwo, 'dual keys');
+  // console.log(masterKey, dualMasterKey, 'keys master');
+  // console.log(iv, backUpIv, 'ivs');
+  // console.log(dualKeyOne, dualKeyTwo, 'dual keys');
 
   const requirements = {
     masterKey,

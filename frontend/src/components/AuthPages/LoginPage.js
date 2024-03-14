@@ -17,6 +17,7 @@ import {
   deriveAllKeys,
   encryptData,
   isEncrypted,
+  vaultMerger,
 } from '@/utils/utilityFn';
 
 const LoginPage = () => {
@@ -38,7 +39,7 @@ const LoginPage = () => {
       const response = await axiosInstance.post(`/login`, data);
       const responseData = response?.data?.data;
       if (response?.status === 200) {
-        console.log(responseData);
+        // console.log(responseData);
         const user_id = responseData._id;
         const vaultRes = await axiosInstance.get(`/vault/user/${user_id}`);
         if (vaultRes?.status === 200) {
@@ -260,7 +261,7 @@ const LoginPage = () => {
                     dualMasterKey,
                     backUpIv,
                   } = allKeys;
-                  console.log(allKeys);
+                  // console.log(allKeys);
 
                   let fileUintArr = [];
 
@@ -308,14 +309,13 @@ const LoginPage = () => {
                     }
                   });
 
-                  let encryptedVaults = [...fileUintArr, ...clientUintArr];
+                  let encryptedVaults = [fileUintArr, clientUintArr];
 
-                  let decryptedVaults = [];
                   let recoveryKeyArr = userData.recoveryKey.data;
 
                   recoveryKeyArr = new Uint8Array(recoveryKeyArr);
 
-                  console.log(recoveryKeyArr);
+                  // console.log(recoveryKeyArr);
 
                   let recoveryKeyDec = await decryptData(
                     operations,
@@ -333,9 +333,10 @@ const LoginPage = () => {
                   );
 
                   backUpMaster = await backUpMaster;
-                  console.log(backUpMaster, masterKey);
-                  encryptedVaults.forEach(async (e) => {
-                    console.log(e.type);
+                  // console.log(backUpMaster, masterKey);
+                  // file
+                  let decryptedFiles = [];
+                  encryptedVaults[0].forEach(async (e) => {
                     let dataDec = await decryptData(
                       operations,
                       backUpMaster,
@@ -344,33 +345,87 @@ const LoginPage = () => {
                     );
 
                     dataDec.type = e.type;
-                    console.log(dataDec);
+                    if (dataDec.type !== 'archive') {
+                      decryptedFiles.push(dataDec);
+                    }
+                    if (decryptedFiles.length == 2) {
+                      let updateVault =
+                        decryptedFiles[0].type !== 'update'
+                          ? decryptedFiles[1]
+                          : decryptedFiles[0];
+
+                      let mainVault =
+                        decryptedFiles[1].type !== 'main'
+                          ? decryptedFiles[0]
+                          : decryptedFiles[1];
+
+                      // console.log(decryptedFiles);
+                      // console.log(updateVault);
+                      // console.log(mainVault);
+                      const mergedVaults = vaultMerger(
+                        'client',
+                        updateVault,
+                        mainVault
+                      );
+                      let newMainVault = { data: mergedVaults, type: 'main' };
+                      console.log(newMainVault, 'files');
+                      const encMainVault = await encryptData(
+                        operations,
+                        masterKey,
+                        iv,
+                        newMainVault
+                      );
+                      console.log(encMainVault);
+                    }
                   });
-                  // console.log(encPassDir);
-                  // let passDirDec = await decryptData(
-                  //   operations,
-                  //   masterKey,
-                  //   iv,
-                  //   encPassDir
-                  // );
-                  // let clientsDec = await decryptData(
-                  //   operations,
-                  //   masterKey,
-                  //   iv,
-                  //   encClients
-                  // );
-                  // let backUpPassDirDec = await decryptData(
-                  //   operations,
-                  //   backUpMasterKey,
-                  //   backUpIv,
-                  //   encBackUpPassDir
-                  // );
-                  // let backUpClientsDec = await decryptData(
-                  //   operations,
-                  //   backUpMasterKey,
-                  //   backUpIv,
-                  //   encBackUpClients
-                  // );
+
+                  // client
+                  let decryptedClients = [];
+                  encryptedVaults[1].forEach(async (e) => {
+                    let dataDec = await decryptData(
+                      operations,
+                      backUpMaster,
+                      iv,
+                      e.data
+                    );
+
+                    // console.log(dataDec);
+
+                    dataDec.type = e.type;
+                    if (dataDec.type !== 'archive') {
+                      decryptedClients.push(dataDec);
+                    }
+                    if (decryptedClients.length == 2) {
+                      let updateVault =
+                        decryptedClients[0].type !== 'update'
+                          ? decryptedClients[1]
+                          : decryptedClients[0];
+
+                      let mainVault =
+                        decryptedClients[1].type !== 'main'
+                          ? decryptedClients[0]
+                          : decryptedClients[1];
+
+                      // console.log(decryptedClients);
+                      // console.log(updateVault);
+                      // console.log(mainVault);
+                      const mergedVaults = vaultMerger(
+                        'client',
+                        updateVault,
+                        mainVault
+                      );
+                      let newMainVault = { data: mergedVaults, type: 'main' };
+                      console.log(newMainVault);
+                      const encMainVault = await encryptData(
+                        operations,
+                        masterKey,
+                        iv,
+                        newMainVault
+                      );
+                      console.log(encMainVault);
+                    }
+                  });
+
                   // // TODO: add vault to state, add keys to ram.
                   // let passwordVault = { passDirDec, backUpPassDirDec };
                   // let clientVault = { clientsDec, backUpClientsDec };

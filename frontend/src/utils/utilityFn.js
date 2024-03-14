@@ -183,42 +183,66 @@ let vaultMerger = (type, vault1, vault2) => {
     let data1Str = JSON.stringify(vault1.data);
     let data2 = vault2.data;
     let data2Str = JSON.stringify(vault2.data);
+
     if (data1Str === data2Str) {
-      console.log('here');
-      return [data2];
-    }
-    if (type === 'client') {
-      let vaultList = [];
-      let mergedVault = mergeFn(data1, data2);
-      for (let i = 0; i < mergedVault.length; i++) {
-        let vaultItem = JSON.parse(mergedVault[i]);
-        if (vaultItem.clientId && vaultItem.clientKey) {
-          vaultList.push(vaultItem);
-        }
-      }
+      console.log('here', type);
+      return data2;
+    } else {
+      if (type === 'client') {
+        let vaultList = [];
+        let mergedVault = mergeFn(data1, data2);
 
-      return vaultList;
-    } else if (type === 'file') {
-      let vaultList = [];
-      let mergedVault = mergeFn(data1, data2);
-      for (let i = 0; i < mergedVault.length; i++) {
-        let vaultItem = JSON.parse(mergedVault[i]);
-        if (
-          vaultItem.fileName &&
-          vaultItem.fileReference &&
-          vaultItem.fileKey
-        ) {
-          vaultList.push(vaultItem);
+        for (let i = 0; i < mergedVault.length; i++) {
+          let vaultItem = JSON.parse(mergedVault[i]);
+          if ('clientId' in vaultItem && 'clientKey' in vaultItem) {
+            vaultList.push(vaultItem);
+          }
         }
-      }
+        return vaultList;
+      } else if (type === 'file') {
+        let vaultList = [];
+        let mergedVault = mergeFn(data1, data2);
 
-      return vaultList;
+        for (let i = 0; i < mergedVault.length; i++) {
+          let vaultItem = JSON.parse(mergedVault[i]);
+
+          if (
+            'fileName' in vaultItem &&
+            'fileReference' in vaultItem &&
+            'fileKey' in vaultItem
+          ) {
+            vaultList.push(vaultItem);
+          }
+        }
+        return vaultList;
+      }
     }
   } catch (error) {
     return { error: true, message: error.message };
   }
 };
+/*
+{
+  "data": [
+    {
+      "clientId": "",
+      "clientKey": ""
+    }
+  ],
+  "type": "update"
+}
 
+{
+  "data": [
+    {
+      "fileName": "",
+      "fileReference": "",
+      "fileKey": ""
+    }
+  ],
+  "type": "main"
+}
+*/
 export {
   passwordGenerator,
   psyMaxKDF,

@@ -19,6 +19,7 @@ import {
   isEncrypted,
   vaultMerger,
 } from '@/utils/utilityFn';
+import { has } from 'lodash';
 
 const LoginPage = () => {
   const {
@@ -88,11 +89,23 @@ const LoginPage = () => {
                   } = allKeys;
 
                   const passwordUpdateDirectory = {
-                    data: [{ fileName: '', fileReference: '', fileKey: '' }],
+                    data: [
+                      {
+                        fileName: 'file1',
+                        fileReference: 'fileRef1',
+                        fileKey: 'fileKey1',
+                      },
+                    ],
                   };
 
                   const passwordMainDirectory = {
-                    data: [{ fileName: '', fileReference: '', fileKey: '' }],
+                    data: [
+                      {
+                        fileName: 'file2',
+                        fileReference: 'fileRef2',
+                        fileKey: 'fileKey2',
+                      },
+                    ],
                   };
 
                   const passwordArchiveDirectory = {
@@ -121,10 +134,10 @@ const LoginPage = () => {
                   );
 
                   const clientsUpdate = {
-                    data: [{ clientId: '', clientKey: '' }],
+                    data: [{ clientId: 'client1', clientKey: 'clientKey1' }],
                   };
                   const clientsMain = {
-                    data: [{ clientId: '', clientKey: '' }],
+                    data: [{ clientId: 'client2', clientKey: 'clientKey2' }],
                   };
                   const clientsArchive = {
                     data: [{ clientId: '', clientKey: '' }],
@@ -216,15 +229,8 @@ const LoginPage = () => {
                     }
                   );
 
-                  console.log(resVault);
-                  // // TODO: add (dec) vault to state, add keys to ram.
-                  // let passwordVault = {
-                  //   passwordDirectory,
-                  //   backUpPasswordDirectory,
-                  // };
-                  // let clientVault = { clients, backUpClients };
-                  // console.log(passwordVault);
-                  // console.log(clientVault);
+                  // // TODO: add vault to state, add keys to ram.
+                  localStorage.setItem('dualKeyOne', dualKeyOne);
                 }
               }
             }
@@ -360,15 +366,14 @@ const LoginPage = () => {
                           : decryptedFiles[1];
 
                       // console.log(decryptedFiles);
-                      // console.log(updateVault);
-                      // console.log(mainVault);
+
                       const mergedVaults = vaultMerger(
-                        'client',
+                        'file',
                         updateVault,
                         mainVault
                       );
                       let newMainVault = { data: mergedVaults, type: 'main' };
-                      console.log(newMainVault, 'files');
+                      console.log(newMainVault);
                       const encMainVault = await encryptData(
                         operations,
                         masterKey,
@@ -378,12 +383,16 @@ const LoginPage = () => {
 
                       let mergeUint = new Uint8Array(encMainVault);
                       // update main vault
-                      await axiosInstance.post(`/vault/user/update/main`, {
-                        userId: userData._id,
-                        type: 'main',
-                        passwords: Array.from(mergeUint),
-                        vault: 'file',
-                      });
+                      let hasSent = false;
+                      if (!hasSent) {
+                        hasSent = true;
+                        await axiosInstance.post(`/vault/user/update/main`, {
+                          userId: userData._id,
+                          type: 'main',
+                          passwords: Array.from(mergeUint),
+                          vault: 'file',
+                        });
+                      }
                     }
                   });
 
@@ -424,9 +433,7 @@ const LoginPage = () => {
                       );
 
                       let newMainVault = { data: mergedVaults, type: 'main' };
-
                       console.log(newMainVault);
-
                       const encMainVault = await encryptData(
                         operations,
                         masterKey,
@@ -435,20 +442,21 @@ const LoginPage = () => {
                       );
                       let mergeUint = new Uint8Array(encMainVault);
                       // update main vault
-                      await axiosInstance.post(`/vault/user/update/main`, {
-                        userId: userData._id,
-                        type: 'main',
-                        passwords: Array.from(mergeUint),
-                        vault: 'client',
-                      });
+                      let hasSent = false;
+                      if (!hasSent) {
+                        hasSent = true;
+                        await axiosInstance.post(`/vault/user/update/main`, {
+                          userId: userData._id,
+                          type: 'main',
+                          passwords: Array.from(mergeUint),
+                          vault: 'client',
+                        });
+                      }
                     }
                   });
 
                   // // TODO: add vault to state, add keys to ram.
-                  // let passwordVault = { passDirDec, backUpPassDirDec };
-                  // let clientVault = { clientsDec, backUpClientsDec };
-                  // console.log(passwordVault);
-                  // console.log(clientVault);
+                  localStorage.setItem('dualKeyOne', dualKeyOne);
                 }
               }
             }

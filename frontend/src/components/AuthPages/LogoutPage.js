@@ -34,10 +34,12 @@ const LogoutPage = () => {
           updateClientVault = JSON.parse(updateClientVault);
           userData = JSON.parse(userData);
 
-          // console.log(serverVault);
-          // console.log(updateFileVault);
-          // console.log(updateClientVault);
-          // console.log(userData);
+          console.log(fileVault);
+          console.log(clientVault);
+          console.log(serverVault);
+          console.log(updateFileVault);
+          console.log(updateClientVault);
+          console.log(userData);
 
           // TODO: encrypt update vault.
           const operations = window.crypto.subtle || window.crypto.webkitSubtle;
@@ -99,14 +101,19 @@ const LogoutPage = () => {
           }
         }
 
-        // const response = await axiosInstance.delete(`/logout`);
-        // if (response?.status === 200) {
-        //   localStorage.removeItem('psymax-token');
-        //   localStorage.removeItem('psymax-user-data');
-        //   localStorage.removeItem('psymax-is-admin');
-        //   localStorage.removeItem('psymax-loggedin');
-        //   router.push('/login');
-        // }
+        const response = await axiosInstance.delete(`/logout`);
+        if (response?.status === 200) {
+          localStorage.removeItem('psymax-token');
+          localStorage.removeItem('psymax-user-data');
+          localStorage.removeItem('psymax-is-admin');
+          localStorage.removeItem('psymax-loggedin');
+          localStorage.removeItem('fileVault');
+          localStorage.removeItem('clientVault');
+          localStorage.removeItem('serverVault');
+          localStorage.removeItem('updateFileVault');
+          localStorage.removeItem('updateClientVault');
+          router.push('/login');
+        }
       } catch (error) {
         console.error('Logout error:', error);
       }

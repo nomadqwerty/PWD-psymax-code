@@ -106,7 +106,6 @@ exports.updateUserVault = async (req, res) => {
       user
     ) {
       console.log('found');
-
       userVault.forEach(async (e) => {
         await UserVault.findOneAndUpdate(
           { userId: e.userId, type: e.type },

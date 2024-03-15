@@ -242,6 +242,14 @@ const LoginPage = () => {
                     data: [],
                     type: 'update',
                   });
+                  setFileVault({
+                    data: [],
+                    type: 'main',
+                  });
+                  setClientVault({
+                    data: [],
+                    type: 'main',
+                  });
                 }
               }
             }
@@ -351,6 +359,7 @@ const LoginPage = () => {
                   // console.log(backUpMaster, masterKey);
                   // file
                   let decryptedFiles = [];
+                  console.log(encryptedVaults);
                   encryptedVaults[0].forEach(async (e) => {
                     let dataDec = await decryptData(
                       operations,
@@ -361,6 +370,7 @@ const LoginPage = () => {
 
                     dataDec.type = e.type;
                     if (dataDec.type !== 'archive') {
+                      console.log(dataDec);
                       decryptedFiles.push(dataDec);
                     }
                     if (decryptedFiles.length == 2) {
@@ -382,6 +392,7 @@ const LoginPage = () => {
                         mainVault
                       );
                       let newMainVault = { data: mergedVaults, type: 'main' };
+                      console.log(newMainVault);
                       // TODO: add new main vault to state
                       setFileVault(newMainVault);
                       const encMainVault = await encryptData(
@@ -420,6 +431,7 @@ const LoginPage = () => {
 
                     dataDec.type = e.type;
                     if (dataDec.type !== 'archive') {
+                      console.log(dataDec);
                       decryptedClients.push(dataDec);
                     }
                     if (decryptedClients.length == 2) {
@@ -440,6 +452,7 @@ const LoginPage = () => {
                       );
 
                       let newMainVault = { data: mergedVaults, type: 'main' };
+                      console.log(newMainVault);
                       // TODO: add new main vault to state
                       setClientVault(newMainVault);
                       const encMainVault = await encryptData(
@@ -522,30 +535,7 @@ const LoginPage = () => {
         );
         if (userData?.isAdmin === 1) {
           router.push('/admin');
-        }
-        if (userData?.isAdmin === 0) {
-          router.push('/dashboard');
-        }
-      }
-    } else if (
-      serverVaultLength > 0 &&
-      updateFileVaultLength > 0 &&
-      updateClientVaultLength > 0
-    ) {
-      if (Object.keys(userData).length > 0) {
-        localStorage.setItem('serverVault', JSON.stringify(serverVault));
-        localStorage.setItem(
-          'updateFileVault',
-          JSON.stringify(updateFileVault)
-        );
-        localStorage.setItem(
-          'updateClientVault',
-          JSON.stringify(updateClientVault)
-        );
-        if (userData?.isAdmin === 1) {
-          router.push('/admin');
-        }
-        if (userData?.isAdmin === 0) {
+        } else if (userData?.isAdmin === 0) {
           router.push('/dashboard');
         }
       }

@@ -185,7 +185,6 @@ let vaultMerger = (type, vault1, vault2) => {
     let data2Str = JSON.stringify(vault2.data);
 
     if (data1Str === data2Str) {
-      console.log('here', type);
       return data2;
     } else {
       if (type === 'client') {

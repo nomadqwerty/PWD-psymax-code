@@ -6,7 +6,7 @@ import CssTextField from '../../components/CssTextField';
 import toast from 'react-hot-toast';
 import axiosInstance from '../../utils/axios';
 import { SOMETHING_WRONG } from '../../utils/constants';
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../context/auth.context';
 import vaultContext from '@/context/vault.context';
 import { useRouter } from 'next/navigation';
@@ -19,7 +19,6 @@ import {
   isEncrypted,
   vaultMerger,
 } from '@/utils/utilityFn';
-import { has } from 'lodash';
 
 const LoginPage = () => {
   const {
@@ -27,22 +26,33 @@ const LoginPage = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
-
+  const [userData, setUserData] = useState();
   const { dispatch } = useContext(AuthContext);
   const { vaultState } = useContext(vaultContext);
-  const { userVault, setUserVault, serverVault, setServerVault } = vaultState;
+  const {
+    fileVault,
+    setFileVault,
+    clientVault,
+    setClientVault,
+    serverVault,
+    setServerVault,
+    updateFileVault,
+    setUpdateFileVault,
+    updateClientVault,
+    setUpdateClientVault,
+  } = vaultState;
 
   const router = useRouter();
 
   const onSubmit = async (data) => {
     try {
-      console.log(process.env.NEXT_PUBLIC_API_HOST);
       const response = await axiosInstance.post(`/login`, data);
       const responseData = response?.data?.data;
       if (response?.status === 200) {
         // console.log(responseData);
         const user_id = responseData._id;
         const vaultRes = await axiosInstance.get(`/vault/user/${user_id}`);
+        setUserData(responseData);
         if (vaultRes?.status === 200) {
           const vaultResData = vaultRes?.data?.data;
           const operations = window.crypto.subtle || window.crypto.webkitSubtle;
@@ -53,7 +63,6 @@ const LoginPage = () => {
           let fileEncrypted = isEncrypted(fileVault);
 
           if (!clientEncrypted && !fileEncrypted) {
-            console.log(clientEncrypted, fileEncrypted);
             if (!operations) {
               alert('Web Crypto is not supported on this browser');
               console.warn('Web Crypto API not supported');
@@ -68,7 +77,6 @@ const LoginPage = () => {
               let masterKeySalt = vault.masterKeySalt;
               if (ePass) {
                 // TODO: derive dualkeys and master keys.
-                console.log('login');
                 let allKeys = await deriveAllKeys(
                   pass,
                   ePass,
@@ -91,9 +99,9 @@ const LoginPage = () => {
                   const passwordUpdateDirectory = {
                     data: [
                       {
-                        fileName: 'file1',
-                        fileReference: 'fileRef1',
-                        fileKey: 'fileKey1',
+                        fileName: '',
+                        fileReference: '',
+                        fileKey: '',
                       },
                     ],
                   };
@@ -101,9 +109,9 @@ const LoginPage = () => {
                   const passwordMainDirectory = {
                     data: [
                       {
-                        fileName: 'file2',
-                        fileReference: 'fileRef2',
-                        fileKey: 'fileKey2',
+                        fileName: '',
+                        fileReference: '',
+                        fileKey: '',
                       },
                     ],
                   };
@@ -134,10 +142,10 @@ const LoginPage = () => {
                   );
 
                   const clientsUpdate = {
-                    data: [{ clientId: 'client1', clientKey: 'clientKey1' }],
+                    data: [{ clientId: '', clientKey: '' }],
                   };
                   const clientsMain = {
-                    data: [{ clientId: 'client2', clientKey: 'clientKey2' }],
+                    data: [{ clientId: '', clientKey: '' }],
                   };
                   const clientsArchive = {
                     data: [{ clientId: '', clientKey: '' }],
@@ -202,11 +210,8 @@ const LoginPage = () => {
                     e.isEncrypted = true;
                     clientVaultArray.push(e);
                   });
-                  console.log(recoveryKeyEnc);
                   let recKeyEnc = Array.from(recoveryKeyEnc);
-                  console.log(recoveryKeyEnc);
                   recKeyEnc = { recovery: recKeyEnc };
-                  console.log(recKeyEnc);
 
                   const masterKeyEnc = await encryptData(
                     operations,
@@ -215,10 +220,7 @@ const LoginPage = () => {
                     recKeyEnc
                   );
 
-                  console.log(masterKeyEnc);
                   let masterKeyEncUint = new Uint8Array(masterKeyEnc);
-
-                  console.log(masterKeyEncUint);
 
                   const resVault = await axiosInstance.post(
                     `/vault/user/update`,
@@ -231,6 +233,15 @@ const LoginPage = () => {
 
                   // // TODO: add vault to state, add keys to ram.
                   localStorage.setItem('dualKeyOne', dualKeyOne);
+                  setServerVault(vault);
+                  setUpdateFileVault({
+                    data: [],
+                    type: 'update',
+                  });
+                  setUpdateClientVault({
+                    data: [],
+                    type: 'update',
+                  });
                 }
               }
             }
@@ -239,7 +250,6 @@ const LoginPage = () => {
               alert('Web Crypto is not supported on this browser');
               console.warn('Web Crypto API not supported');
             } else {
-              console.log('vault encrypted');
               let userData = responseData;
               const response = await axiosInstance.get(`/vault/server`);
               let vault = response.data.data;
@@ -249,7 +259,6 @@ const LoginPage = () => {
               let masterKeySalt = vault.masterKeySalt;
               if (ePass) {
                 // TODO: derive dualkeys and master keys.
-                console.log('login');
                 let allKeys = await deriveAllKeys(
                   pass,
                   ePass,
@@ -373,7 +382,8 @@ const LoginPage = () => {
                         mainVault
                       );
                       let newMainVault = { data: mergedVaults, type: 'main' };
-                      console.log(newMainVault);
+                      // TODO: add new main vault to state
+                      setFileVault(newMainVault);
                       const encMainVault = await encryptData(
                         operations,
                         masterKey,
@@ -423,9 +433,6 @@ const LoginPage = () => {
                           ? decryptedClients[0]
                           : decryptedClients[1];
 
-                      // console.log(decryptedClients);
-                      // console.log(updateVault);
-                      // console.log(mainVault);
                       const mergedVaults = vaultMerger(
                         'client',
                         updateVault,
@@ -433,7 +440,8 @@ const LoginPage = () => {
                       );
 
                       let newMainVault = { data: mergedVaults, type: 'main' };
-                      console.log(newMainVault);
+                      // TODO: add new main vault to state
+                      setClientVault(newMainVault);
                       const encMainVault = await encryptData(
                         operations,
                         masterKey,
@@ -457,6 +465,15 @@ const LoginPage = () => {
 
                   // // TODO: add vault to state, add keys to ram.
                   localStorage.setItem('dualKeyOne', dualKeyOne);
+                  setServerVault(vault);
+                  setUpdateFileVault({
+                    data: [],
+                    type: 'update',
+                  });
+                  setUpdateClientVault({
+                    data: [],
+                    type: 'update',
+                  });
                 }
               }
             }
@@ -470,11 +487,6 @@ const LoginPage = () => {
           type: 'LOGIN',
           payload: { isLoggedin: true, userData: responseData },
         });
-        // if (responseData?.isAdmin === 1) {
-        //   router.push('/admin');
-        // } else {
-        //   router.push('/dashboard');
-        // }
       } else {
         toast.error(SOMETHING_WRONG);
       }
@@ -482,6 +494,63 @@ const LoginPage = () => {
       handleApiError(error, router);
     }
   };
+  useEffect(() => {
+    let fileVaultLength = Object.keys(fileVault).length;
+    let clientVaultLength = Object.keys(clientVault).length;
+    let serverVaultLength = Object.keys(serverVault).length;
+    let updateFileVaultLength = Object.keys(updateFileVault).length;
+    let updateClientVaultLength = Object.keys(updateClientVault).length;
+
+    if (
+      fileVaultLength > 0 &&
+      clientVaultLength > 0 &&
+      serverVaultLength > 0 &&
+      updateFileVaultLength > 0 &&
+      updateClientVaultLength > 0
+    ) {
+      if (Object.keys(userData).length > 0) {
+        localStorage.setItem('fileVault', JSON.stringify(fileVault));
+        localStorage.setItem('clientVault', JSON.stringify(clientVault));
+        localStorage.setItem('serverVault', JSON.stringify(serverVault));
+        localStorage.setItem(
+          'updateFileVault',
+          JSON.stringify(updateFileVault)
+        );
+        localStorage.setItem(
+          'updateClientVault',
+          JSON.stringify(updateClientVault)
+        );
+        if (userData?.isAdmin === 1) {
+          router.push('/admin');
+        }
+        if (userData?.isAdmin === 0) {
+          router.push('/dashboard');
+        }
+      }
+    } else if (
+      serverVaultLength > 0 &&
+      updateFileVaultLength > 0 &&
+      updateClientVaultLength > 0
+    ) {
+      if (Object.keys(userData).length > 0) {
+        localStorage.setItem('serverVault', JSON.stringify(serverVault));
+        localStorage.setItem(
+          'updateFileVault',
+          JSON.stringify(updateFileVault)
+        );
+        localStorage.setItem(
+          'updateClientVault',
+          JSON.stringify(updateClientVault)
+        );
+        if (userData?.isAdmin === 1) {
+          router.push('/admin');
+        }
+        if (userData?.isAdmin === 0) {
+          router.push('/dashboard');
+        }
+      }
+    }
+  }, [fileVault, clientVault, serverVault, updateFileVault, updateClientVault]);
   return (
     <Layout>
       <div className="main-content">
@@ -646,61 +715,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
-// useEffect(() => {
-//   const operations = window.crypto.subtle || window.crypto.webkitSubtle;
-//   if (!operations) {
-//     alert('Web Crypto is not supported on this browser');
-//     console.warn('Web Crypto API not supported');
-//   } else {
-//     (async () => {
-//       // TODO: request server vault.
-//       let userLoginData = localStorage.getItem('userData');
-
-//       if (userLoginData !== undefined) {
-//         userLoginData = JSON.parse(userLoginData);
-//         if (typeof userLoginData === 'string') {
-//           userLoginData = JSON.parse(userLoginData);
-//         }
-//       }
-//       const response = await axiosInstance.get(`/vault/server`);
-//       let vault = response.data.data;
-//       let userData = userLoginData;
-//       let pass = userData.password;
-//       let ePass = userData.emergencyPassword;
-//       let dualKeySalt = vault.dualKeySalt;
-//       let masterKeySalt = vault.masterKeySalt;
-//       console.log(userData);
-
-//       if (ePass) {
-//         // TODO: derive dualkeys and master keys.
-//         console.log('accounts set');
-//         let allKeys = await deriveAllKeys(
-//           pass,
-//           ePass,
-//           dualKeySalt,
-//           masterKeySalt,
-//           window
-//         );
-//         let keysLength = Object.keys(allKeys).length;
-
-//         if (keysLength > 0) {
-//           const {
-//             masterKey,
-//             backUpMasterKey,
-//             iv,
-//             backUpIv,
-//             dualKeyOne,
-//             dualKeyTwo,
-//           } = allKeys;
-//           setMasterKey(masterKey);
-//           setMasterKeyBackUp(backUpMasterKey);
-//           setIv(iv);
-//           setIvBackUp(backUpIv);
-//           setOperations(operations);
-//         }
-//       }
-//     })();
-//   }
-// }, [state]);
-////////////////////////////////

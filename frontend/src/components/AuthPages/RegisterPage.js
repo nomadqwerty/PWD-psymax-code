@@ -25,19 +25,15 @@ const Register = () => {
   const router = useRouter();
 
   const onSubmit = async (data) => {
-    console.log(errors);
     try {
       data.emergencyPassword = passwordGenerator();
       // TODO:
-      console.log(data);
       // isEncrypted: false - pass
 
       const response = await axiosInstance.post(`/register`, data);
       const responseData = response?.data;
-      console.log(responseData);
       if (response?.status === 200) {
         let user_id = responseData.data.userId;
-        console.log(user_id);
         let fileVault = JSON.stringify({
           data: [{ fileName: '', fileReference: '', fileKey: '' }],
         });
@@ -45,8 +41,6 @@ const Register = () => {
           data: [{ clientId: '', clientKey: '' }],
         });
 
-        console.log(fileVault);
-        console.log(clientVault);
         const resVault = await axiosInstance.post(`/vault/user`, {
           userId: user_id,
           type: 'main',
@@ -55,7 +49,6 @@ const Register = () => {
           passwords: fileVault,
           clients: clientVault,
         });
-        console.log(resVault);
         dispatch({ type: 'INITIAL_STATE' });
         router.push('/login');
         toast.success(responseData?.message);

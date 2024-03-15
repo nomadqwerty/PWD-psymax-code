@@ -3,11 +3,25 @@ import { createContext, useState } from 'react';
 const vaultContext = createContext();
 
 const VaultProvider = ({ children }) => {
-  const [userVault, setUserVault] = useState({});
+  const [fileVault, setFileVault] = useState({});
+  const [clientVault, setClientVault] = useState({});
   const [serverVault, setServerVault] = useState({});
+  const [updateFileVault, setUpdateFileVault] = useState({});
+  const [updateClientVault, setUpdateClientVault] = useState({});
 
   let state = {
-    vaultState: { userVault, setUserVault, serverVault, setServerVault },
+    vaultState: {
+      fileVault,
+      setFileVault,
+      clientVault,
+      setClientVault,
+      serverVault,
+      setServerVault,
+      updateFileVault,
+      setUpdateFileVault,
+      updateClientVault,
+      setUpdateClientVault,
+    },
   };
 
   return (

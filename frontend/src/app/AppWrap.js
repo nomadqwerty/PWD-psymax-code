@@ -9,9 +9,11 @@ import { AuthProvider } from '@/context/auth.context';
 import { KlientProvider } from '@/context/klient.context';
 import { ProviderKonto } from '@/context/konto.context';
 import { VaultProvider } from '@/context/vault.context';
+import { registerSW } from '@/utils/pwaUtils';
 
 import '../../public/styles/globals.css';
 import '../../public/styles/custom.css';
+import { useEffect } from 'react';
 
 const theme = createTheme({
   palette: {
@@ -36,6 +38,17 @@ const theme = createTheme({
 });
 
 function MyAppWrap({ Component, pageProps, children }) {
+  useEffect(() => {
+    if (navigator) {
+      registerSW(navigator)
+        .then((e) => {
+          console.log('registered');
+        })
+        .catch((e) => {
+          console.log(e.message);
+        });
+    }
+  });
   return (
     <ThemeProvider theme={theme}>
       <LocalizationProvider dateAdapter={AdapterDateFns}>

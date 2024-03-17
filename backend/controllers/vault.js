@@ -225,3 +225,19 @@ exports.updateMainVault = async (req, res, next) => {
     });
   }
 };
+
+exports.getStatus = async (req, res, next) => {
+  try {
+      let response = {
+        status_code: 200,
+        message: 'online',
+        
+      };
+      res.status(200).json(response);
+  } catch (error) {
+    res.status(400).json({
+      status: 'fail',
+      message: error.message,
+    });
+  }
+};

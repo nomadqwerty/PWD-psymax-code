@@ -2,7 +2,7 @@ oninstall = async (e) => {
   console.log('[Service Worker] Installed...');
   e.waitUntil(
     (async () => {
-      //   await cacheOnRegister(staticV, dynamicV);
+      // await cacheOnRegister(staticV, dynamicV);
     })()
   );
 };

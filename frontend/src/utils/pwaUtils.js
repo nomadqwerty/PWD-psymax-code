@@ -9,7 +9,7 @@ const registerSW = async (navigator) => {
         // let dynamicV = `dynamic`;
         // await caches.delete(staticV);
         // await caches.delete(dynamicV);
-        console.log('Cleared old cache');
+        // console.log('Cleared old cache');
         if (unregisteredWorker) {
           console.log('removed older service worker.');
           const swReg = await navigator.serviceWorker.register(

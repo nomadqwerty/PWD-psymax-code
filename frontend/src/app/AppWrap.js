@@ -10,10 +10,11 @@ import { KlientProvider } from '@/context/klient.context';
 import { ProviderKonto } from '@/context/konto.context';
 import { VaultProvider } from '@/context/vault.context';
 import { registerSW } from '@/utils/pwaUtils';
+import axiosInstance from '@/utils/axios';
 
 import '../../public/styles/globals.css';
 import '../../public/styles/custom.css';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const theme = createTheme({
   palette: {
@@ -38,17 +39,44 @@ const theme = createTheme({
 });
 
 function MyAppWrap({ Component, pageProps, children }) {
+  const [intervalId, setIntervalId] = useState(false);
   useEffect(() => {
+    let statusChecker;
     if (navigator) {
       registerSW(navigator)
         .then((e) => {
           console.log('registered');
+          statusChecker = setInterval(() => {
+            let networkStatus;
+            if (navigator.onLine === true) {
+              networkStatus = true;
+            } else if (navigator.onLine === false) {
+              networkStatus = false;
+            } else if (navigator.onLine === undefined) {
+              axiosInstance.get(`/vault/user/status`).then((res) => {
+                if (res.status.startsWith('40')) {
+                  networkStatus = false;
+                }
+              });
+            }
+            console.log(networkStatus);
+            if (networkStatus === false) {
+              // TODO: encrypt data and register BG sync task
+            }
+          }, 15000);
+          setIntervalId(statusChecker);
         })
         .catch((e) => {
           console.log(e.message);
         });
     }
-  });
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, []);
   return (
     <ThemeProvider theme={theme}>
       <LocalizationProvider dateAdapter={AdapterDateFns}>

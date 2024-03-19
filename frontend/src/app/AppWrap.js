@@ -41,28 +41,90 @@ const theme = createTheme({
 
 function MyAppWrap({ Component, pageProps, children }) {
   const [intervalId, setIntervalId] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
   useEffect(() => {
     let statusChecker;
     if (navigator) {
       registerSW(navigator)
         .then((e) => {
           console.log('registered');
-          statusChecker = setInterval(async () => {
-            let networkStatus;
-            let isUpdated = false;
-            if (navigator.onLine === true) {
-              networkStatus = true;
-            } else if (navigator.onLine === false) {
-              networkStatus = false;
-            } else if (navigator.onLine === undefined) {
-              axiosInstance.get(`/vault/user/status`).then((res) => {
-                if (res.status.startsWith('40')) {
-                  networkStatus = false;
-                }
-              });
+        })
+        .catch((e) => {
+          console.log(e.message);
+        });
+    }
+  }, []);
+
+  useEffect(() => {
+    statusChecker = setInterval(async () => {
+      let networkStatus;
+
+      if (navigator.onLine === true) {
+        networkStatus = true;
+        if (isOffline === true) {
+          setIsOffline(false);
+        }
+      } else if (navigator.onLine === false) {
+        networkStatus = false;
+        if (isOffline === false) {
+          setIsOffline(true);
+        }
+      } else if (navigator.onLine === undefined) {
+        axiosInstance.get(`/vault/user/status`).then((res) => {
+          if (res.status.startsWith('40')) {
+            networkStatus = false;
+            if (isOffline === false) {
+              setIsOffline(true);
             }
-            console.log(networkStatus);
-            if (networkStatus === false && !isUpdated) {
+          }
+        });
+      }
+    }, 1000);
+
+    setIntervalId(statusChecker);
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isOffline]);
+  useEffect(() => {
+    const syncManager = window.SyncManager;
+    console.log(isOffline);
+  }, [isOffline]);
+  return (
+    <ThemeProvider theme={theme}>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <Toaster position="top-right" />
+        <KlientProvider>
+          <AuthProvider>
+            <VaultProvider>
+              <ProviderKonto>
+                <Head>
+                  <meta charSet="utf-8" />
+                  <link rel="icon" href="/favicon.svg" />
+                  <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+                  />
+                  <meta name="description" content="Psymax" />
+                  <title>Psymax</title>
+                </Head>
+                {children}
+              </ProviderKonto>
+            </VaultProvider>
+          </AuthProvider>
+        </KlientProvider>
+      </LocalizationProvider>
+    </ThemeProvider>
+  );
+}
+
+export default MyAppWrap;
+
+/* 
+if (networkStatus === false && !isUpdated) {
               // TODO: encrypt data and register BG sync task.
               let fileVault = localStorage.getItem('fileVault');
               let clientVault = localStorage.getItem('clientVault');
@@ -85,13 +147,6 @@ function MyAppWrap({ Component, pageProps, children }) {
                 updateFileVault = JSON.parse(updateFileVault);
                 updateClientVault = JSON.parse(updateClientVault);
                 userData = JSON.parse(userData);
-
-                console.log(fileVault);
-                console.log(clientVault);
-                console.log(serverVault);
-                console.log(updateFileVault);
-                console.log(updateClientVault);
-                console.log(userData);
 
                 // TODO: encrypt update vault.
                 const operations =
@@ -139,6 +194,7 @@ function MyAppWrap({ Component, pageProps, children }) {
                   console.log(fileUpdateUint, clientUpdateUint);
 
                   // TODO: send update store enc vault, use bgSync to schedule the request.
+                  console.log(window.SyncManager);
                   if (
                     window.SyncManager &&
                     fileUpdateUint &&
@@ -156,8 +212,8 @@ function MyAppWrap({ Component, pageProps, children }) {
                         JSON.stringify({ data: clientUpdateUint })
                       );
 
-                      readySw.sync.register('updateVaultRequest');
-                      console.log('set bg task');
+                      // readySw.sync.register('updateVaultRequest');
+                      // console.log('set bg task');
                     }
                   }
 
@@ -180,46 +236,4 @@ function MyAppWrap({ Component, pageProps, children }) {
                 }
               }
             }
-          }, 15000);
-          setIntervalId(statusChecker);
-        })
-        .catch((e) => {
-          console.log(e.message);
-        });
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, []);
-  return (
-    <ThemeProvider theme={theme}>
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <Toaster position="top-right" />
-        <KlientProvider>
-          <AuthProvider>
-            <VaultProvider>
-              <ProviderKonto>
-                <Head>
-                  <meta charSet="utf-8" />
-                  <link rel="icon" href="/favicon.svg" />
-                  <meta
-                    name="viewport"
-                    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-                  />
-                  <meta name="description" content="Psymax" />
-                  <title>Psymax</title>
-                </Head>
-                {children}
-              </ProviderKonto>
-            </VaultProvider>
-          </AuthProvider>
-        </KlientProvider>
-      </LocalizationProvider>
-    </ThemeProvider>
-  );
-}
-
-export default MyAppWrap;
+*/

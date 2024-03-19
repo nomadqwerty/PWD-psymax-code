@@ -139,6 +139,28 @@ function MyAppWrap({ Component, pageProps, children }) {
                   console.log(fileUpdateUint, clientUpdateUint);
 
                   // TODO: send update store enc vault, use bgSync to schedule the request.
+                  if (
+                    window.SyncManager &&
+                    fileUpdateUint &&
+                    clientUpdateUint
+                  ) {
+                    let readySw = await window.navigator.serviceWorker.ready;
+                    if (readySw) {
+                      localStorage.setItem(
+                        'encryptedFileUpdateVault',
+                        JSON.stringify({ data: fileUpdateUint })
+                      );
+
+                      localStorage.setItem(
+                        'encryptedClientUpdateVault',
+                        JSON.stringify({ data: clientUpdateUint })
+                      );
+
+                      readySw.sync.register('updateVaultRequest');
+                      console.log('set bg task');
+                    }
+                  }
+
                   //  let fileRes = await axiosInstance.post(`/vault/user/update/main`, {
                   //     userId: userData._id,
                   //     type: 'update',

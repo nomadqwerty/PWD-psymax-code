@@ -53,29 +53,32 @@ const fetchWrap = async (url, method, payload) => {
     return;
   }
 };
-const bgSynReq = async (e, idb) => {
-  if (e.tag === 'updateVaultRequest') {
-    let encryptedFileUpdateVault = localStorage.getItem(
-      'encryptedFileUpdateVault'
-    );
-    let encryptedClientUpdateVault = localStorage.getItem(
-      'encryptedClientUpdateVault'
-    );
+const bgSynReq = async (e) => {
+  console.log('backOnline');
+  console.log(self);
+  console.log(window);
+  // if (e.tag === 'updateVaultRequest') {
+  //   let encryptedFileUpdateVault = localStorage.getItem(
+  //     'encryptedFileUpdateVault'
+  //   );
+  //   let encryptedClientUpdateVault = localStorage.getItem(
+  //     'encryptedClientUpdateVault'
+  //   );
 
-    if (encryptedFileUpdateVault && encryptedClientUpdateVault) {
-      encryptedFileUpdateVault = JSON.parse(encryptedFileUpdateVault);
-      encryptedClientUpdateVault = JSON.parse(encryptedClientUpdateVault);
-      console.log(encryptedFileUpdateVault);
-      console.log(encryptedClientUpdateVault);
-    }
-  } else {
-    return;
-  }
+  //   if (encryptedFileUpdateVault && encryptedClientUpdateVault) {
+  //     encryptedFileUpdateVault = JSON.parse(encryptedFileUpdateVault);
+  //     encryptedClientUpdateVault = JSON.parse(encryptedClientUpdateVault);
+  //     console.log(encryptedFileUpdateVault);
+  //     console.log(encryptedClientUpdateVault);
+  //   }
+  // } else {
+  //   return;
+  // }
 };
 onsync = (e) => {
   e.waitUntil(
     (async () => {
-      await bgSynReq(e, idb);
+      await bgSynReq(e);
     })()
   );
 };

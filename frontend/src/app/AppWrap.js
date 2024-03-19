@@ -42,12 +42,13 @@ const theme = createTheme({
 function MyAppWrap({ Component, pageProps, children }) {
   const [intervalId, setIntervalId] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [registeredServiceWorker, setRegisteredServiceWorker] = useState(false);
   useEffect(() => {
-    let statusChecker;
     if (navigator) {
       registerSW(navigator)
         .then((e) => {
           console.log('registered');
+          setRegisteredServiceWorker(true);
         })
         .catch((e) => {
           console.log(e.message);
@@ -56,42 +57,157 @@ function MyAppWrap({ Component, pageProps, children }) {
   }, []);
 
   useEffect(() => {
-    statusChecker = setInterval(async () => {
-      let networkStatus;
-
-      if (navigator.onLine === true) {
-        networkStatus = true;
-        if (isOffline === true) {
-          setIsOffline(false);
-        }
-      } else if (navigator.onLine === false) {
-        networkStatus = false;
-        if (isOffline === false) {
-          setIsOffline(true);
-        }
-      } else if (navigator.onLine === undefined) {
-        axiosInstance.get(`/vault/user/status`).then((res) => {
-          if (res.status.startsWith('40')) {
-            networkStatus = false;
-            if (isOffline === false) {
-              setIsOffline(true);
-            }
+    let statusChecker;
+    if (registeredServiceWorker === true) {
+      statusChecker = setInterval(async () => {
+        let networkStatus;
+        console.log('check');
+        if (navigator.onLine === true) {
+          networkStatus = true;
+          if (isOffline === true) {
+            setIsOffline(false);
           }
-        });
-      }
-    }, 1000);
+        } else if (navigator.onLine === false) {
+          networkStatus = false;
+          if (isOffline === false) {
+            setIsOffline(true);
+          }
+        } else if (navigator.onLine === undefined) {
+          axiosInstance.get(`/vault/user/status`).then((res) => {
+            if (res.status.startsWith('40')) {
+              networkStatus = false;
+              if (isOffline === false) {
+                setIsOffline(true);
+              }
+            }
+          });
+        }
+      }, 10000);
+    }
 
-    setIntervalId(statusChecker);
+    if (statusChecker !== undefined) {
+      setIntervalId(statusChecker);
+    }
 
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
       }
     };
-  }, [isOffline]);
+  }, [isOffline, registeredServiceWorker]);
   useEffect(() => {
     const syncManager = window.SyncManager;
-    console.log(isOffline);
+    if (isOffline === true && syncManager !== undefined) {
+      console.log(isOffline, syncManager);
+      (async () => {
+        if (isOffline === true) {
+          // TODO: encrypt data and register BG sync task.
+          let fileVault = localStorage.getItem('fileVault');
+          let clientVault = localStorage.getItem('clientVault');
+          let serverVault = localStorage.getItem('serverVault');
+          let updateFileVault = localStorage.getItem('updateFileVault');
+          let updateClientVault = localStorage.getItem('updateClientVault');
+          let userData = localStorage.getItem('psymax-user-data');
+          if (
+            fileVault &&
+            clientVault &&
+            serverVault &&
+            updateFileVault &&
+            updateClientVault &&
+            userData
+          ) {
+            fileVault = JSON.parse(fileVault);
+            clientVault = JSON.parse(clientVault);
+            serverVault = JSON.parse(serverVault);
+            updateFileVault = JSON.parse(updateFileVault);
+            updateClientVault = JSON.parse(updateClientVault);
+            userData = JSON.parse(userData);
+            // TODO: encrypt update vault.
+            const operations =
+              window.crypto.subtle || window.crypto.webkitSubtle;
+            let pass = userData.password;
+            let ePass = userData.emergencyPassword;
+            let dualKeySalt = serverVault.dualKeySalt;
+            let masterKeySalt = serverVault.masterKeySalt;
+
+            let allKeys = await deriveAllKeys(
+              pass,
+              ePass,
+              dualKeySalt,
+              masterKeySalt,
+              window
+            );
+            let keysLength = Object.keys(allKeys).length;
+            console.log(allKeys);
+            if (keysLength > 0) {
+              const {
+                masterKey,
+                iv,
+                dualKeyOne,
+                dualKeyTwo,
+                dualMasterKey,
+                backUpIv,
+                recoveryKeyEnc,
+              } = allKeys;
+
+              const fileUpdateEnc = await encryptData(
+                operations,
+                masterKey,
+                iv,
+                updateFileVault
+              );
+              let fileUpdateUint = new Uint8Array(fileUpdateEnc);
+
+              const clientUpdateEnc = await encryptData(
+                operations,
+                masterKey,
+                iv,
+                updateClientVault
+              );
+              let clientUpdateUint = new Uint8Array(clientUpdateEnc);
+
+              // TODO: send update store enc vault, use bgSync to schedule the request.
+
+              if (fileUpdateUint && clientUpdateUint) {
+                let readySw = await window.navigator.serviceWorker.ready;
+                if (readySw) {
+                  localStorage.setItem(
+                    'encryptedFileUpdateVault',
+                    // SON.stringify({ data: fileUpdateUint }) - pass
+                    JSON.stringify({ data: fileUpdateUint })
+                  );
+
+                  localStorage.setItem(
+                    'encryptedClientUpdateVault',
+                    JSON.stringify({ data: clientUpdateUint })
+                  );
+
+                  readySw.sync.register('updateVaultRequest');
+                  console.log('set bg task');
+                }
+              }
+
+              //  let fileRes = await axiosInstance.post(`/vault/user/update/main`, {
+              //     userId: userData._id,
+              //     type: 'update',
+              //     passwords: Array.from(fileUpdateUint),
+              //     vault: 'file',
+              //   });
+              //  let clientRes = await axiosInstance.post(`/vault/user/update/main`, {
+              //     userId: userData._id,
+              //     type: 'update',
+              //     passwords: Array.from(clientUpdateUint),
+              //     vault: 'client',
+              //   });
+
+              // if(fileRes.status === '200' && clientRes.status === 200){
+              //   isUpdated = true;
+              // }
+            }
+          }
+        }
+      })();
+    }
   }, [isOffline]);
   return (
     <ThemeProvider theme={theme}>
@@ -124,116 +240,5 @@ function MyAppWrap({ Component, pageProps, children }) {
 export default MyAppWrap;
 
 /* 
-if (networkStatus === false && !isUpdated) {
-              // TODO: encrypt data and register BG sync task.
-              let fileVault = localStorage.getItem('fileVault');
-              let clientVault = localStorage.getItem('clientVault');
-              let serverVault = localStorage.getItem('serverVault');
-              let updateFileVault = localStorage.getItem('updateFileVault');
-              let updateClientVault = localStorage.getItem('updateClientVault');
-              let userData = localStorage.getItem('psymax-user-data');
 
-              if (
-                fileVault &&
-                clientVault &&
-                serverVault &&
-                updateFileVault &&
-                updateClientVault &&
-                userData
-              ) {
-                fileVault = JSON.parse(fileVault);
-                clientVault = JSON.parse(clientVault);
-                serverVault = JSON.parse(serverVault);
-                updateFileVault = JSON.parse(updateFileVault);
-                updateClientVault = JSON.parse(updateClientVault);
-                userData = JSON.parse(userData);
-
-                // TODO: encrypt update vault.
-                const operations =
-                  window.crypto.subtle || window.crypto.webkitSubtle;
-                let pass = userData.password;
-                let ePass = userData.emergencyPassword;
-                let dualKeySalt = serverVault.dualKeySalt;
-                let masterKeySalt = serverVault.masterKeySalt;
-
-                let allKeys = await deriveAllKeys(
-                  pass,
-                  ePass,
-                  dualKeySalt,
-                  masterKeySalt,
-                  window
-                );
-                let keysLength = Object.keys(allKeys).length;
-                if (keysLength > 0) {
-                  const {
-                    masterKey,
-                    iv,
-                    dualKeyOne,
-                    dualKeyTwo,
-                    dualMasterKey,
-                    backUpIv,
-                    recoveryKeyEnc,
-                  } = allKeys;
-
-                  const fileUpdateEnc = await encryptData(
-                    operations,
-                    masterKey,
-                    iv,
-                    updateFileVault
-                  );
-                  let fileUpdateUint = new Uint8Array(fileUpdateEnc);
-
-                  const clientUpdateEnc = await encryptData(
-                    operations,
-                    masterKey,
-                    iv,
-                    updateClientVault
-                  );
-                  let clientUpdateUint = new Uint8Array(clientUpdateEnc);
-
-                  console.log(fileUpdateUint, clientUpdateUint);
-
-                  // TODO: send update store enc vault, use bgSync to schedule the request.
-                  console.log(window.SyncManager);
-                  if (
-                    window.SyncManager &&
-                    fileUpdateUint &&
-                    clientUpdateUint
-                  ) {
-                    let readySw = await window.navigator.serviceWorker.ready;
-                    if (readySw) {
-                      localStorage.setItem(
-                        'encryptedFileUpdateVault',
-                        JSON.stringify({ data: fileUpdateUint })
-                      );
-
-                      localStorage.setItem(
-                        'encryptedClientUpdateVault',
-                        JSON.stringify({ data: clientUpdateUint })
-                      );
-
-                      // readySw.sync.register('updateVaultRequest');
-                      // console.log('set bg task');
-                    }
-                  }
-
-                  //  let fileRes = await axiosInstance.post(`/vault/user/update/main`, {
-                  //     userId: userData._id,
-                  //     type: 'update',
-                  //     passwords: Array.from(fileUpdateUint),
-                  //     vault: 'file',
-                  //   });
-                  //  let clientRes = await axiosInstance.post(`/vault/user/update/main`, {
-                  //     userId: userData._id,
-                  //     type: 'update',
-                  //     passwords: Array.from(clientUpdateUint),
-                  //     vault: 'client',
-                  //   });
-
-                  // if(fileRes.status === '200' && clientRes.status === 200){
-                  //   isUpdated = true;
-                  // }
-                }
-              }
-            }
 */

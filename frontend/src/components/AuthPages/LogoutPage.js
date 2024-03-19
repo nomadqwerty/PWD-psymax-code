@@ -116,6 +116,7 @@ const LogoutPage = () => {
         }
       } catch (error) {
         console.error('Logout error:', error);
+        router.push('/login');
       }
     };
 

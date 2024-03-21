@@ -9,7 +9,7 @@ import { AuthProvider } from '@/context/auth.context';
 import { KlientProvider } from '@/context/klient.context';
 import { ProviderKonto } from '@/context/konto.context';
 import { VaultProvider } from '@/context/vault.context';
-import { registerSW } from '@/utils/pwaUtils';
+import { registerSW, createStore, addToIdb } from '@/utils/pwaUtils';
 import axiosInstance from '@/utils/axios';
 import { deriveAllKeys, encryptData } from '@/utils/utilityFn';
 
@@ -82,7 +82,7 @@ function MyAppWrap({ Component, pageProps, children }) {
             }
           });
         }
-      }, 10000);
+      }, 100000);
     }
 
     if (statusChecker !== undefined) {
@@ -97,8 +97,12 @@ function MyAppWrap({ Component, pageProps, children }) {
   }, [isOffline, registeredServiceWorker]);
   useEffect(() => {
     const syncManager = window.SyncManager;
-    if (isOffline === true && syncManager !== undefined) {
-      console.log(isOffline, syncManager);
+    let indexDB = window.idb;
+    if (
+      isOffline === true &&
+      syncManager !== undefined &&
+      indexDB !== undefined
+    ) {
       (async () => {
         if (isOffline === true) {
           // TODO: encrypt data and register BG sync task.
@@ -171,38 +175,31 @@ function MyAppWrap({ Component, pageProps, children }) {
               if (fileUpdateUint && clientUpdateUint) {
                 let readySw = await window.navigator.serviceWorker.ready;
                 if (readySw) {
-                  localStorage.setItem(
-                    'encryptedFileUpdateVault',
-                    // SON.stringify({ data: fileUpdateUint }) - pass
-                    JSON.stringify({ data: fileUpdateUint })
-                  );
+                  let updateVaultData = {
+                    userId: userData._id,
+                    files: Array.from(fileUpdateUint),
+                    clients: Array.from(clientUpdateUint),
+                  };
 
-                  localStorage.setItem(
-                    'encryptedClientUpdateVault',
-                    JSON.stringify({ data: clientUpdateUint })
-                  );
+                  if (indexDB) {
+                    let storeName = 'updateVault';
+                    let db = createStore(indexDB, storeName, 'bgSync-store');
 
-                  readySw.sync.register('updateVaultRequest');
-                  console.log('set bg task');
+                    if (db) {
+                      await addToIdb(
+                        storeName,
+                        'updateVault',
+                        updateVaultData,
+                        'bgSync',
+                        db
+                      );
+
+                      readySw.sync.register('updateVaultRequest');
+                      console.log('set bg task');
+                    }
+                  }
                 }
               }
-
-              //  let fileRes = await axiosInstance.post(`/vault/user/update/main`, {
-              //     userId: userData._id,
-              //     type: 'update',
-              //     passwords: Array.from(fileUpdateUint),
-              //     vault: 'file',
-              //   });
-              //  let clientRes = await axiosInstance.post(`/vault/user/update/main`, {
-              //     userId: userData._id,
-              //     type: 'update',
-              //     passwords: Array.from(clientUpdateUint),
-              //     vault: 'client',
-              //   });
-
-              // if(fileRes.status === '200' && clientRes.status === 200){
-              //   isUpdated = true;
-              // }
             }
           }
         }

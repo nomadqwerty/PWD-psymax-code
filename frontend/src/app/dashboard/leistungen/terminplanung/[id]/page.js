@@ -1,11 +1,6 @@
-const { default: MyAppWrap } = require("../../../../AppWrap");
-import AddEditSchedule from "../../../../../components/Services/Scheduling/SchedulingPage";
+import AddEditSchedule from '../../../../../components/Services/Scheduling/SchedulingPage';
 const Terminplanung = () => {
-  return (
-    <MyAppWrap>
-      <AddEditSchedule />
-    </MyAppWrap>
-  );
+  return <AddEditSchedule />;
 };
 
 export default Terminplanung;

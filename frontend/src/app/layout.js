@@ -1,4 +1,6 @@
 import Script from 'next/script';
+import MyAppWrap from './AppWrap';
+
 export const metadata = {
   title: 'Psymax',
   description: 'Psymax consultation',
@@ -10,7 +12,9 @@ export default function RootLayout({ children }) {
       <head>
         <Script defer src="/idb.js"></Script>
       </head>
-      <body>{children}</body>
+      <body>
+        <MyAppWrap>{children}</MyAppWrap>
+      </body>
     </html>
   );
 }

@@ -1,12 +1,7 @@
-const { default: MyAppWrap } = require("../../AppWrap");
-import JustificationPage from "@/components/Justification/JustificationPage";
+import JustificationPage from '@/components/Justification/JustificationPage';
 
 const Begruendungstexte = () => {
-  return (
-    <MyAppWrap>
-      <JustificationPage />
-    </MyAppWrap>
-  );
+  return <JustificationPage />;
 };
 
 export default Begruendungstexte;

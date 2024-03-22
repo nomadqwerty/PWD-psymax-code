@@ -533,6 +533,7 @@ const LoginPage = () => {
           'updateClientVault',
           JSON.stringify(updateClientVault)
         );
+
         if (userData?.isAdmin === 1) {
           router.push('/admin');
         } else if (userData?.isAdmin === 0) {

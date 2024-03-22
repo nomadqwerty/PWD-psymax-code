@@ -1,12 +1,7 @@
-const { default: MyAppWrap } = require("../../AppWrap");
-import AccountsSettingsPage from "@/components/accountSetting/AccountsSettingsPage";
+import AccountsSettingsPage from '@/components/accountSetting/AccountsSettingsPage';
 
 const kontoeinstellungen = () => {
-  return (
-    <MyAppWrap>
-      <AccountsSettingsPage />
-    </MyAppWrap>
-  );
+  return <AccountsSettingsPage />;
 };
 
 export default kontoeinstellungen;

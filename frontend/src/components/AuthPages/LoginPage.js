@@ -492,10 +492,12 @@ const LoginPage = () => {
             }
           }
         }
+
         localStorage.setItem('psymax-loggedin', true);
         localStorage.setItem('psymax-token', responseData?.token);
         localStorage.setItem('psymax-user-data', JSON.stringify(responseData));
         localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
+
         dispatch({
           type: 'LOGIN',
           payload: { isLoggedin: true, userData: responseData },
@@ -521,24 +523,10 @@ const LoginPage = () => {
       updateFileVaultLength > 0 &&
       updateClientVaultLength > 0
     ) {
-      if (Object.keys(userData).length > 0) {
-        localStorage.setItem('fileVault', JSON.stringify(fileVault));
-        localStorage.setItem('clientVault', JSON.stringify(clientVault));
-        localStorage.setItem('serverVault', JSON.stringify(serverVault));
-        localStorage.setItem(
-          'updateFileVault',
-          JSON.stringify(updateFileVault)
-        );
-        localStorage.setItem(
-          'updateClientVault',
-          JSON.stringify(updateClientVault)
-        );
-
-        if (userData?.isAdmin === 1) {
-          router.push('/admin');
-        } else if (userData?.isAdmin === 0) {
-          router.push('/dashboard');
-        }
+      if (userData?.isAdmin === 1) {
+        router.push('/admin');
+      } else if (userData?.isAdmin === 0) {
+        router.push('/dashboard');
       }
     }
   }, [fileVault, clientVault, serverVault, updateFileVault, updateClientVault]);

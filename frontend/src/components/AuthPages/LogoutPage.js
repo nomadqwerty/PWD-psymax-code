@@ -8,38 +8,34 @@ import { deriveAllKeys, encryptData } from '@/utils/utilityFn';
 
 const LogoutPage = () => {
   const router = useRouter();
+  const { vaultState } = useContext(vaultContext);
+  const {
+    fileVault,
+    clientVault,
+    serverVault,
+    updateFileVault,
+    updateClientVault,
+  } = vaultState;
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        let fileVault = localStorage.getItem('fileVault');
-        let clientVault = localStorage.getItem('clientVault');
-        let serverVault = localStorage.getItem('serverVault');
-        let updateFileVault = localStorage.getItem('updateFileVault');
-        let updateClientVault = localStorage.getItem('updateClientVault');
+        let fileVaultLength = Object.keys(fileVault).length;
+        let clientVaultLength = Object.keys(clientVault).length;
+        let serverVaultLength = Object.keys(serverVault).length;
+        let updateFileVaultLength = Object.keys(updateFileVault).length;
+        let updateClientVaultLength = Object.keys(updateClientVault).length;
         let userData = localStorage.getItem('psymax-user-data');
 
         if (
-          fileVault &&
-          clientVault &&
-          serverVault &&
-          updateFileVault &&
-          updateClientVault &&
+          fileVaultLength > 0 &&
+          clientVaultLength > 0 &&
+          serverVaultLength > 0 &&
+          updateFileVaultLength > 0 &&
+          updateClientVaultLength > 0 &&
           userData
         ) {
-          fileVault = JSON.parse(fileVault);
-          clientVault = JSON.parse(clientVault);
-          serverVault = JSON.parse(serverVault);
-          updateFileVault = JSON.parse(updateFileVault);
-          updateClientVault = JSON.parse(updateClientVault);
           userData = JSON.parse(userData);
-
-          console.log(fileVault);
-          console.log(clientVault);
-          console.log(serverVault);
-          console.log(updateFileVault);
-          console.log(updateClientVault);
-          console.log(userData);
 
           // TODO: encrypt update vault.
           const operations = window.crypto.subtle || window.crypto.webkitSubtle;
@@ -107,11 +103,7 @@ const LogoutPage = () => {
           localStorage.removeItem('psymax-user-data');
           localStorage.removeItem('psymax-is-admin');
           localStorage.removeItem('psymax-loggedin');
-          localStorage.removeItem('fileVault');
-          localStorage.removeItem('clientVault');
-          localStorage.removeItem('serverVault');
-          localStorage.removeItem('updateFileVault');
-          localStorage.removeItem('updateClientVault');
+
           router.push('/login');
         }
       } catch (error) {

@@ -27,7 +27,6 @@ const ConnectionChecker = ({
     setUpdateClientVault,
   } = vaultState;
   let path = usePathname();
-  console.log(path);
 
   useEffect(() => {
     let statusChecker;
@@ -58,16 +57,12 @@ const ConnectionChecker = ({
       }, 60000);
     }
 
-    if (statusChecker !== undefined) {
-      setIntervalId(statusChecker);
-    }
-
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+      if (statusChecker) {
+        clearInterval(statusChecker);
       }
     };
-  }, [registeredServiceWorker]);
+  });
 
   useEffect(() => {
     const syncManager = window.SyncManager;

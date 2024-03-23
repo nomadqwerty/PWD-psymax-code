@@ -523,6 +523,8 @@ const LoginPage = () => {
       updateFileVaultLength > 0 &&
       updateClientVaultLength > 0
     ) {
+      const vaultStateJson = JSON.stringify(vaultState);
+      sessionStorage.setItem('vaultState', vaultStateJson);
       if (userData?.isAdmin === 1) {
         router.push('/admin');
       } else if (userData?.isAdmin === 0) {

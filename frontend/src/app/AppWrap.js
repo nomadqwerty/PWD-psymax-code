@@ -10,6 +10,8 @@ import { KlientProvider } from '@/context/klient.context';
 import { ProviderKonto } from '@/context/konto.context';
 import { VaultProvider } from '@/context/vault.context';
 import { registerSW } from '@/utils/pwaUtils';
+import VaultSession from './VaultSession';
+import { useRouter } from 'next/navigation';
 
 import ConnectionChecker from './ConnectionCheck';
 
@@ -40,12 +42,12 @@ const theme = createTheme({
 });
 
 function MyAppWrap({ Component, pageProps, children }) {
+  const router = useRouter();
   const [registeredServiceWorker, setRegisteredServiceWorker] = useState(false);
   useEffect(() => {
     if (navigator) {
       registerSW(navigator)
         .then((e) => {
-          console.log('registered');
           setRegisteredServiceWorker(true);
         })
         .catch((e) => {
@@ -53,6 +55,22 @@ function MyAppWrap({ Component, pageProps, children }) {
         });
     }
   }, []);
+
+  useEffect(() => {
+    const beforeUnloadHandler = (event) => {
+      // Recommended
+      event.preventDefault();
+      console.log('page reload');
+
+      return true;
+    };
+
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnloadHandler);
+    };
+  });
 
   return (
     <ThemeProvider theme={theme}>
@@ -72,11 +90,13 @@ function MyAppWrap({ Component, pageProps, children }) {
                   <meta name="description" content="Psymax" />
                   <title>Psymax</title>
                 </Head>
-                <ConnectionChecker
-                  registeredServiceWorker={registeredServiceWorker}
-                >
-                  {children}
-                </ConnectionChecker>
+                <VaultSession>
+                  <ConnectionChecker
+                    registeredServiceWorker={registeredServiceWorker}
+                  >
+                    {children}
+                  </ConnectionChecker>
+                </VaultSession>
               </ProviderKonto>
             </VaultProvider>
           </AuthProvider>

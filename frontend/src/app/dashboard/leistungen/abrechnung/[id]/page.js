@@ -1,12 +1,7 @@
-const { default: MyAppWrap } = require("../../../../AppWrap");
-import AddEditInvoice from "../../../../../components/Services/Invoice/InvoivePage";
+import AddEditInvoice from '../../../../../components/Services/Invoice/InvoivePage';
 
 const Abrechnung = () => {
-  return (
-    <MyAppWrap>
-      <AddEditInvoice />
-    </MyAppWrap>
-  );
+  return <AddEditInvoice />;
 };
 
 export default Abrechnung;

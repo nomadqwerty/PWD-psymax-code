@@ -1,12 +1,7 @@
-const { default: MyAppWrap } = require('../../../AppWrap');
 import QuestionnaireEditOverview from './edit';
 
 const EditPage = () => {
-  return (
-    <MyAppWrap>
-      <QuestionnaireEditOverview />
-    </MyAppWrap>
-  );
+  return <QuestionnaireEditOverview />;
 };
 
 export default EditPage;

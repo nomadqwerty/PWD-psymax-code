@@ -1,12 +1,7 @@
-const { default: MyAppWrap } = require('../../../AppWrap');
 import QuestionnaireAssignment from './Assigment';
 
 const AssignmentPage = () => {
-  return (
-    <MyAppWrap>
-      <QuestionnaireAssignment />
-    </MyAppWrap>
-  );
+  return <QuestionnaireAssignment />;
 };
 
 export default AssignmentPage;

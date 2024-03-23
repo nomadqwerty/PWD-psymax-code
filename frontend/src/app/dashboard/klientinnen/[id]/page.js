@@ -1,11 +1,6 @@
-const { default: MyAppWrap } = require("../../../AppWrap");
-import ClientAddEdit from "../../../../components/client/add/AddClient";
+import ClientAddEdit from '../../../../components/client/add/AddClient';
 const KlientAdd = () => {
-  return (
-    <MyAppWrap>
-      <ClientAddEdit />
-    </MyAppWrap>
-  );
+  return <ClientAddEdit />;
 };
 
 export default KlientAdd;

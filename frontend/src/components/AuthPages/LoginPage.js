@@ -97,27 +97,15 @@ const LoginPage = () => {
                   } = allKeys;
 
                   const passwordUpdateDirectory = {
-                    data: [
-                      {
-                        fileName: '',
-                        fileReference: '',
-                        fileKey: '',
-                      },
-                    ],
+                    data: [],
                   };
 
                   const passwordMainDirectory = {
-                    data: [
-                      {
-                        fileName: '',
-                        fileReference: '',
-                        fileKey: '',
-                      },
-                    ],
+                    data: [],
                   };
 
                   const passwordArchiveDirectory = {
-                    data: [{ fileName: '', fileReference: '', fileKey: '' }],
+                    data: [],
                   };
 
                   const passUpdateDirEnc = await encryptData(
@@ -142,13 +130,13 @@ const LoginPage = () => {
                   );
 
                   const clientsUpdate = {
-                    data: [{ clientId: '', clientKey: '' }],
+                    data: [],
                   };
                   const clientsMain = {
-                    data: [{ clientId: '', clientKey: '' }],
+                    data: [],
                   };
                   const clientsArchive = {
-                    data: [{ clientId: '', clientKey: '' }],
+                    data: [],
                   };
 
                   const clientUpdateEnc = await encryptData(
@@ -359,6 +347,7 @@ const LoginPage = () => {
                   // console.log(backUpMaster, masterKey);
                   // file
                   let decryptedFiles = [];
+                  let decryptedArchive = [];
                   console.log(encryptedVaults);
                   encryptedVaults[0].forEach(async (e) => {
                     let dataDec = await decryptData(
@@ -369,11 +358,18 @@ const LoginPage = () => {
                     );
 
                     dataDec.type = e.type;
+
                     if (dataDec.type !== 'archive') {
                       console.log(dataDec);
                       decryptedFiles.push(dataDec);
+                    } else {
+                      decryptedArchive.push(dataDec);
                     }
-                    if (decryptedFiles.length == 2) {
+
+                    if (
+                      decryptedFiles.length == 2 &&
+                      decryptedArchive.length == 1
+                    ) {
                       let updateVault =
                         decryptedFiles[0].type !== 'update'
                           ? decryptedFiles[1]
@@ -384,13 +380,57 @@ const LoginPage = () => {
                           ? decryptedFiles[0]
                           : decryptedFiles[1];
 
-                      // console.log(decryptedFiles);
+                      let archiveVault = decryptedArchive[0];
+
+                      if (mainVault.data.length >= 250) {
+                        const newArchive = vaultMerger(
+                          'file',
+                          archiveVault,
+                          mainVault
+                        );
+
+                        let newArchiveVault = {
+                          data: newArchive,
+                          type: 'archive',
+                        };
+
+                        let newMainVault = { data: [], type: 'main' };
+
+                        const encMainVault = await encryptData(
+                          operations,
+                          masterKey,
+                          iv,
+                          newMainVault
+                        );
+
+                        const encArchiveVault = await encryptData(
+                          operations,
+                          masterKey,
+                          iv,
+                          newArchiveVault
+                        );
+
+                        let mainUint = new Uint8Array(encMainVault);
+                        let archiveUint = new Uint8Array(encArchiveVault);
+                        let archiveUpdateRes = await axiosInstance.post(
+                          `/vault/user/update/archive`,
+                          {
+                            userId: userData._id,
+                            type: 'archive',
+                            passwordsMain: Array.from(mainUint),
+                            passwordsArchive: Array.from(archiveUint),
+                            vault: 'file',
+                          }
+                        );
+                        console.log(archiveUpdateRes);
+                      }
 
                       const mergedVaults = vaultMerger(
                         'file',
                         updateVault,
                         mainVault
                       );
+
                       let newMainVault = { data: mergedVaults, type: 'main' };
                       console.log(newMainVault);
                       // TODO: add new main vault to state
@@ -419,6 +459,7 @@ const LoginPage = () => {
 
                   // client
                   let decryptedClients = [];
+                  let decClientArchive = [];
                   encryptedVaults[1].forEach(async (e) => {
                     let dataDec = await decryptData(
                       operations,
@@ -433,8 +474,13 @@ const LoginPage = () => {
                     if (dataDec.type !== 'archive') {
                       console.log(dataDec);
                       decryptedClients.push(dataDec);
+                    } else {
+                      decClientArchive.push(dataDec);
                     }
-                    if (decryptedClients.length == 2) {
+                    if (
+                      decryptedClients.length == 2 &&
+                      decClientArchive.length == 1
+                    ) {
                       let updateVault =
                         decryptedClients[0].type !== 'update'
                           ? decryptedClients[1]
@@ -444,6 +490,51 @@ const LoginPage = () => {
                         decryptedClients[1].type !== 'main'
                           ? decryptedClients[0]
                           : decryptedClients[1];
+
+                      let archiveVault = decClientArchive[0];
+
+                      if (mainVault.data.length >= 250) {
+                        const newArchive = vaultMerger(
+                          'client',
+                          archiveVault,
+                          mainVault
+                        );
+
+                        let newArchiveVault = {
+                          data: newArchive,
+                          type: 'archive',
+                        };
+
+                        let newMainVault = { data: [], type: 'main' };
+
+                        const encMainVault = await encryptData(
+                          operations,
+                          masterKey,
+                          iv,
+                          newMainVault
+                        );
+
+                        const encArchiveVault = await encryptData(
+                          operations,
+                          masterKey,
+                          iv,
+                          newArchiveVault
+                        );
+
+                        let mainUint = new Uint8Array(encMainVault);
+                        let archiveUint = new Uint8Array(encArchiveVault);
+                        let archiveUpdateRes = await axiosInstance.post(
+                          `/vault/user/update/archive`,
+                          {
+                            userId: userData._id,
+                            type: 'archive',
+                            clientsMain: Array.from(mainUint),
+                            clientsArchive: Array.from(archiveUint),
+                            vault: 'client',
+                          }
+                        );
+                        console.log(archiveUpdateRes);
+                      }
 
                       const mergedVaults = vaultMerger(
                         'client',
@@ -469,7 +560,7 @@ const LoginPage = () => {
                         await axiosInstance.post(`/vault/user/update/main`, {
                           userId: userData._id,
                           type: 'main',
-                          passwords: Array.from(mergeUint),
+                          clients: Array.from(mergeUint),
                           vault: 'client',
                         });
                       }
@@ -525,11 +616,11 @@ const LoginPage = () => {
     ) {
       const vaultStateJson = JSON.stringify(vaultState);
       sessionStorage.setItem('vaultState', vaultStateJson);
-      if (userData?.isAdmin === 1) {
-        router.push('/admin');
-      } else if (userData?.isAdmin === 0) {
-        router.push('/dashboard');
-      }
+      // if (userData?.isAdmin === 1) {
+      //   router.push('/admin');
+      // } else if (userData?.isAdmin === 0) {
+      //   router.push('/dashboard');
+      // }
     }
   }, [fileVault, clientVault, serverVault, updateFileVault, updateClientVault]);
   return (

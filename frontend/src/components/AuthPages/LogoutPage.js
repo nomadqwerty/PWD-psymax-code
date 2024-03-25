@@ -91,7 +91,7 @@ const LogoutPage = () => {
             await axiosInstance.post(`/vault/user/update/main`, {
               userId: userData._id,
               type: 'update',
-              passwords: Array.from(clientUpdateUint),
+              clients: Array.from(clientUpdateUint),
               vault: 'client',
             });
           }

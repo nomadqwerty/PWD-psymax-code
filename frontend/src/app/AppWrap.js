@@ -59,15 +59,14 @@ function MyAppWrap({ Component, pageProps, children }) {
   useEffect(() => {
     const beforeUnloadHandler = (event) => {
       event.preventDefault();
-      router.push('/logout');
       return true;
     };
+    // show warning popup on page reload.
+    // window.addEventListener('beforeunload', beforeUnloadHandler);
 
-    window.addEventListener('beforeunload', beforeUnloadHandler);
-
-    return () => {
-      window.removeEventListener('beforeunload', beforeUnloadHandler);
-    };
+    // return () => {
+    //   window.removeEventListener('beforeunload', beforeUnloadHandler);
+    // };
   });
 
   return (

@@ -226,6 +226,86 @@ exports.updateMainVault = async (req, res, next) => {
   }
 };
 
+exports.updateArchiveVault = async (req, res, next) => {
+  try {
+    let reqBody = req.body;
+    let vaultType = reqBody.vault;
+    reqBody.vault = undefined;
+    if (vaultType === 'file') {
+      
+      let archive = {userId: reqBody.userId,
+        type: 'archive',
+        passwords:reqBody.passwordsArchive }
+
+      let main = {userId: reqBody.userId,
+        type: 'main',
+        passwords:reqBody.passwordsMain }
+      console.log(archive)
+      console.log(main)
+      let fileVaultArchive = await UserVault.findOneAndUpdate(
+          {
+            userId: archive.userId,
+            type: archive.type,
+          },
+          archive,
+          { new: true }
+        );
+      let fileVaultMain = await UserVault.findOneAndUpdate(
+          {
+            userId: main.userId,
+            type: main.type,
+          },
+          main,
+          { new: true }
+        );
+        console.log(fileVaultArchive);
+        console.log(fileVaultMain);
+    }
+    if (vaultType === 'client') {
+      let archive = {userId: reqBody.userId,
+        type: 'archive',
+        clients:reqBody.clientsArchive }
+
+      let main = {userId: reqBody.userId,
+        type: 'main',
+        clients:reqBody.clientsMain }
+      console.log(archive)
+      console.log(main)
+      let clientVaultArchive = await UserVault.findOneAndUpdate(
+          {
+            userId: archive.userId,
+            type: archive.type,
+          },
+          archive,
+          { new: true }
+        );
+      let clientVaultMain = await UserVault.findOneAndUpdate(
+          {
+            userId: main.userId,
+            type: main.type,
+          },
+          main,
+          { new: true }
+        );
+        console.log(clientVaultArchive);
+        console.log(clientVaultMain);
+    }
+    // let clientVault = await ClientVault.findOne({
+    //   userId: reqBody.userId,
+    //   type: reqBody.type,
+    // });
+
+    res.status(200).json({
+      status: 'success',
+    });
+  } catch (error) {
+    res.status(405).json({
+      status: 'fail',
+      message: error.message,
+    });
+  }
+};
+
 exports.getStatus = async (req, res, next) => {
   try {
       let response = {

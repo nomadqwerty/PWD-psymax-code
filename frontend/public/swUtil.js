@@ -95,7 +95,7 @@ const bgSynReq = async (e, idb) => {
       await fetchWrap(`${serverUrl}/api/vault/user/update/main`, 'POST', {
         userId: updateVaultData[0].userId,
         type: 'update',
-        passwords: updateVaultData[0].clients,
+        clients: updateVaultData[0].clients,
         vault: 'client',
       });
     }

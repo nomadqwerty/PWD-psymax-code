@@ -58,10 +58,8 @@ function MyAppWrap({ Component, pageProps, children }) {
 
   useEffect(() => {
     const beforeUnloadHandler = (event) => {
-      // Recommended
       event.preventDefault();
-      console.log('page reload');
-
+      router.push('/logout');
       return true;
     };
 

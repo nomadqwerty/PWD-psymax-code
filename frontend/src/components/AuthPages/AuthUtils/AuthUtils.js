@@ -1,0 +1,516 @@
+import {
+  deriveAllKeys,
+  encryptData,
+  decryptData,
+  vaultMerger,
+} from '@/utils/utilityFn';
+import axiosInstance from '@/utils/axios';
+
+let encryptOnLoginA = async (
+  clientVault,
+  fileVault,
+  response,
+  userData,
+  operations,
+  setFileVault,
+  setClientVault,
+  setServerVault,
+  setUpdateFileVault,
+  setUpdateClientVault
+) => {
+  let vault = response.data.data;
+  let pass = userData.password;
+  let ePass = userData.emergencyPassword;
+  let dualKeySalt = vault.dualKeySalt;
+  let masterKeySalt = vault.masterKeySalt;
+
+  if (ePass) {
+    // TODO: Import function.
+    let allKeys = await deriveAllKeys(
+      pass,
+      ePass,
+      dualKeySalt,
+      masterKeySalt,
+      window
+    );
+    let keysLength = Object.keys(allKeys).length;
+    if (keysLength > 0) {
+      const {
+        masterKey,
+        iv,
+        dualKeyOne,
+        dualKeyTwo,
+        dualMasterKey,
+        backUpIv,
+        recoveryKeyEnc,
+      } = allKeys;
+
+      const passwordUpdateDirectory = {
+        data: [],
+      };
+
+      const passwordMainDirectory = {
+        data: [],
+      };
+
+      const passwordArchiveDirectory = {
+        data: [],
+      };
+
+      const passUpdateDirEnc = await encryptData(
+        operations,
+        masterKey,
+        iv,
+        passwordUpdateDirectory
+      );
+
+      const passMainDirEnc = await encryptData(
+        operations,
+        masterKey,
+        iv,
+        passwordMainDirectory
+      );
+
+      const passArchiveDirEnc = await encryptData(
+        operations,
+        masterKey,
+        iv,
+        passwordArchiveDirectory
+      );
+
+      const clientsUpdate = {
+        data: [],
+      };
+      const clientsMain = {
+        data: [],
+      };
+      const clientsArchive = {
+        data: [],
+      };
+
+      const clientUpdateEnc = await encryptData(
+        operations,
+        masterKey,
+        iv,
+        clientsUpdate
+      );
+      const clientMainEnc = await encryptData(
+        operations,
+        masterKey,
+        iv,
+        clientsMain
+      );
+      const clientArchiveEnc = await encryptData(
+        operations,
+        masterKey,
+        iv,
+        clientsArchive
+      );
+
+      const passUpdateUintArr = new Uint8Array(passUpdateDirEnc);
+      const passMainUintArr = new Uint8Array(passMainDirEnc);
+      const passArchiveUintArr = new Uint8Array(passArchiveDirEnc);
+
+      const clientsUpdateUintArr = new Uint8Array(clientUpdateEnc);
+      const clientsMainUintArr = new Uint8Array(clientMainEnc);
+      const clientsArchiveUintArr = new Uint8Array(clientArchiveEnc);
+
+      let fileVaultArray = [];
+      let clientVaultArray = [];
+
+      fileVault.map((e) => {
+        if (e.type === 'update') {
+          e.passwords = Array.from(passUpdateUintArr);
+        }
+        if (e.type === 'main') {
+          e.passwords = Array.from(passMainUintArr);
+        }
+        if (e.type === 'archive') {
+          e.passwords = Array.from(passArchiveUintArr);
+        }
+        e.isEncrypted = true;
+        fileVaultArray.push(e);
+      });
+
+      clientVault.map((e) => {
+        if (e.type === 'update') {
+          e.clients = Array.from(clientsUpdateUintArr);
+        }
+        if (e.type === 'main') {
+          e.clients = Array.from(clientsMainUintArr);
+        }
+        if (e.type === 'archive') {
+          e.clients = Array.from(clientsArchiveUintArr);
+        }
+        e.isEncrypted = true;
+        clientVaultArray.push(e);
+      });
+      let recKeyEnc = Array.from(recoveryKeyEnc);
+      recKeyEnc = { recovery: recKeyEnc };
+
+      const masterKeyEnc = await encryptData(
+        operations,
+        dualMasterKey,
+        backUpIv,
+        recKeyEnc
+      );
+
+      let masterKeyEncUint = new Uint8Array(masterKeyEnc);
+
+      // TODO: import axiosInstance
+      const resVault = await axiosInstance.post(`/vault/user/update`, {
+        fileVault: fileVaultArray,
+        clientVault: clientVaultArray,
+        recoveryKey: Array.from(masterKeyEncUint),
+      });
+
+      if (resVault.status === 200) {
+        sessionStorage.setItem('dualKeyOne', dualKeyOne);
+
+        setServerVault(vault);
+        setUpdateFileVault({
+          data: [],
+          type: 'update',
+        });
+        setUpdateClientVault({
+          data: [],
+          type: 'update',
+        });
+        setFileVault({
+          data: [],
+          type: 'main',
+        });
+        setClientVault({
+          data: [],
+          type: 'main',
+        });
+      }
+    }
+  }
+};
+
+//////////////////////////////////////////
+
+async (
+  clientVault,
+  fileVault,
+  response,
+  userData,
+  operations,
+  setFileVault,
+  setClientVault,
+  setServerVault,
+  setUpdateFileVault,
+  setUpdateClientVault
+) => {
+  let vault = response.data.data;
+  let pass = userData.password;
+  let ePass = userData.emergencyPassword;
+  let dualKeySalt = vault.dualKeySalt;
+  let masterKeySalt = vault.masterKeySalt;
+  if (ePass) {
+    // TODO: import FN
+    let allKeys = await deriveAllKeys(
+      pass,
+      ePass,
+      dualKeySalt,
+      masterKeySalt,
+      window
+    );
+    let keysLength = Object.keys(allKeys).length;
+    if (keysLength > 0) {
+      const { masterKey, iv, dualKeyOne, dualKeyTwo, dualMasterKey, backUpIv } =
+        allKeys;
+      // console.log(allKeys);
+
+      let fileUintArr = [];
+
+      fileVault.forEach((e) => {
+        if (e.type === 'update') {
+          let fileUpdateVault = new Uint8Array(e.passwords.data);
+          fileUintArr.push({
+            data: fileUpdateVault,
+            type: e.type,
+          });
+        }
+        if (e.type === 'main') {
+          let fileMainVault = new Uint8Array(e.passwords.data);
+          fileUintArr.push({ data: fileMainVault, type: e.type });
+        }
+        if (e.type === 'archive') {
+          let fileArchiveVault = new Uint8Array(e.passwords.data);
+          fileUintArr.push({
+            data: fileArchiveVault,
+            type: e.type,
+          });
+        }
+      });
+
+      let clientUintArr = [];
+
+      clientVault.forEach((e) => {
+        if (e.type === 'update') {
+          let clientUpdateVault = new Uint8Array(e.clients.data);
+          clientUintArr.push({
+            data: clientUpdateVault,
+            type: e.type,
+          });
+        }
+        if (e.type === 'main') {
+          let clientMainVault = new Uint8Array(e.clients.data);
+          clientUintArr.push({
+            data: clientMainVault,
+            type: e.type,
+          });
+        }
+        if (e.type === 'archive') {
+          let clientArchiveVault = new Uint8Array(e.clients.data);
+          clientUintArr.push({
+            data: clientArchiveVault,
+            type: e.type,
+          });
+        }
+      });
+
+      let encryptedVaults = [fileUintArr, clientUintArr];
+
+      let recoveryKeyArr = userData.recoveryKey.data;
+
+      recoveryKeyArr = new Uint8Array(recoveryKeyArr);
+
+      // console.log(recoveryKeyArr);
+      // TODO: Import decrypt FN
+      let recoveryKeyDec = await decryptData(
+        operations,
+        dualMasterKey,
+        backUpIv,
+        recoveryKeyArr
+      );
+
+      let backUpMaster = window.crypto.subtle.importKey(
+        'raw',
+        new Uint8Array(recoveryKeyDec.recovery),
+        'AES-GCM',
+        true,
+        ['encrypt', 'decrypt']
+      );
+
+      backUpMaster = await backUpMaster;
+      // console.log(backUpMaster, masterKey);
+      // file
+      let decryptedFiles = [];
+      let decryptedArchive = [];
+      console.log(encryptedVaults);
+      encryptedVaults[0].forEach(async (e) => {
+        let dataDec = await decryptData(operations, backUpMaster, iv, e.data);
+
+        dataDec.type = e.type;
+
+        if (dataDec.type !== 'archive') {
+          console.log(dataDec);
+          decryptedFiles.push(dataDec);
+        } else {
+          decryptedArchive.push(dataDec);
+        }
+
+        if (decryptedFiles.length == 2 && decryptedArchive.length == 1) {
+          let updateVault =
+            decryptedFiles[0].type !== 'update'
+              ? decryptedFiles[1]
+              : decryptedFiles[0];
+
+          let mainVault =
+            decryptedFiles[1].type !== 'main'
+              ? decryptedFiles[0]
+              : decryptedFiles[1];
+
+          let archiveVault = decryptedArchive[0];
+
+          if (mainVault.data.length >= 250) {
+            // TODO: import vaultMerger
+            const newArchive = vaultMerger('file', archiveVault, mainVault);
+
+            let newArchiveVault = {
+              data: newArchive,
+              type: 'archive',
+            };
+
+            let newMainVault = { data: [], type: 'main' };
+
+            const encMainVault = await encryptData(
+              operations,
+              masterKey,
+              iv,
+              newMainVault
+            );
+
+            const encArchiveVault = await encryptData(
+              operations,
+              masterKey,
+              iv,
+              newArchiveVault
+            );
+
+            let mainUint = new Uint8Array(encMainVault);
+            let archiveUint = new Uint8Array(encArchiveVault);
+            let archiveUpdateRes = await axiosInstance.post(
+              `/vault/user/update/archive`,
+              {
+                userId: userData._id,
+                type: 'archive',
+                passwordsMain: Array.from(mainUint),
+                passwordsArchive: Array.from(archiveUint),
+                vault: 'file',
+              }
+            );
+            console.log(archiveUpdateRes);
+          }
+
+          const mergedVaults = vaultMerger('file', updateVault, mainVault);
+
+          let newMainVault = { data: mergedVaults, type: 'main' };
+          console.log(newMainVault);
+          // TODO: add state to params
+          setFileVault(newMainVault);
+          const encMainVault = await encryptData(
+            operations,
+            masterKey,
+            iv,
+            newMainVault
+          );
+
+          let mergeUint = new Uint8Array(encMainVault);
+          // update main vault
+          let hasSent = false;
+          if (!hasSent) {
+            hasSent = true;
+            await axiosInstance.post(`/vault/user/update/main`, {
+              userId: userData._id,
+              type: 'main',
+              passwords: Array.from(mergeUint),
+              vault: 'file',
+            });
+          }
+        }
+      });
+
+      // client
+      let decryptedClients = [];
+      let decClientArchive = [];
+      encryptedVaults[1].forEach(async (e) => {
+        let dataDec = await decryptData(operations, backUpMaster, iv, e.data);
+
+        // console.log(dataDec);
+
+        dataDec.type = e.type;
+        if (dataDec.type !== 'archive') {
+          console.log(dataDec);
+          decryptedClients.push(dataDec);
+        } else {
+          decClientArchive.push(dataDec);
+        }
+        if (decryptedClients.length == 2 && decClientArchive.length == 1) {
+          let updateVault =
+            decryptedClients[0].type !== 'update'
+              ? decryptedClients[1]
+              : decryptedClients[0];
+
+          let mainVault =
+            decryptedClients[1].type !== 'main'
+              ? decryptedClients[0]
+              : decryptedClients[1];
+
+          let archiveVault = decClientArchive[0];
+
+          if (mainVault.data.length >= 250) {
+            const newArchive = vaultMerger('client', archiveVault, mainVault);
+
+            let newArchiveVault = {
+              data: newArchive,
+              type: 'archive',
+            };
+
+            let newMainVault = { data: [], type: 'main' };
+
+            const encMainVault = await encryptData(
+              operations,
+              masterKey,
+              iv,
+              newMainVault
+            );
+
+            const encArchiveVault = await encryptData(
+              operations,
+              masterKey,
+              iv,
+              newArchiveVault
+            );
+
+            let mainUint = new Uint8Array(encMainVault);
+            let archiveUint = new Uint8Array(encArchiveVault);
+            let archiveUpdateRes = await axiosInstance.post(
+              `/vault/user/update/archive`,
+              {
+                userId: userData._id,
+                type: 'archive',
+                clientsMain: Array.from(mainUint),
+                clientsArchive: Array.from(archiveUint),
+                vault: 'client',
+              }
+            );
+            console.log(archiveUpdateRes);
+          }
+
+          const mergedVaults = vaultMerger('client', updateVault, mainVault);
+
+          let newMainVault = { data: mergedVaults, type: 'main' };
+          console.log(newMainVault);
+          // TODO: add new main vault to state
+          setClientVault(newMainVault);
+          const encMainVault = await encryptData(
+            operations,
+            masterKey,
+            iv,
+            newMainVault
+          );
+          let mergeUint = new Uint8Array(encMainVault);
+          // update main vault
+          let hasSent = false;
+          if (!hasSent) {
+            hasSent = true;
+            await axiosInstance.post(`/vault/user/update/main`, {
+              userId: userData._id,
+              type: 'main',
+              clients: Array.from(mergeUint),
+              vault: 'client',
+            });
+          }
+        }
+      });
+
+      // // TODO: add vault to state, add keys to ram.
+      localStorage.setItem('dualKeyOne', dualKeyOne);
+      setServerVault(vault);
+      setUpdateFileVault({
+        data: [],
+        type: 'update',
+      });
+      setUpdateClientVault({
+        data: [],
+        type: 'update',
+      });
+    }
+  }
+};
+//   ( clientVault,
+//     fileVault,
+//     response,
+//     userData,
+//     operations,
+//     setFileVault,
+//     setClientVault,
+//     setServerVault,
+//     setUpdateFileVault,
+//     setUpdateClientVault);
+
+export { encryptOnLoginA };

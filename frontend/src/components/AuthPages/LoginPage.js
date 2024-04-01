@@ -19,7 +19,7 @@ import {
   isEncrypted,
   vaultMerger,
 } from '@/utils/utilityFn';
-import { encryptOnLoginA } from './AuthUtils/AuthUtils';
+import { encryptOnLoginA, encryptOnLoginB } from './AuthUtils/AuthUtils';
 
 const LoginPage = () => {
   const {
@@ -50,7 +50,6 @@ const LoginPage = () => {
       const response = await axiosInstance.post(`/login`, data);
       const responseData = response?.data?.data;
       if (response?.status === 200) {
-        // console.log(responseData);
         const user_id = responseData._id;
         const vaultRes = await axiosInstance.get(`/vault/user/${user_id}`);
         setUserData(responseData);
@@ -62,7 +61,6 @@ const LoginPage = () => {
 
           let clientEncrypted = isEncrypted(clientVault);
           let fileEncrypted = isEncrypted(fileVault);
-
           if (!clientEncrypted && !fileEncrypted) {
             if (!operations) {
               alert('Web Crypto is not supported on this browser');
@@ -71,7 +69,6 @@ const LoginPage = () => {
               // TODO: request server vault.
               let userData = responseData;
               const response = await axiosInstance.get(`/vault/server`);
-
               await encryptOnLoginA(
                 clientVault,
                 fileVault,
@@ -94,6 +91,18 @@ const LoginPage = () => {
             } else {
               let userData = responseData;
               const response = await axiosInstance.get(`/vault/server`);
+              await encryptOnLoginB(
+                clientVault,
+                fileVault,
+                response,
+                userData,
+                operations,
+                setFileVault,
+                setClientVault,
+                setServerVault,
+                setUpdateFileVault,
+                setUpdateClientVault
+              );
             }
           }
         }
@@ -130,11 +139,12 @@ const LoginPage = () => {
     ) {
       const vaultStateJson = JSON.stringify(vaultState);
       sessionStorage.setItem('vaultState', vaultStateJson);
-      // if (userData?.isAdmin === 1) {
-      //   router.push('/admin');
-      // } else if (userData?.isAdmin === 0) {
-      //   router.push('/dashboard');
-      // }
+      console.log(vaultState);
+      if (userData?.isAdmin === 1) {
+        router.push('/admin');
+      } else if (userData?.isAdmin === 0) {
+        router.push('/dashboard');
+      }
     }
   }, [fileVault, clientVault, serverVault, updateFileVault, updateClientVault]);
   return (

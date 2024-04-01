@@ -1,23 +1,29 @@
-const ServerVault = require('../models/ServerVault');
-const UserVault = require('../models/UserVault');
-const ClientVault = require('../models/ClientVault');
-const { UserSchema } = require('../models/userModel');
+const ServerVault = require("../models/ServerVault");
+const UserVault = require("../models/UserVault");
+const ClientVault = require("../models/ClientVault");
+const { UserSchema } = require("../models/userModel");
 
 exports.getServerVault = async (req, res, next) => {
   try {
     let vault = await ServerVault.find();
-
     if (vault[0]) {
       let response = {
         status_code: 200,
-        message: '',
+        message: "",
         data: vault[0],
       };
+
       res.status(200).json(response);
+    } else {
+      let response = {
+        status_code: 404,
+        message: "not found",
+      };
+      res.status(404).json(response);
     }
   } catch (error) {
     res.status(405).json({
-      status: 'fail',
+      status: "fail",
       message: error.message,
     });
   }
@@ -34,7 +40,7 @@ exports.createUserVault = async (req, res) => {
     });
 
     if (!existingVault && !existingClientVault) {
-      console.log('not found');
+      console.log("not found");
       let fileVault = { ...userVault };
       let clientVault = { ...userVault };
 
@@ -43,44 +49,40 @@ exports.createUserVault = async (req, res) => {
 
       let newVault = await UserVault.create(fileVault);
       let newClientVault = await ClientVault.create(clientVault);
-      console.log('main...');
-      fileVault.type = 'update';
-      clientVault.type = 'update';
+      console.log("main...");
+      fileVault.type = "update";
+      clientVault.type = "update";
 
       let newUpdateVault = await UserVault.create(fileVault);
       let newClientUpdateVault = await ClientVault.create(clientVault);
 
-      console.log('update...');
-      fileVault.type = 'archive';
-      clientVault.type = 'archive';
+      console.log("update...");
+      fileVault.type = "archive";
+      clientVault.type = "archive";
 
       let newArchiveVault = await UserVault.create(fileVault);
       let newClientArchiveVault = await ClientVault.create(clientVault);
-      console.log('archive...');
+      console.log("archive...");
 
       let response = {
         status_code: 204,
 
-        message: 'vaults created',
+        message: "vaults created",
       };
-
-      console.log(newVault, newClientVault);
-      console.log(newUpdateVault, newClientUpdateVault);
-      console.log(newArchiveVault, newClientArchiveVault);
 
       return res.status(200).json(response);
     } else {
       let response = {
         status_code: 200,
 
-        message: 'user vault already exists',
+        message: "user vault already exists",
       };
 
       return res.status(200).json(response);
     }
   } catch (error) {
     return res.status(405).json({
-      status: 'fail',
+      status: "fail",
       message: error.message,
     });
   }
@@ -105,7 +107,7 @@ exports.updateUserVault = async (req, res) => {
       existingClientVault.length === 3 &&
       user
     ) {
-      console.log('found');
+      console.log("found");
       userVault.forEach(async (e) => {
         await UserVault.findOneAndUpdate(
           { userId: e.userId, type: e.type },
@@ -129,7 +131,7 @@ exports.updateUserVault = async (req, res) => {
       let response = {
         status_code: 200,
 
-        data: 'updated Vaults',
+        data: "updated Vaults",
       };
 
       return res.status(200).json(response);
@@ -137,7 +139,7 @@ exports.updateUserVault = async (req, res) => {
       let response = {
         status_code: 404,
 
-        message: 'user vault does not exists',
+        message: "user vault does not exists",
       };
 
       return res.status(404).json(response);
@@ -145,7 +147,7 @@ exports.updateUserVault = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(405).json({
-      status: 'fail',
+      status: "fail",
       message: error.message,
     });
   }
@@ -154,13 +156,12 @@ exports.updateUserVault = async (req, res) => {
 exports.getUserVault = async (req, res, next) => {
   try {
     let id = req.params.userId;
-    console.log(id);
     let vault = await UserVault.find({ userId: id });
     let clientVault = await ClientVault.find({ userId: id });
     if (vault.length === 3 && clientVault.length === 3) {
       let response = {
         status_code: 200,
-        message: '',
+        message: "",
         data: {
           vaults: vault,
           clientVaults: clientVault,
@@ -170,13 +171,13 @@ exports.getUserVault = async (req, res, next) => {
     } else {
       let response = {
         status_code: 200,
-        message: '',
+        message: "",
       };
       res.status(200).json(response);
     }
   } catch (error) {
     res.status(405).json({
-      status: 'fail',
+      status: "fail",
       message: error.message,
     });
   }
@@ -185,10 +186,9 @@ exports.getUserVault = async (req, res, next) => {
 exports.updateMainVault = async (req, res, next) => {
   try {
     let reqBody = req.body;
-    console.log(reqBody);
     let vaultType = reqBody.vault;
     reqBody.vault = undefined;
-    if (vaultType === 'file') {
+    if (vaultType === "file") {
       let fileVault = await UserVault.findOneAndUpdate(
         {
           userId: reqBody.userId,
@@ -197,9 +197,8 @@ exports.updateMainVault = async (req, res, next) => {
         reqBody,
         { new: true }
       );
-      console.log(fileVault);
     }
-    if (vaultType === 'client') {
+    if (vaultType === "client") {
       let clientVault = await ClientVault.findOneAndUpdate(
         {
           userId: reqBody.userId,
@@ -208,7 +207,6 @@ exports.updateMainVault = async (req, res, next) => {
         reqBody,
         { new: true }
       );
-      console.log(clientVault);
     }
     // let clientVault = await ClientVault.findOne({
     //   userId: reqBody.userId,
@@ -216,11 +214,11 @@ exports.updateMainVault = async (req, res, next) => {
     // });
 
     res.status(200).json({
-      status: 'success',
+      status: "success",
     });
   } catch (error) {
     res.status(405).json({
-      status: 'fail',
+      status: "fail",
       message: error.message,
     });
   }
@@ -231,64 +229,65 @@ exports.updateArchiveVault = async (req, res, next) => {
     let reqBody = req.body;
     let vaultType = reqBody.vault;
     reqBody.vault = undefined;
-    if (vaultType === 'file') {
-      
-      let archive = {userId: reqBody.userId,
-        type: 'archive',
-        passwords:reqBody.passwordsArchive }
+    if (vaultType === "file") {
+      let archive = {
+        userId: reqBody.userId,
+        type: "archive",
+        passwords: reqBody.passwordsArchive,
+      };
 
-      let main = {userId: reqBody.userId,
-        type: 'main',
-        passwords:reqBody.passwordsMain }
-      console.log(archive)
-      console.log(main)
+      let main = {
+        userId: reqBody.userId,
+        type: "main",
+        passwords: reqBody.passwordsMain,
+      };
+
       let fileVaultArchive = await UserVault.findOneAndUpdate(
-          {
-            userId: archive.userId,
-            type: archive.type,
-          },
-          archive,
-          { new: true }
-        );
+        {
+          userId: archive.userId,
+          type: archive.type,
+        },
+        archive,
+        { new: true }
+      );
       let fileVaultMain = await UserVault.findOneAndUpdate(
-          {
-            userId: main.userId,
-            type: main.type,
-          },
-          main,
-          { new: true }
-        );
-        console.log(fileVaultArchive);
-        console.log(fileVaultMain);
+        {
+          userId: main.userId,
+          type: main.type,
+        },
+        main,
+        { new: true }
+      );
     }
-    if (vaultType === 'client') {
-      let archive = {userId: reqBody.userId,
-        type: 'archive',
-        clients:reqBody.clientsArchive }
+    if (vaultType === "client") {
+      let archive = {
+        userId: reqBody.userId,
+        type: "archive",
+        clients: reqBody.clientsArchive,
+      };
 
-      let main = {userId: reqBody.userId,
-        type: 'main',
-        clients:reqBody.clientsMain }
-      console.log(archive)
-      console.log(main)
+      let main = {
+        userId: reqBody.userId,
+        type: "main",
+        clients: reqBody.clientsMain,
+      };
+
       let clientVaultArchive = await UserVault.findOneAndUpdate(
-          {
-            userId: archive.userId,
-            type: archive.type,
-          },
-          archive,
-          { new: true }
-        );
+        {
+          userId: archive.userId,
+          type: archive.type,
+        },
+        archive,
+        { new: true }
+      );
       let clientVaultMain = await UserVault.findOneAndUpdate(
-          {
-            userId: main.userId,
-            type: main.type,
-          },
-          main,
-          { new: true }
-        );
-        console.log(clientVaultArchive);
-        console.log(clientVaultMain);
+        {
+          userId: main.userId,
+          type: main.type,
+        },
+        main,
+        { new: true }
+      );
     }
     // let clientVault = await ClientVault.findOne({
     //   userId: reqBody.userId,
@@ -296,11 +295,11 @@ exports.updateArchiveVault = async (req, res, next) => {
     // });
 
     res.status(200).json({
-      status: 'success',
+      status: "success",
     });
   } catch (error) {
     res.status(405).json({
-      status: 'fail',
+      status: "fail",
       message: error.message,
     });
   }
@@ -308,15 +307,14 @@ exports.updateArchiveVault = async (req, res, next) => {
 
 exports.getStatus = async (req, res, next) => {
   try {
-      let response = {
-        status_code: 200,
-        message: 'online',
-        
-      };
-      res.status(200).json(response);
+    let response = {
+      status_code: 200,
+      message: "online",
+    };
+    res.status(200).json(response);
   } catch (error) {
     res.status(400).json({
-      status: 'fail',
+      status: "fail",
       message: error.message,
     });
   }

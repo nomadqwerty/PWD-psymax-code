@@ -18,6 +18,7 @@ let encryptOnLoginA = async (
   setUpdateFileVault,
   setUpdateClientVault
 ) => {
+  console.log('A');
   let vault = response.data.data;
   let pass = userData.password;
   let ePass = userData.emergencyPassword;
@@ -191,7 +192,7 @@ let encryptOnLoginA = async (
 
 //////////////////////////////////////////
 
-async (
+let encryptOnLoginB = async (
   clientVault,
   fileVault,
   response,
@@ -203,6 +204,7 @@ async (
   setUpdateFileVault,
   setUpdateClientVault
 ) => {
+  console.log('B');
   let vault = response.data.data;
   let pass = userData.password;
   let ePass = userData.emergencyPassword;
@@ -221,7 +223,6 @@ async (
     if (keysLength > 0) {
       const { masterKey, iv, dualKeyOne, dualKeyTwo, dualMasterKey, backUpIv } =
         allKeys;
-      // console.log(allKeys);
 
       let fileUintArr = [];
 
@@ -278,7 +279,6 @@ async (
 
       recoveryKeyArr = new Uint8Array(recoveryKeyArr);
 
-      // console.log(recoveryKeyArr);
       // TODO: Import decrypt FN
       let recoveryKeyDec = await decryptData(
         operations,
@@ -296,18 +296,15 @@ async (
       );
 
       backUpMaster = await backUpMaster;
-      // console.log(backUpMaster, masterKey);
       // file
       let decryptedFiles = [];
       let decryptedArchive = [];
-      console.log(encryptedVaults);
       encryptedVaults[0].forEach(async (e) => {
         let dataDec = await decryptData(operations, backUpMaster, iv, e.data);
 
         dataDec.type = e.type;
 
         if (dataDec.type !== 'archive') {
-          console.log(dataDec);
           decryptedFiles.push(dataDec);
         } else {
           decryptedArchive.push(dataDec);
@@ -363,13 +360,11 @@ async (
                 vault: 'file',
               }
             );
-            console.log(archiveUpdateRes);
           }
 
           const mergedVaults = vaultMerger('file', updateVault, mainVault);
 
           let newMainVault = { data: mergedVaults, type: 'main' };
-          console.log(newMainVault);
           // TODO: add state to params
           setFileVault(newMainVault);
           const encMainVault = await encryptData(
@@ -400,11 +395,8 @@ async (
       encryptedVaults[1].forEach(async (e) => {
         let dataDec = await decryptData(operations, backUpMaster, iv, e.data);
 
-        // console.log(dataDec);
-
         dataDec.type = e.type;
         if (dataDec.type !== 'archive') {
-          console.log(dataDec);
           decryptedClients.push(dataDec);
         } else {
           decClientArchive.push(dataDec);
@@ -458,13 +450,11 @@ async (
                 vault: 'client',
               }
             );
-            console.log(archiveUpdateRes);
           }
 
           const mergedVaults = vaultMerger('client', updateVault, mainVault);
 
           let newMainVault = { data: mergedVaults, type: 'main' };
-          console.log(newMainVault);
           // TODO: add new main vault to state
           setClientVault(newMainVault);
           const encMainVault = await encryptData(
@@ -489,7 +479,7 @@ async (
       });
 
       // // TODO: add vault to state, add keys to ram.
-      localStorage.setItem('dualKeyOne', dualKeyOne);
+      sessionStorage.setItem('dualKeyOne', dualKeyOne);
       setServerVault(vault);
       setUpdateFileVault({
         data: [],
@@ -502,15 +492,106 @@ async (
     }
   }
 };
-//   ( clientVault,
-//     fileVault,
-//     response,
-//     userData,
-//     operations,
-//     setFileVault,
-//     setClientVault,
-//     setServerVault,
-//     setUpdateFileVault,
-//     setUpdateClientVault);
+///////////////////////////////
+const fetchData_encrypyOnLogout = async (
+  fileVault,
+  clientVault,
+  serverVault,
+  updateFileVault,
+  updateClientVault,
+  router
+) => {
+  try {
+    let fileVaultLength = Object.keys(fileVault).length;
+    let clientVaultLength = Object.keys(clientVault).length;
+    let serverVaultLength = Object.keys(serverVault).length;
+    let updateFileVaultLength = Object.keys(updateFileVault).length;
+    let updateClientVaultLength = Object.keys(updateClientVault).length;
+    let userData = localStorage.getItem('psymax-user-data');
 
-export { encryptOnLoginA };
+    if (
+      fileVaultLength > 0 &&
+      clientVaultLength > 0 &&
+      serverVaultLength > 0 &&
+      updateFileVaultLength > 0 &&
+      updateClientVaultLength > 0 &&
+      userData
+    ) {
+      userData = JSON.parse(userData);
+
+      // TODO: encrypt update vault.
+      const operations = window.crypto.subtle || window.crypto.webkitSubtle;
+      let pass = userData.password;
+      let ePass = userData.emergencyPassword;
+      let dualKeySalt = serverVault.dualKeySalt;
+      let masterKeySalt = serverVault.masterKeySalt;
+
+      let allKeys = await deriveAllKeys(
+        pass,
+        ePass,
+        dualKeySalt,
+        masterKeySalt,
+        window
+      );
+      let keysLength = Object.keys(allKeys).length;
+      if (keysLength > 0) {
+        const {
+          masterKey,
+          iv,
+          dualKeyOne,
+          dualKeyTwo,
+          dualMasterKey,
+          backUpIv,
+          recoveryKeyEnc,
+        } = allKeys;
+
+        const fileUpdateEnc = await encryptData(
+          operations,
+          masterKey,
+          iv,
+          updateFileVault
+        );
+        let fileUpdateUint = new Uint8Array(fileUpdateEnc);
+
+        const clientUpdateEnc = await encryptData(
+          operations,
+          masterKey,
+          iv,
+          updateClientVault
+        );
+        let clientUpdateUint = new Uint8Array(clientUpdateEnc);
+
+        console.log(fileUpdateUint, clientUpdateUint);
+
+        // TODO: send update vault to DB.
+        await axiosInstance.post(`/vault/user/update/main`, {
+          userId: userData._id,
+          type: 'update',
+          passwords: Array.from(fileUpdateUint),
+          vault: 'file',
+        });
+        await axiosInstance.post(`/vault/user/update/main`, {
+          userId: userData._id,
+          type: 'update',
+          clients: Array.from(clientUpdateUint),
+          vault: 'client',
+        });
+      }
+    }
+
+    const response = await axiosInstance.delete(`/logout`);
+    if (response?.status === 200) {
+      localStorage.removeItem('psymax-token');
+      localStorage.removeItem('psymax-user-data');
+      localStorage.removeItem('psymax-is-admin');
+      localStorage.removeItem('psymax-loggedin');
+
+      router.push('/login');
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+    router.push('/login');
+  }
+};
+
+export { encryptOnLoginA, encryptOnLoginB, fetchData_encrypyOnLogout };

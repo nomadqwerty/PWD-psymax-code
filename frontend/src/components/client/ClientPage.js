@@ -8,6 +8,7 @@ import axiosInstance from '../../utils/axios';
 import ModelDialogue from '../../components/Dialog/ModelDialogue';
 import { handleApiError } from '../../utils/apiHelpers';
 import { KlientContext } from '../../context/klient.context';
+import clientContext from '../../context/client.context';
 import PrivateRoute from '../../components/PrivateRoute';
 import {
   AddNewClient,
@@ -40,10 +41,20 @@ import {
 } from '../../components/client/Data';
 
 const ClientPage = () => {
+  // TODO: set client states to context.
+  const { clientState } = useContext(clientContext);
+
+  const {
+    activeKlients,
+    setActiveKlients,
+    archivedKlients,
+    setArchivedKlients,
+    newKlients,
+    setNewKlients,
+  } = clientState;
+
   const [search, setSearch] = useState(null);
-  const [activeKlients, setActiveKlients] = useState([]);
-  const [archivedKlients, setArchivedKlients] = useState([]);
-  const [newKlients, setNewKlients] = useState([]);
+
   const [open, setOpen] = useState(false);
   const [actionTitle, setActionTitle] = useState('');
   const [confirmTxt, setConfirmTxt] = useState('');

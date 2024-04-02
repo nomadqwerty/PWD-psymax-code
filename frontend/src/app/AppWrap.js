@@ -7,6 +7,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import Head from 'next/head';
 import { AuthProvider } from '@/context/auth.context';
 import { KlientProvider } from '@/context/klient.context';
+import { ClientProvider } from '@/context/client.context';
 import { ProviderKonto } from '@/context/konto.context';
 import { VaultProvider } from '@/context/vault.context';
 import { registerSW } from '@/utils/pwaUtils';
@@ -77,23 +78,25 @@ function MyAppWrap({ Component, pageProps, children }) {
           <AuthProvider>
             <VaultProvider>
               <ProviderKonto>
-                <Head>
-                  <meta charSet="utf-8" />
-                  <link rel="icon" href="/favicon.svg" />
-                  <meta
-                    name="viewport"
-                    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-                  />
-                  <meta name="description" content="Psymax" />
-                  <title>Psymax</title>
-                </Head>
-                <VaultSession>
-                  <ConnectionChecker
-                    registeredServiceWorker={registeredServiceWorker}
-                  >
-                    {children}
-                  </ConnectionChecker>
-                </VaultSession>
+                <ClientProvider>
+                  <Head>
+                    <meta charSet="utf-8" />
+                    <link rel="icon" href="/favicon.svg" />
+                    <meta
+                      name="viewport"
+                      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+                    />
+                    <meta name="description" content="Psymax" />
+                    <title>Psymax</title>
+                  </Head>
+                  <VaultSession>
+                    <ConnectionChecker
+                      registeredServiceWorker={registeredServiceWorker}
+                    >
+                      {children}
+                    </ConnectionChecker>
+                  </VaultSession>
+                </ClientProvider>
               </ProviderKonto>
             </VaultProvider>
           </AuthProvider>

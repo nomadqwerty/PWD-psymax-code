@@ -265,15 +265,16 @@ const save = async (req, res, next) => {
     const requestBody = req.body;
 
     if (requestBody?.password) {
-      const passwordStrength = zxcvbn(requestBody?.password);
+      // TODO: fix vault errors based on password change: Account recovery
+      // const passwordStrength = zxcvbn(requestBody?.password);
 
-      if (passwordStrength?.score < 3) {
-        let response = {
-          status_code: 400,
-          message: 'Das Passwort sollte sicher sein',
-        };
-        return res.status(400).send(response);
-      }
+      // if (passwordStrength?.score < 3) {
+      //   let response = {
+      //     status_code: 400,
+      //     message: 'Das Passwort sollte sicher sein',
+      //   };
+      //   return res.status(400).send(response);
+      // }
     }
     
     const userDetailsSchema = Joi.object({
@@ -301,7 +302,7 @@ const save = async (req, res, next) => {
       invoiceEmail: Joi.string().email().allow(''),
       StandardSalesTax: Joi.string().allow(''),
       confirmPassword: Joi.string().allow(''),
-      password: Joi.string().allow(''),
+      // password: Joi.string().allow(''),
       Authentifizierungscode: Joi.string().allow(''),
     });
 
@@ -359,7 +360,7 @@ const save = async (req, res, next) => {
         }
         finalChiffre = chiffre + nextChar;
       }
-      const encryptedPassword = await bcrypt.hash(requestBody?.password, 10);
+      // const encryptedPassword = await bcrypt.hash(requestBody?.password, 10);
       user.Anrede = requestBody?.Anrede;
       user.Titel = requestBody?.Titel;
       user.Vorname = requestBody?.Vorname;
@@ -385,7 +386,7 @@ const save = async (req, res, next) => {
       user.invoiceEmail = requestBody?.invoiceEmail;
       user.StandardSalesTax = requestBody?.StandardSalesTax;
       user.confirmPassword = requestBody?.confirmPassword;
-      user.password = encryptedPassword;
+      // user.password = encryptedPassword;
       user.Authentifizierungscode = requestBody?.Authentifizierungscode;
       user.isAdmin = 0;
       // user.isFirst = 0;

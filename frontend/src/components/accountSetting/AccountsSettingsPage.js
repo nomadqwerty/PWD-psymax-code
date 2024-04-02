@@ -190,27 +190,22 @@ const AccountSettingsPage = React.memo(() => {
         confirmPassword: finalData?.confirmPassword,
         Authentifizierungscode: finalData?.Authentifizierungscode,
         IBAN: finalData?.IBAN,
-        password: finalData?.password,
+        // password: finalData?.password,
       };
+      console.log(finalDatas);
+      const response = await axiosInstance.post('/user/save', finalDatas);
 
-      if (operations) {
-        const response = await axiosInstance.post('/user/save', finalDatas);
-
-        if (response?.status === 200) {
-          const responseData = response?.data?.data;
-          localStorage.setItem('psymax-loggedin', true);
-          localStorage.setItem('psymax-token', responseData?.token);
-          localStorage.setItem(
-            'psymax-user-data',
-            JSON.stringify(responseData)
-          );
-          localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
-          dispatch({
-            type: 'LOGIN',
-            payload: { isLoggedin: true, userData: responseData },
-          });
-          // router.push('/dashboard');
-        }
+      if (response?.status === 200) {
+        const responseData = response?.data?.data;
+        localStorage.setItem('psymax-loggedin', true);
+        localStorage.setItem('psymax-token', responseData?.token);
+        localStorage.setItem('psymax-user-data', JSON.stringify(responseData));
+        localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
+        dispatch({
+          type: 'LOGIN',
+          payload: { isLoggedin: true, userData: responseData },
+        });
+        router.push('/dashboard');
       }
     } catch (error) {
       handleApiError(error, router);
@@ -456,7 +451,7 @@ const AccountSettingsPage = React.memo(() => {
             setKontoData={setKontoData}
             register={register}
           />
-          <Password
+          {/* <Password
             spacing={spacing}
             kontoData={kontoData}
             setKontoData={setKontoData}
@@ -464,7 +459,7 @@ const AccountSettingsPage = React.memo(() => {
             register={register}
             getValues={getValues}
             errors={errors}
-          />
+          /> */}
           {/* TwoFA */}
           <TwoFaktorAuthentifizierung spacing={spacing} />
 

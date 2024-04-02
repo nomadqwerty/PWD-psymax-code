@@ -1,15 +1,21 @@
 'use client';
 import { Grid, useMediaQuery } from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '../../../utils/axios';
 import AppLayout from '../../../components/AppLayout';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import ModelDialogue from '../../../components/Dialog/ModelDialogue';
 import { handleApiError } from '../../../utils/apiHelpers';
 import PrivateRoute from '../../../components/PrivateRoute';
+import clientContext from '@/context/client.context';
+import {
+  deriveAllKeys,
+  encryptData,
+  passwordGenerator,
+} from '@/utils/utilityFn';
 import {
   CipherHeader,
   PersonalData,
@@ -46,8 +52,30 @@ import {
   Remove,
 } from '../../../components/client/add/InputsAndButtonsB';
 
+import vaultContext from '@/context/vault.context';
+
 const ClientAddEdit = React.memo(() => {
   const params = useParams();
+
+  const { vaultState } = useContext(vaultContext);
+  const { clientState } = useContext(clientContext);
+  //
+  const {
+    fileVault,
+    clientVault,
+    serverVault,
+    updateFileVault,
+    updateClientVault,
+  } = vaultState;
+
+  const {
+    activeKlients,
+    setActiveKlients,
+    archivedKlients,
+    setArchivedKlients,
+    newKlients,
+    setNewKlients,
+  } = clientState;
 
   const {
     register,
@@ -150,19 +178,82 @@ const ClientAddEdit = React.memo(() => {
       // perform checks if data exists.
       // encrypt client using client password+client salt.
       // store client password in vault.
-      if (isEdit) {
-        data.id = params?.id;
-        delete data?.Chiffre;
-        delete data?.userChiffre;
-        response = await axiosInstance.put('/klient/update', data);
-      } else {
-        response = await axiosInstance.post('/klient/save', data);
-      }
+      const operations = window.crypto.subtle || window.crypto.webkitSubtle;
+      let serverVaultLength = Object.keys(serverVault).length;
+      let userData = localStorage.getItem('psymax-user-data');
+      if (serverVaultLength > 0 && userData) {
+        userData = JSON.parse(userData);
 
-      if (response?.status === 200) {
-        const responseData = response?.data;
-        toast.success(responseData?.message);
-        router.push('/dashboard/klientinnen');
+        let pass = passwordGenerator();
+        let ePass = userData.emergencyPassword;
+        let dualKeySalt = serverVault.dualKeySalt;
+        let masterKeySalt = serverVault.masterKeySalt;
+
+        let allKeys = await deriveAllKeys(
+          pass,
+          ePass,
+          dualKeySalt,
+          masterKeySalt,
+          window
+        );
+        let keysLength = Object.keys(allKeys).length;
+        if (keysLength > 0) {
+          const { masterKey, iv } = allKeys;
+
+          const fieldsToEncrypt = [
+            'Anrede',
+            'Titel',
+            'Firma',
+            'Vorname',
+            'Nachname',
+            'Strasse_und_Hausnummer',
+            'PLZ',
+            'Ort',
+            'Land',
+            'Diagnose',
+            'Geburtsdatum',
+            'ArztTitel',
+            'ArztAnrede',
+            'ArztVorname',
+            'ArztNachname',
+            'ArztStrasse_und_Hausnummer',
+            'ArztPLZ',
+            'ArztOrt',
+            'ArztLand',
+          ];
+          for (let i = 0; i < fieldsToEncrypt.length; i++) {
+            const dataField = data[fieldsToEncrypt[i]];
+            const encField = await encryptData(
+              operations,
+              masterKey,
+              iv,
+              dataField
+            );
+            const uintField = new Uint8Array(encField);
+            const arrayField = Array.from(uintField);
+            data[fieldsToEncrypt[i]] = arrayField;
+          }
+        }
+
+        // TODO: encrypt client data fields.
+
+        if (isEdit) {
+          data.id = params?.id;
+          delete data?.Chiffre;
+          delete data?.userChiffre;
+          // response = await axiosInstance.put('/klient/update', data);
+        } else {
+          data.isEncrypted = true;
+          console.log(data);
+          response = await axiosInstance.post('/klient/save', data);
+          // TODO: Add client key and id to client vault
+        }
+
+        if (response?.status === 200) {
+          const responseData = response?.data;
+          toast.success(responseData?.message);
+          router.push('/dashboard/klientinnen');
+        }
       }
     } catch (error) {
       handleApiError(error, router);
@@ -214,6 +305,23 @@ const ClientAddEdit = React.memo(() => {
         }
       }
       fetchData();
+    }
+  }, [params]);
+
+  useEffect(() => {
+    if (params?.id) {
+      let clients = [...activeKlients, ...archivedKlients, ...newKlients];
+      if (clients.length > 0) {
+        clients.forEach((client) => {
+          if (client._id === params.id) {
+            if (client.isEncrypted) {
+              // TODO: decrypt client
+            } else {
+              console.log('client is not encrypted.');
+            }
+          }
+        });
+      }
     }
   }, [params]);
 

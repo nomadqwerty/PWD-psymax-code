@@ -63,6 +63,7 @@ const ClientAddEdit = React.memo(() => {
   const {
     fileVault,
     clientVault,
+    setClientVault,
     serverVault,
     updateFileVault,
     updateClientVault,
@@ -255,6 +256,16 @@ const ClientAddEdit = React.memo(() => {
 
             let updateVault = {
               data: [
+                ...updateClientVault.data,
+                {
+                  clientId: response.data.data._id,
+                  clientKey: pass,
+                },
+              ],
+              type: 'update',
+            };
+            let mainVault = {
+              data: [
                 ...clientVault.data,
                 {
                   clientId: response.data.data._id,
@@ -265,7 +276,7 @@ const ClientAddEdit = React.memo(() => {
             };
 
             setUpdateClientVault(updateVault);
-
+            setClientVault(mainVault);
             const vaultEnc = await encryptData(
               operations,
               clientKeys.masterKey,

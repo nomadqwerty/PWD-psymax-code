@@ -451,10 +451,10 @@ let encryptOnLoginB = async (
               }
             );
           }
-
           const mergedVaults = vaultMerger('client', updateVault, mainVault);
 
           let newMainVault = { data: mergedVaults, type: 'main' };
+          console.log(newMainVault);
           // TODO: add new main vault to state
           setClientVault(newMainVault);
           const encMainVault = await encryptData(

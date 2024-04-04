@@ -10,6 +10,8 @@ import { handleApiError } from '../../utils/apiHelpers';
 import { KlientContext } from '../../context/klient.context';
 import clientContext from '../../context/client.context';
 import PrivateRoute from '../../components/PrivateRoute';
+import vaultContext from '@/context/vault.context';
+import { decryptData, deriveAllKeys } from '@/utils/utilityFn';
 import {
   AddNewClient,
   Cipher,
@@ -43,6 +45,9 @@ import {
 const ClientPage = () => {
   // TODO: set client states to context.
   const { clientState } = useContext(clientContext);
+  const { vaultState } = useContext(vaultContext);
+
+  const { clientVault, serverVault } = vaultState;
 
   const {
     activeKlients,
@@ -398,6 +403,81 @@ const ClientPage = () => {
     newSelectedKlients,
     newKlients,
   ]);
+
+  useEffect(() => {
+    if (activeKlients.length > 0 && clientVault.data?.length > 0) {
+      console.log(activeKlients);
+      console.log(clientVault);
+      let fieldsToDec = [
+        'Anrede',
+        'Titel',
+        'Firma',
+        'Vorname',
+        'Nachname',
+        'Strasse_und_Hausnummer',
+        'PLZ',
+        'Ort',
+        'Land',
+        'Diagnose',
+        'Geburtsdatum',
+        'ArztTitel',
+        'ArztAnrede',
+        'ArztVorname',
+        'ArztNachname',
+        'ArztStrasse_und_Hausnummer',
+        'ArztPLZ',
+        'ArztOrt',
+        'ArztLand',
+      ];
+      const operations = window.crypto.subtle || window.crypto.webkitSubtle;
+      clientVault.data.forEach(async (vault) => {
+        let clientId = vault.clientId;
+        let clientKey = vault.clientKey;
+
+        console.log(clientId);
+        console.log(clientKey);
+        let serverVaultLength = Object.keys(serverVault).length;
+        let userData = localStorage.getItem('psymax-user-data');
+        if (serverVaultLength > 0 && userData) {
+          userData = JSON.parse(userData);
+
+          let pass = clientKey;
+          let ePass = userData.emergencyPassword;
+          let dualKeySalt = serverVault.dualKeySalt;
+          let masterKeySalt = serverVault.masterKeySalt;
+          console.log(pass, ePass, dualKeySalt, masterKeySalt);
+          if (pass && ePass && dualKeySalt && masterKeySalt) {
+            let allKeys = await deriveAllKeys(
+              pass,
+              ePass,
+              dualKeySalt,
+              masterKeySalt,
+              window
+            );
+            console.log(allKeys);
+          }
+          // activeKlients.forEach(async (client) => {
+          //   if (clientId === client._id) {
+          //     console.log(client);
+          //     for (let i = 0; i < fieldsToDec.length; i++) {
+          //       const dataField = client[fieldsToDec[i]];
+
+          //       // const encField = await encryptData(
+          //       //   operations,
+          //       //   masterKey,
+          //       //   iv,
+          //       //   dataField
+          //       // );
+          //       // const uintField = new Uint8Array(encField);
+          //       // const arrayField = Array.from(uintField);
+          //       // data[fieldsToEncrypt[i]] = arrayField;
+          //     }
+          //   }
+          // });
+        }
+      });
+    }
+  }, [activeKlients]);
 
   return (
     <AppLayout>

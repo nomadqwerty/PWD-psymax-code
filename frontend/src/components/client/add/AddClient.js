@@ -66,6 +66,7 @@ const ClientAddEdit = React.memo(() => {
     serverVault,
     updateFileVault,
     updateClientVault,
+    setUpdateClientVault,
   } = vaultState;
 
   const {
@@ -196,8 +197,16 @@ const ClientAddEdit = React.memo(() => {
           masterKeySalt,
           window
         );
+        let clientKeys = await deriveAllKeys(
+          userData.password,
+          ePass,
+          dualKeySalt,
+          masterKeySalt,
+          window
+        );
         let keysLength = Object.keys(allKeys).length;
-        if (keysLength > 0) {
+        let clientKeyLength = Object.keys(clientKeys).length;
+        if (keysLength > 0 && clientKeyLength > 0) {
           const { masterKey, iv } = allKeys;
 
           const fieldsToEncrypt = [
@@ -233,21 +242,53 @@ const ClientAddEdit = React.memo(() => {
             const arrayField = Array.from(uintField);
             data[fieldsToEncrypt[i]] = arrayField;
           }
+          if (isEdit) {
+            data.id = params?.id;
+            delete data?.Chiffre;
+            delete data?.userChiffre;
+            // response = await axiosInstance.put('/klient/update', data);
+          } else {
+            data.isEncrypted = true;
+            console.log(data);
+            response = await axiosInstance.post('/klient/save', data);
+            // TODO: Add client key and id to client vault
+
+            let updateVault = {
+              data: [
+                ...clientVault.data,
+                {
+                  clientId: response.data.data._id,
+                  clientKey: pass,
+                },
+              ],
+              type: 'update',
+            };
+
+            setUpdateClientVault(updateVault);
+
+            const vaultEnc = await encryptData(
+              operations,
+              clientKeys.masterKey,
+              clientKeys.iv,
+              updateVault
+            );
+            console.log(vaultEnc);
+            let clientUpdateUint = new Uint8Array(vaultEnc);
+            console.log(clientUpdateUint);
+            let clientVaultRes = await axiosInstance.post(
+              `/vault/user/update/main`,
+              {
+                userId: userData._id,
+                type: 'update',
+                clients: Array.from(clientUpdateUint),
+                vault: 'client',
+              }
+            );
+            console.log(clientVaultRes);
+          }
         }
 
         // TODO: encrypt client data fields.
-
-        if (isEdit) {
-          data.id = params?.id;
-          delete data?.Chiffre;
-          delete data?.userChiffre;
-          // response = await axiosInstance.put('/klient/update', data);
-        } else {
-          data.isEncrypted = true;
-          console.log(data);
-          response = await axiosInstance.post('/klient/save', data);
-          // TODO: Add client key and id to client vault
-        }
 
         if (response?.status === 200) {
           const responseData = response?.data;

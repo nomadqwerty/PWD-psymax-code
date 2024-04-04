@@ -293,94 +293,13 @@ const ClientPage = () => {
         `/klient/getActive?page=${pagenum}&pageSize=${process.env.NEXT_PUBLIC_PAGINATION_LIMIT}`
       );
       const clientList = getActive?.data?.data?.list;
-      if (clientVault?.data?.length >= 0) {
-        let fieldsToDec = [
-          'Anrede',
-          'Titel',
-          'Firma',
-          'Vorname',
-          'Nachname',
-          'Strasse_und_Hausnummer',
-          'PLZ',
-          'Ort',
-          'Land',
-          'Diagnose',
-          'Geburtsdatum',
-          'ArztTitel',
-          'ArztAnrede',
-          'ArztVorname',
-          'ArztNachname',
-          'ArztStrasse_und_Hausnummer',
-          'ArztPLZ',
-          'ArztOrt',
-          'ArztLand',
-        ];
-        const operations = window.crypto.subtle || window.crypto.webkitSubtle;
 
-        console.log(clientList);
-        console.log(clientVault);
-        //       let clientId = vault.clientId;
-        //       let clientKey = vault.clientKey;
-
-        //       console.log(clientId);
-        //       console.log(clientKey);
-        //       let serverVaultLength = Object.keys(serverVault).length;
-        //       let userData = localStorage.getItem('psymax-user-data');
-        clientVault.data.forEach(async (vault) => {
-          let clientId = vault.clientId;
-          let clientKey = vault.clientKey;
-
-          console.log(clientId);
-          console.log(clientKey);
-          let serverVaultLength = Object.keys(serverVault).length;
-          let userData = localStorage.getItem('psymax-user-data');
-          if (serverVaultLength > 0 && userData) {
-            userData = JSON.parse(userData);
-
-            let pass = clientKey;
-            let ePass = userData.emergencyPassword;
-            let dualKeySalt = serverVault.dualKeySalt;
-            let masterKeySalt = serverVault.masterKeySalt;
-            console.log(pass, ePass, dualKeySalt, masterKeySalt);
-            if (pass && ePass && dualKeySalt && masterKeySalt) {
-              let allKeys = await deriveAllKeys(
-                pass,
-                ePass,
-                dualKeySalt,
-                masterKeySalt,
-                window
-              );
-              console.log(allKeys);
-              clientList.forEach(async (client) => {
-                if (clientId === client._id) {
-                  console.log(client);
-                  for (let i = 0; i < fieldsToDec.length; i++) {
-                    const dataField = client[fieldsToDec[i]];
-
-                    const decField = await decryptData(
-                      operations,
-                      allKeys.masterKey,
-                      allKeys.iv,
-                      dataField
-                    );
-                    console.log(dataField, ': ', decField);
-                    // const uintField = new Uint8Array(encField);
-                    // const arrayField = Array.from(uintField);
-                    // data[fieldsToEncrypt[i]] = arrayField;
-                  }
-                }
-              });
-            }
-          }
-        });
-        setActiveKlients(clientList);
-
-        setActivePage({
-          ...activePage,
-          pagenum: pagenum,
-          total: getActive?.data?.data?.totalCount,
-        });
-      }
+      setActiveKlients(clientList);
+      setActivePage({
+        ...activePage,
+        pagenum: pagenum,
+        total: getActive?.data?.data?.totalCount,
+      });
     } catch (error) {
       handleApiError(error, router);
     }

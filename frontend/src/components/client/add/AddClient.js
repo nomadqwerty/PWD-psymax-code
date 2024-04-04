@@ -15,6 +15,7 @@ import {
   deriveAllKeys,
   encryptData,
   passwordGenerator,
+  decryptData,
 } from '@/utils/utilityFn';
 import {
   CipherHeader,
@@ -161,6 +162,7 @@ const ClientAddEdit = React.memo(() => {
           Geburtsdatum: Geburtsdatum,
         };
         const response = await axiosInstance.post('/klient/getChiffre', data);
+
         setEditData((prevData) => ({
           ...prevData,
           ['Chiffre']: response?.data?.data,
@@ -335,6 +337,7 @@ const ClientAddEdit = React.memo(() => {
             '/klient/getById/' + params?.id
           );
           const responseData = response?.data?.data;
+          // console.log(responseData);
           const ArztData = responseData?.ArztId;
           setDefaultValues(responseData?.ArztId, 1);
           delete responseData?.ArztId;
@@ -351,29 +354,92 @@ const ClientAddEdit = React.memo(() => {
             modifiedArzt[`Arzt${key}`] = ArztData[key];
           }
 
-          setEditData({ ...responseData, ...modifiedArzt });
+          if (clientVault?.data?.length >= 0) {
+            let fieldsToDec = [
+              'Anrede',
+              'Titel',
+              'Firma',
+              'Vorname',
+              'Nachname',
+              'Strasse_und_Hausnummer',
+              'PLZ',
+              'Ort',
+              'Land',
+              'Diagnose',
+              'Geburtsdatum',
+              'ArztTitel',
+              'ArztAnrede',
+              'ArztVorname',
+              'ArztNachname',
+              'ArztStrasse_und_Hausnummer',
+              'ArztPLZ',
+              'ArztOrt',
+              'ArztLand',
+            ];
+            const operations =
+              window.crypto.subtle || window.crypto.webkitSubtle;
+            const decClientsList = [];
+
+            clientVault.data.forEach(async (vault) => {
+              let clientId = vault.clientId;
+              let clientKey = vault.clientKey;
+
+              let serverVaultLength = Object.keys(serverVault).length;
+              let userData = localStorage.getItem('psymax-user-data');
+              if (serverVaultLength > 0 && userData) {
+                userData = JSON.parse(userData);
+
+                let pass = clientKey;
+                let ePass = userData.emergencyPassword;
+                let dualKeySalt = serverVault.dualKeySalt;
+                let masterKeySalt = serverVault.masterKeySalt;
+                // console.log(pass, ePass, dualKeySalt, masterKeySalt);
+                if (
+                  pass.length > 0 &&
+                  ePass.length > 0 &&
+                  dualKeySalt.length > 0 &&
+                  masterKeySalt.length > 0
+                ) {
+                  let allKeys = await deriveAllKeys(
+                    pass,
+                    ePass,
+                    dualKeySalt,
+                    masterKeySalt,
+                    window
+                  );
+
+                  let dataObj = { ...responseData, ...modifiedArzt };
+
+                  for (let i = 0; i < fieldsToDec.length; i++) {
+                    const dataField = new Uint8Array(
+                      dataObj[fieldsToDec[i]].data
+                    );
+
+                    const decField = await decryptData(
+                      operations,
+                      allKeys.masterKey,
+                      allKeys.iv,
+                      dataField
+                    );
+
+                    dataObj[fieldsToDec[i]] = decField;
+                  }
+                  if (
+                    typeof dataObj['Anrede'] === 'string' &&
+                    typeof dataObj['Anrede'] !== '[object][object]'
+                  ) {
+                    setEditData(dataObj);
+                    console.log(dataObj);
+                  }
+                }
+              }
+            });
+          }
         } catch (error) {
           handleApiError(error, router);
         }
       }
       fetchData();
-    }
-  }, [params]);
-
-  useEffect(() => {
-    if (params?.id) {
-      let clients = [...activeKlients, ...archivedKlients, ...newKlients];
-      if (clients.length > 0) {
-        clients.forEach((client) => {
-          if (client._id === params.id) {
-            if (client.isEncrypted) {
-              // TODO: decrypt client
-            } else {
-              console.log('client is not encrypted.');
-            }
-          }
-        });
-      }
     }
   }, [params]);
 

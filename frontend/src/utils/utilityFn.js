@@ -91,12 +91,12 @@ const deriveAllKeys = async (
   masterKeySalt,
   window
 ) => {
-  console.log(pass);
-  console.log(dualKeySalt);
+  // console.log(pass);
+  // console.log(dualKeySalt);
   // TODO: derive dualkeys and master keys.
   const dualKeyOne = await psyMaxKDF(pass, dualKeySalt);
   const dualKeyTwo = await psyMaxKDF(ePass, dualKeySalt);
-  console.log(dualKeyOne);
+  // console.log(dualKeyOne);
   const masterKeyOne = await psyMaxKDF(dualKeyOne, masterKeySalt);
   const masterKeyTwo = await psyMaxKDF(dualKeyTwo, masterKeySalt);
 

@@ -96,7 +96,7 @@ const VaultSession = ({ children }) => {
           console.log('vault is empty');
         }
       }
-    }, 60000);
+    }, 10000);
 
     return () => {
       if (vaultChecker) {

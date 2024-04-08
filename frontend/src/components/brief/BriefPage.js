@@ -1,18 +1,18 @@
-"use client";
-import React, { useContext, useEffect, useRef, useState } from "react";
-import AppLayout from "../../components/AppLayout";
-import { Controller, useForm } from "react-hook-form";
-import { Grid, useMediaQuery } from "@mui/material";
-import { handleApiError } from "../../utils/apiHelpers";
-import { useRouter } from "next/navigation";
-import axiosInstance from "../../utils/axios";
-import dynamic from "next/dynamic";
-import ModelDialogue from "../../components/Dialog/ModelDialogue";
-import { AuthContext } from "../../context/auth.context";
-import { useParams } from "next/navigation";
-import { KlientContext } from "../../context/klient.context";
-import PrivateRoute from "../../components/PrivateRoute";
-import { BriefHeader, options } from "../../components/brief/HeadersAndInfo";
+'use client';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import AppLayout from '../../components/AppLayout';
+import { Controller, useForm } from 'react-hook-form';
+import { Grid, useMediaQuery } from '@mui/material';
+import { handleApiError } from '../../utils/apiHelpers';
+import { useRouter } from 'next/navigation';
+import axiosInstance from '../../utils/axios';
+import dynamic from 'next/dynamic';
+import ModelDialogue from '../../components/Dialog/ModelDialogue';
+import { AuthContext } from '../../context/auth.context';
+import { useParams } from 'next/navigation';
+import { KlientContext } from '../../context/klient.context';
+import PrivateRoute from '../../components/PrivateRoute';
+import { BriefHeader, options } from '../../components/brief/HeadersAndInfo';
 import {
   Cancel,
   Confirm,
@@ -22,7 +22,7 @@ import {
   Reference,
   SignatureFieldA,
   SignatureFieldB,
-} from "../../components/brief/InputsAndButtons";
+} from '../../components/brief/InputsAndButtons';
 
 const BriefPage = React.memo(() => {
   const params = useParams();
@@ -43,8 +43,8 @@ const BriefPage = React.memo(() => {
   const [empfaenger, setEmpfaenger] = useState({});
   const [templates, setTemplates] = useState([]);
   const [briefData, setBriefData] = useState({
-    Empfaenger: "klient",
-    Briefvorlage: "none",
+    Empfaenger: 'klient',
+    Briefvorlage: 'none',
   });
   const [open, setOpen] = useState(false);
   const editor = useRef(null);
@@ -72,7 +72,7 @@ const BriefPage = React.memo(() => {
   useEffect(() => {
     if (params?.id) {
       getTemplates();
-      handleEmpfaenger("klient");
+      handleEmpfaenger('klient');
       getKlientById(params?.id);
       const index = klientState?.brief?.indexOf(params?.id);
 
@@ -80,7 +80,7 @@ const BriefPage = React.memo(() => {
         klientState?.brief.splice(index, 1);
       }
       klientDispatch({
-        type: "BRIEF",
+        type: 'BRIEF',
         payload: {
           brief: klientState?.brief,
         },
@@ -104,46 +104,46 @@ const BriefPage = React.memo(() => {
   };
 
   const handleBriefvorlageChange = (value) => {
-    if (value !== "none") {
+    if (value !== 'none') {
       if (briefData?.Empfaenger) {
-        handleChange("Briefvorlage", value);
+        handleChange('Briefvorlage', value);
         setInhaltCommon(value, briefData?.Empfaenger);
       } else {
-        setValue("Empfaenger", "", {
+        setValue('Empfaenger', '', {
           shouldValidate: true,
         });
       }
     } else {
-      handleChange("Briefvorlage", value);
+      handleChange('Briefvorlage', value);
       setBriefData((prev) => {
         return {
           ...prev,
-          Betreff: "",
-          Inhalt: "",
+          Betreff: '',
+          Inhalt: '',
         };
       });
 
-      setValue("Betreff", "", {
+      setValue('Betreff', '', {
         shouldValidate: false,
       });
 
-      setValue("Inhalt", "", {
+      setValue('Inhalt', '', {
         shouldValidate: false,
       });
     }
   };
 
   const handleEmpfaenger = (value) => {
-    handleChange("Empfaenger", value);
+    handleChange('Empfaenger', value);
 
-    const Unterschriftsfeld1 = `${state?.userData?.Titel || ""} ${
-      state?.userData?.Vorname || ""
-    } ${state?.userData?.Nachname || ""}`;
-    const Unterschriftsfeld2 = `${state?.userData?.Berufsbezeichnung || ""}`;
-    setValue("Unterschriftsfeld1", Unterschriftsfeld1, {
+    const Unterschriftsfeld1 = `${state?.userData?.Titel || ''} ${
+      state?.userData?.Vorname || ''
+    } ${state?.userData?.Nachname || ''}`;
+    const Unterschriftsfeld2 = `${state?.userData?.Berufsbezeichnung || ''}`;
+    setValue('Unterschriftsfeld1', Unterschriftsfeld1, {
       shouldValidate: true,
     });
-    setValue("Unterschriftsfeld2", Unterschriftsfeld2, {
+    setValue('Unterschriftsfeld2', Unterschriftsfeld2, {
       shouldValidate: Unterschriftsfeld2 || false,
     });
 
@@ -155,7 +155,7 @@ const BriefPage = React.memo(() => {
       };
     });
 
-    if (briefData?.Briefvorlage !== "none") {
+    if (briefData?.Briefvorlage !== 'none') {
       setInhaltCommon(briefData?.Briefvorlage, value);
     }
   };
@@ -164,14 +164,14 @@ const BriefPage = React.memo(() => {
     const selectedTemp = templates.find((obj) => obj.templateId === value);
 
     const empfaengerData =
-      Empfaenger === "arzt" ? empfaenger?.ArztId : empfaenger;
+      Empfaenger === 'arzt' ? empfaenger?.ArztId : empfaenger;
     const dateObject = new Date(empfaenger?.Geburtsdatum);
     const Geburtsdatum = `${dateObject
       .getUTCDate()
       .toString()
-      .padStart(2, "0")}.${(dateObject.getUTCMonth() + 1)
+      .padStart(2, '0')}.${(dateObject.getUTCMonth() + 1)
       .toString()
-      .padStart(2, "0")}.${dateObject.getUTCFullYear().toString().slice(-2)}`;
+      .padStart(2, '0')}.${dateObject.getUTCFullYear().toString().slice(-2)}`;
 
     const variables = {
       KlientVorname: empfaengerData?.Vorname,
@@ -192,11 +192,11 @@ const BriefPage = React.memo(() => {
       };
     });
 
-    setValue("Betreff", selectedTemp?.subject, {
+    setValue('Betreff', selectedTemp?.subject, {
       shouldValidate: true,
     });
 
-    setValue("Inhalt", inhalt, {
+    setValue('Inhalt', inhalt, {
       shouldValidate: true,
     });
   };
@@ -204,7 +204,7 @@ const BriefPage = React.memo(() => {
   const handleBriefAction = async (option) => {
     try {
       let finalId =
-        briefData?.Empfaenger === "klient"
+        briefData?.Empfaenger === 'klient'
           ? params?.id
           : empfaenger?.ArztId?._id;
       const data = {
@@ -219,10 +219,10 @@ const BriefPage = React.memo(() => {
       const response = await axiosInstance.post(`brief/save`, data);
       const responseData = response?.data?.data;
       if (responseData) {
-        const link = document.createElement("a");
-        link.href = "data:application/pdf;base64," + responseData?.base64Pdf;
-        link.setAttribute("download", responseData?.fileName);
-        link.setAttribute("target", "_blank");
+        const link = document.createElement('a');
+        link.href = 'data:application/pdf;base64,' + responseData?.base64Pdf;
+        link.setAttribute('download', responseData?.fileName);
+        link.setAttribute('target', '_blank');
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
@@ -231,12 +231,12 @@ const BriefPage = React.memo(() => {
       if (klientState?.brief?.length > 0) {
         router.push(`/dashboard/brief/${klientState?.brief?.[0]}`);
       } else {
-        router.push("/dashboard/klientinnen");
+        router.push('/dashboard/klientinnen');
       }
       setOpen(false);
       setBriefData({
-        Empfaenger: "",
-        Briefvorlage: "none",
+        Empfaenger: '',
+        Briefvorlage: 'none',
       });
       reset();
     } catch (error) {
@@ -244,11 +244,12 @@ const BriefPage = React.memo(() => {
     }
   };
 
-  const onSubmit = () => {
+  const onSubmit = (data) => {
+    console.log(data);
     setOpen(true);
   };
 
-  const DynamicJoditEditor = dynamic(() => import("jodit-react"), {
+  const DynamicJoditEditor = dynamic(() => import('jodit-react'), {
     ssr: false,
   });
 
@@ -256,7 +257,7 @@ const BriefPage = React.memo(() => {
     setOpen(false);
   };
 
-  const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
 
   // Define the spacing based on the screen size
   const spacing = isMobile ? 0 : 2;
@@ -342,11 +343,11 @@ const BriefPage = React.memo(() => {
       <ModelDialogue
         open={open}
         setOpen={setOpen}
-        actionTitle={"Brief"}
+        actionTitle={'Brief'}
         confirmationText={
-          "Möchten Sie die Anlage(n) als PDF exportieren oder an den Empfänger versenden?"
+          'Möchten Sie die Anlage(n) als PDF exportieren oder an den Empfänger versenden?'
         }
-        agreeModel={() => console.log("hidden")}
+        agreeModel={() => console.log('hidden')}
         closeModel={closeModel}
         options={options()}
         cancelHide={false}

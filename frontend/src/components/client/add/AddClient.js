@@ -187,126 +187,146 @@ const ClientAddEdit = React.memo(() => {
       let userData = localStorage.getItem('psymax-user-data');
       if (serverVaultLength > 0 && userData) {
         userData = JSON.parse(userData);
-
-        let pass = passwordGenerator();
-        let ePass = userData.emergencyPassword;
-        let dualKeySalt = serverVault.dualKeySalt;
-        let masterKeySalt = serverVault.masterKeySalt;
-
-        let allKeys = await deriveAllKeys(
-          pass,
-          ePass,
-          dualKeySalt,
-          masterKeySalt,
-          window
-        );
-        let clientKeys = await deriveAllKeys(
-          userData.password,
-          ePass,
-          dualKeySalt,
-          masterKeySalt,
-          window
-        );
-        let keysLength = Object.keys(allKeys).length;
-        let clientKeyLength = Object.keys(clientKeys).length;
-        if (keysLength > 0 && clientKeyLength > 0) {
-          const { masterKey, iv } = allKeys;
-
-          const fieldsToEncrypt = [
-            'Anrede',
-            'Titel',
-            'Firma',
-            'Vorname',
-            'Nachname',
-            'Strasse_und_Hausnummer',
-            'PLZ',
-            'Ort',
-            'Land',
-            'Diagnose',
-            'Geburtsdatum',
-            'ArztTitel',
-            'ArztAnrede',
-            'ArztVorname',
-            'ArztNachname',
-            'ArztStrasse_und_Hausnummer',
-            'ArztPLZ',
-            'ArztOrt',
-            'ArztLand',
-          ];
-          for (let i = 0; i < fieldsToEncrypt.length; i++) {
-            const dataField = data[fieldsToEncrypt[i]];
-            const encField = await encryptData(
-              operations,
-              masterKey,
-              iv,
-              dataField
-            );
-            const uintField = new Uint8Array(encField);
-            const arrayField = Array.from(uintField);
-            data[fieldsToEncrypt[i]] = arrayField;
-          }
-          if (isEdit) {
-            data.id = params?.id;
-            delete data?.Chiffre;
-            delete data?.userChiffre;
-            // response = await axiosInstance.put('/klient/update', data);
-          } else {
-            data.isEncrypted = true;
-            console.log(data);
-            response = await axiosInstance.post('/klient/save', data);
-            // TODO: Add client key and id to client vault
-
-            let updateVault = {
-              data: [
-                ...updateClientVault.data,
-                {
-                  clientId: response.data.data._id,
-                  clientKey: pass,
-                },
-              ],
-              type: 'update',
-            };
-            let mainVault = {
-              data: [
-                ...clientVault.data,
-                {
-                  clientId: response.data.data._id,
-                  clientKey: pass,
-                },
-              ],
-              type: 'update',
-            };
-
-            setUpdateClientVault(updateVault);
-            setClientVault(mainVault);
-            const vaultEnc = await encryptData(
-              operations,
-              clientKeys.masterKey,
-              clientKeys.iv,
-              updateVault
-            );
-            console.log(vaultEnc);
-            let clientUpdateUint = new Uint8Array(vaultEnc);
-            console.log(clientUpdateUint);
-            let clientVaultRes = await axiosInstance.post(
-              `/vault/user/update/main`,
-              {
-                userId: userData._id,
-                type: 'update',
-                clients: Array.from(clientUpdateUint),
-                vault: 'client',
+        console.log(isEdit);
+        console.log(params);
+        let pass;
+        if (params?.id) {
+          if (clientVault?.data?.length >= 0) {
+            clientVault.data.forEach((vault) => {
+              let clientId = vault.clientId;
+              let clientKey = vault.clientKey;
+              if (params.id === clientId) {
+                pass = clientKey;
               }
-            );
-            console.log(clientVaultRes);
+            });
           }
+        } else {
+          pass = passwordGenerator();
         }
+        console.log(pass);
+        if (pass !== undefined) {
+          let ePass = userData.emergencyPassword;
+          let dualKeySalt = serverVault.dualKeySalt;
+          let masterKeySalt = serverVault.masterKeySalt;
 
-        // TODO: encrypt client data fields.
+          let allKeys = await deriveAllKeys(
+            pass,
+            ePass,
+            dualKeySalt,
+            masterKeySalt,
+            window
+          );
+          let clientKeys = await deriveAllKeys(
+            userData.password,
+            ePass,
+            dualKeySalt,
+            masterKeySalt,
+            window
+          );
+          let keysLength = Object.keys(allKeys).length;
+          let clientKeyLength = Object.keys(clientKeys).length;
+          if (keysLength > 0 && clientKeyLength > 0) {
+            const { masterKey, iv } = allKeys;
 
-        if (response?.status === 200) {
-          const responseData = response?.data;
-          toast.success(responseData?.message);
-          router.push('/dashboard/klientinnen');
+            const fieldsToEncrypt = [
+              'Anrede',
+              'Titel',
+              'Firma',
+              'Vorname',
+              'Nachname',
+              'Strasse_und_Hausnummer',
+              'PLZ',
+              'Ort',
+              'Land',
+              'Diagnose',
+              'Geburtsdatum',
+              'ArztTitel',
+              'ArztAnrede',
+              'ArztVorname',
+              'ArztNachname',
+              'ArztStrasse_und_Hausnummer',
+              'ArztPLZ',
+              'ArztOrt',
+              'ArztLand',
+            ];
+            for (let i = 0; i < fieldsToEncrypt.length; i++) {
+              const dataField = data[fieldsToEncrypt[i]];
+              const encField = await encryptData(
+                operations,
+                masterKey,
+                iv,
+                dataField
+              );
+              const uintField = new Uint8Array(encField);
+              const arrayField = Array.from(uintField);
+              data[fieldsToEncrypt[i]] = arrayField;
+            }
+            if (isEdit) {
+              data.id = params?.id;
+              data.isEncrypted = true;
+              delete data?.Chiffre;
+              delete data?.userChiffre;
+              console.log('here for editing');
+              console.log(data);
+              response = await axiosInstance.put('/klient/update', data);
+            } else {
+              data.isEncrypted = true;
+              console.log(data);
+              response = await axiosInstance.post('/klient/save', data);
+              // TODO: Add client key and id to client vault
+
+              let updateVault = {
+                data: [
+                  ...updateClientVault.data,
+                  {
+                    clientId: response.data.data._id,
+                    clientKey: pass,
+                  },
+                ],
+                type: 'update',
+              };
+              let mainVault = {
+                data: [
+                  ...clientVault.data,
+                  {
+                    clientId: response.data.data._id,
+                    clientKey: pass,
+                  },
+                ],
+                type: 'update',
+              };
+
+              setUpdateClientVault(updateVault);
+              setClientVault(mainVault);
+              const vaultEnc = await encryptData(
+                operations,
+                clientKeys.masterKey,
+                clientKeys.iv,
+                updateVault
+              );
+              console.log(vaultEnc);
+              let clientUpdateUint = new Uint8Array(vaultEnc);
+              console.log(clientUpdateUint);
+              let clientVaultRes = await axiosInstance.post(
+                `/vault/user/update/main`,
+                {
+                  userId: userData._id,
+                  type: 'update',
+                  clients: Array.from(clientUpdateUint),
+                  vault: 'client',
+                }
+              );
+              console.log(clientVaultRes);
+            }
+          }
+
+          // TODO: encrypt client data fields.
+
+          if (response?.status === 200) {
+            const responseData = response?.data;
+            toast.success(responseData?.message);
+            router.push('/dashboard/klientinnen');
+          }
         }
       }
     } catch (error) {
@@ -339,9 +359,9 @@ const ClientAddEdit = React.memo(() => {
           const responseData = response?.data?.data;
           // console.log(responseData);
           const ArztData = responseData?.ArztId;
-          setDefaultValues(responseData?.ArztId, 1);
+          // setDefaultValues(responseData?.ArztId, 1);
           delete responseData?.ArztId;
-          setDefaultValues(responseData);
+          // setDefaultValues(responseData);
 
           delete ArztData?._id;
           delete ArztData?.createdAt;
@@ -383,53 +403,57 @@ const ClientAddEdit = React.memo(() => {
             clientVault.data.forEach(async (vault) => {
               let clientId = vault.clientId;
               let clientKey = vault.clientKey;
+              console.log(params.id === clientId);
 
-              let serverVaultLength = Object.keys(serverVault).length;
-              let userData = localStorage.getItem('psymax-user-data');
-              if (serverVaultLength > 0 && userData) {
-                userData = JSON.parse(userData);
+              if (params.id === clientId) {
+                let serverVaultLength = Object.keys(serverVault).length;
+                let userData = localStorage.getItem('psymax-user-data');
+                if (serverVaultLength > 0 && userData) {
+                  userData = JSON.parse(userData);
 
-                let pass = clientKey;
-                let ePass = userData.emergencyPassword;
-                let dualKeySalt = serverVault.dualKeySalt;
-                let masterKeySalt = serverVault.masterKeySalt;
-                // console.log(pass, ePass, dualKeySalt, masterKeySalt);
-                if (
-                  pass.length > 0 &&
-                  ePass.length > 0 &&
-                  dualKeySalt.length > 0 &&
-                  masterKeySalt.length > 0
-                ) {
-                  let allKeys = await deriveAllKeys(
-                    pass,
-                    ePass,
-                    dualKeySalt,
-                    masterKeySalt,
-                    window
-                  );
-
-                  let dataObj = { ...responseData, ...modifiedArzt };
-
-                  for (let i = 0; i < fieldsToDec.length; i++) {
-                    const dataField = new Uint8Array(
-                      dataObj[fieldsToDec[i]].data
-                    );
-
-                    const decField = await decryptData(
-                      operations,
-                      allKeys.masterKey,
-                      allKeys.iv,
-                      dataField
-                    );
-
-                    dataObj[fieldsToDec[i]] = decField;
-                  }
+                  let pass = clientKey;
+                  let ePass = userData.emergencyPassword;
+                  let dualKeySalt = serverVault.dualKeySalt;
+                  let masterKeySalt = serverVault.masterKeySalt;
+                  // console.log(pass, ePass, dualKeySalt, masterKeySalt);
                   if (
-                    typeof dataObj['Anrede'] === 'string' &&
-                    typeof dataObj['Anrede'] !== '[object][object]'
+                    pass.length > 0 &&
+                    ePass.length > 0 &&
+                    dualKeySalt.length > 0 &&
+                    masterKeySalt.length > 0
                   ) {
-                    setEditData(dataObj);
-                    console.log(dataObj);
+                    let allKeys = await deriveAllKeys(
+                      pass,
+                      ePass,
+                      dualKeySalt,
+                      masterKeySalt,
+                      window
+                    );
+
+                    let dataObj = { ...responseData, ...modifiedArzt };
+                    console.log(responseData, modifiedArzt);
+                    for (let i = 0; i < fieldsToDec.length; i++) {
+                      const dataField = new Uint8Array(
+                        dataObj[fieldsToDec[i]].data
+                      );
+
+                      const decField = await decryptData(
+                        operations,
+                        allKeys.masterKey,
+                        allKeys.iv,
+                        dataField
+                      );
+
+                      dataObj[fieldsToDec[i]] = decField;
+                    }
+                    if (
+                      typeof dataObj['Anrede'] === 'string' &&
+                      typeof dataObj['Anrede'] !== '[object][object]'
+                    ) {
+                      setDefaultValues(dataObj);
+                      setEditData(dataObj);
+                      console.log(dataObj);
+                    }
                   }
                 }
               }

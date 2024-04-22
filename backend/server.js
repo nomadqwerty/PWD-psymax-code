@@ -1,15 +1,20 @@
 const express = require("express");
 const app = express();
-const http = require("http");
+const https = require("https");
 const cors = require("cors");
+const fs = require("fs");
+
+const key = fs.readFileSync("key.pem", "utf-8");
+const cert = fs.readFileSync("cert.pem", "utf-8");
+
 const { Server } = require("socket.io");
 
-const server = http.createServer(app);
+const server = https.createServer({ key, cert }, app);
 
 app.use(cors({ origin: "*" }));
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3001",
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
@@ -147,6 +152,10 @@ io.on("connection", (socket) => {
       console.log("added caller ice");
       socket.to(data.toId).emit("hasCallerIce", data);
     }
+  });
+  socket.on("newMessage", (data) => {
+    console.log(data, "new message");
+    socket.to(data.to).emit("incomingMessage", data);
   });
 });
 

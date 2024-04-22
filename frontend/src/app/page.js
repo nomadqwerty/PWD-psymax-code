@@ -4,7 +4,7 @@ import Link from "next/link";
 const CreateCall = () => {
   return (
     <div>
-      <Link href={"/call"}>Create call</Link>
+      <a href={"/call"}>Create call</a>
     </div>
   );
 };

@@ -1,47 +1,25 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import io from "socket.io-client";
 import { fetchUserMedia } from "@/utils/utils";
 
+const socket = io.connect("https://192.168.8.148:3000");
 const userName = "user123";
 const accessKey = "test123";
-const socket = io.connect("http://localhost:3000", {
-  auth: {
-    userName,
-    accessKey,
-  },
-});
 
-const Call = () => {
+const Answer = () => {
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [peerConnection, setPeerConnection] = useState(null);
+  const [offers, setOffers] = useState(null);
   const [didIOffer, setDidIOffer] = useState(false);
-  const [rtcAnswer, setRtcAnswer] = useState(false);
-  const [offerObject, setOfferObject] = useState(false);
-  const [answerIce, setAnswerIce] = useState(false);
+  const [callerIce, setCallerIce] = useState(false);
   const [addedIce, setAddedIce] = useState(false);
-  const [iceArray, setIceArray] = useState([]);
-
-  socket.on("answerResponse", async (offerObj) => {
-    if (offerObj?.answer?.type === "answer" && peerConnection) {
-      if (!rtcAnswer) {
-        setRtcAnswer(offerObj.answer);
-        setOfferObject(offerObj);
-      }
-    }
-  });
-  // socket.on("receivedIceCandidateFromServer", (iceCandidate) => {
-  //   if (!answerIce) {
-  //     console.log("set answer ICE, opt 1");
-  //     setAnswerIce(iceCandidate);
-  //   }
-  // });
+  const [myIce, setMyIce] = useState(false);
+  const [message, setMessage] = useState(false);
 
   useEffect(() => {
     if (socket.connected) {
-      // console.log(socket.id);
       try {
         (async () => {
           const localVideoEl = document.querySelector("#local-video");
@@ -88,11 +66,12 @@ const Call = () => {
       peerConnection.onsignalingstatechange = (event) => {
         // console.log(event);
         // console.log(peerConnection.signalingState);
-        console.log("signal change");
+        console.log("signal changed");
       };
 
       peerConnection.onicecandidate = (e) => {
         console.log("........Ice candidate found!......");
+        // console.log(e);
         if (e.candidate) {
           socket.emit("sendIceCandidateToSignalingServer", {
             iceCandidate: e.candidate,
@@ -100,6 +79,7 @@ const Call = () => {
             didIOffer,
             iceAccessKey: accessKey,
           });
+          setMyIce(e.candidate);
         }
       };
 
@@ -111,106 +91,126 @@ const Call = () => {
           console.log("Here's an exciting moment... fingers cross");
         });
       };
-
-      (async () => {
-        try {
-          console.log("Creating offer...");
-          const offer = await peerConnection.createOffer();
-
-          peerConnection.setLocalDescription(offer);
-          setDidIOffer(true);
-          socket.emit("newOffer", { offer, id: socket.id }); //send offer to signalingServer
-        } catch (err) {
-          console.log(err);
-        }
-      })();
     }
   }, [peerConnection]);
 
   useEffect(() => {
-    if (rtcAnswer) {
-      (async () => {
-        if (
-          !peerConnection.remoteDescription &&
-          peerConnection.remoteDescription === null
-        ) {
-          // console.log(rtcAnswer);
-          console.log("set remote description");
-          await peerConnection.setRemoteDescription(rtcAnswer);
+    (async () => {
+      try {
+        if (offers?.length > 0) {
+          await peerConnection.setRemoteDescription(offers[0].offer);
+          const answer = await peerConnection.createAnswer({}); //just to
+          await peerConnection.setLocalDescription(answer);
+          offers[0].answer = answer;
+          console.log("set answer SDP");
+          const offerIceCandidates = await socket.emitWithAck("newAnswer", {
+            offer: offers[0],
+            answerId: socket.id,
+            answererAccessKey: accessKey,
+          });
+
+          offerIceCandidates.forEach((c) => {
+            peerConnection.addIceCandidate(c);
+            console.log("======Added Ice Candidate======");
+          });
+          // console.log(offerIceCandidates);
+          // console.log(offers);
         }
-      })();
-    }
-  }, [rtcAnswer]);
+      } catch (err) {
+        console.log(err);
+      }
+    })();
+  }, [offers]);
 
   useEffect(() => {
-    if (answerIce && peerConnection && iceArray.length <= 1) {
-      setIceArray([...iceArray, answerIce]);
+    if (!addedIce && peerConnection && callerIce) {
+      peerConnection.addIceCandidate(callerIce);
+      console.log("added ice candidate");
 
-      if (iceArray.length === 1) {
-        peerConnection.addIceCandidate(iceArray[0]);
-        console.log("added ice candidate");
-        console.log(iceArray);
-      }
       setAddedIce(true);
     }
-  }, [answerIce]);
+  }, [callerIce]);
 
-  useEffect(() => {
-    if (offerObject) {
-      // console.log(addedIce);
-      if (!addedIce) {
-        setInterval(
-          () => {
-            if (!answerIce && !addedIce) {
-              socket.emit("addedCallerIce", {
-                fromId: socket.id,
-                toId: offerObject.answerId,
-              });
-            }
-            return;
-          },
-          10000,
-          addedIce,
-          answerIce
-        );
-      }
-    }
-  }, [offerObject, addedIce, answerIce]);
-
-  socket.on("receivedCallerIce", (data) => {
-    // console.log("ice was received");
-
-    if (!answerIce) {
-      // console.log("set answer ICE, opt 2");
-      setAnswerIce(data.myIce);
+  socket.on("newOfferAwaiting", (offers) => {
+    console.log("listening...");
+    if (offers?.length > 0) {
+      setOffers(offers);
     }
   });
 
+  socket.on("receivedIceCandidateFromServer", (iceCandidate) => {
+    if (!callerIce) {
+      console.log("set answer ICE.");
+      setCallerIce(iceCandidate);
+    }
+  });
+  socket.on("hasCallerIce", (data) => {
+    if (myIce) {
+      data.myIce = myIce;
+      console.log(data);
+
+      socket.emit("addedCallerIce", data);
+    }
+  });
+  socket.on("incomingMessage", (data) => {
+    console.log(data.message, "incomingMessage");
+  });
   return (
-    <div style={{ display: "flex" }}>
-      <div>
-        <video
-          className="video-player"
-          id="local-video"
-          autoPlay
-          playsInline
-          controls
-          style={{ width: "50%", marginRight: "20px" }}
-        ></video>
-        Call
+    <>
+      <div style={{ display: "flex" }}>
+        <div>
+          <video
+            className="video-player"
+            id="local-video"
+            autoPlay
+            playsInline
+            controls
+            style={{ width: "50%", marginRight: "20px" }}
+          ></video>
+          Call
+        </div>
+        <div>
+          <video
+            className="video-player"
+            id="remote-video"
+            autoPlay
+            playsInline
+            controls
+            style={{ width: "50%", marginRight: "20px" }}
+          ></video>
+          Join
+        </div>
       </div>
       <div>
-        <video
-          className="video-player"
-          id="remote-video"
-          autoPlay
-          playsInline
-          controls
-          style={{ width: "50%", marginRight: "20px" }}
-        ></video>
-        Join
+        <input
+          onChange={(e) => {
+            setMessage(e.target.value);
+          }}
+          value={message || ""}
+          style={{
+            background: "grey",
+            height: "10vh",
+            width: "50vw",
+          }}
+        ></input>
       </div>
-    </div>
+      <div>
+        <button
+          onClick={() => {
+            console.log(offers);
+            if (offers[0]) {
+              socket.emit("newMessage", {
+                from: socket.id,
+                to: offers[0].callerId,
+                message,
+              });
+            }
+          }}
+        >
+          Send Message
+        </button>
+      </div>
+    </>
   );
 };
-export default Call;
+export default Answer;

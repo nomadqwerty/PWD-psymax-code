@@ -13,6 +13,27 @@ const socket = io.connect("https://192.168.8.148:3000", {
   },
 });
 
+const Messages = ({ messages }) => {
+  const messageStamps = Object.keys(messages);
+
+  const chat = messageStamps.map((msg, i) => {
+    console.log(typeof msg);
+    const time = msg;
+    let alignment = messages[msg].path === "from" ? "right" : "left";
+    return (
+      <div key={i} style={{ textAlign: alignment }}>
+        <p style={{ marginBottom: "10px" }}>
+          {" "}
+          {messages[msg].path}: {messages[msg].message}
+        </p>
+      </div>
+    );
+  });
+
+  return (
+    <div style={{ paddingRight: "120px", paddingLeft: "120px" }}>{chat}</div>
+  );
+};
 const Call = () => {
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
@@ -24,6 +45,7 @@ const Call = () => {
   const [addedIce, setAddedIce] = useState(false);
   const [iceArray, setIceArray] = useState([]);
   const [message, setMessage] = useState(false);
+  const [messages, setMessages] = useState({});
 
   socket.on("answerResponse", async (offerObj) => {
     if (offerObj?.answer?.type === "answer" && peerConnection) {
@@ -177,6 +199,9 @@ const Call = () => {
       }
     }
   }, [offerObject, addedIce, answerIce]);
+  useEffect(() => {
+    console.log(messages, "msgs");
+  }, [messages]);
 
   socket.on("receivedCallerIce", (data) => {
     // console.log("ice was received");
@@ -189,6 +214,10 @@ const Call = () => {
 
   socket.on("incomingMessage", (data) => {
     console.log(data.message, "incomingMessage");
+    setMessages({
+      ...messages,
+      [data.stamp]: { message: data.message, path: "to" },
+    });
   });
 
   return (
@@ -217,33 +246,50 @@ const Call = () => {
           Join
         </div>
       </div>
-      <div>
-        <input
-          onChange={(e) => {
-            setMessage(e.target.value);
-          }}
-          value={message || ""}
-          style={{
-            background: "grey",
-            height: "10vh",
-            width: "50vw",
-          }}
-        ></input>
-      </div>
-      <div>
-        <button
-          onClick={() => {
-            if (offerObject) {
-              socket.emit("newMessage", {
-                from: socket.id,
-                to: offerObject.answerId,
-                message,
-              });
-            }
-          }}
-        >
-          Send Message
-        </button>
+      <div style={{ display: "flex" }}>
+        <div>
+          <div>
+            <input
+              onChange={(e) => {
+                setMessage(e.target.value);
+              }}
+              value={message || ""}
+              style={{
+                background: "grey",
+                height: "10vh",
+                width: "50vw",
+              }}
+            ></input>
+          </div>
+          <div>
+            <button
+              onClick={() => {
+                if (offerObject) {
+                  let msgObj = {
+                    from: socket.id,
+                    to: offerObject.answerId,
+                    stamp: Date.now(),
+                    message,
+                  };
+                  socket.emit("newMessage", msgObj);
+                  setMessages({
+                    ...messages,
+                    [msgObj.stamp]: {
+                      message: msgObj.message,
+                      path: "from",
+                    },
+                  });
+                  setMessage("");
+                }
+              }}
+            >
+              Send Message
+            </button>
+          </div>
+        </div>
+        <div style={{ background: "grey", height: "auto", width: "50%" }}>
+          <Messages messages={messages}></Messages>
+        </div>
       </div>
     </>
   );

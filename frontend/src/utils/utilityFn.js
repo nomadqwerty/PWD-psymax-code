@@ -55,7 +55,24 @@ const encryptData = async (
     console.log(error.message, ':- encryption error');
   }
 };
-
+const encryptFile = async (
+  operations,
+  file,
+  encKey,
+  iv,
+  algoName = 'AES-GCM'
+) => {
+  try {
+    const encrypted = await operations.encrypt(
+      { name: algoName, iv },
+      encKey,
+      file
+    );
+    return encrypted;
+  } catch (error) {
+    console.log(error.message, ':- encryption error');
+  }
+};
 const decryptData = async (
   operations,
   decKey,
@@ -252,4 +269,5 @@ export {
   deriveAllKeys,
   isEncrypted,
   vaultMerger,
+  encryptFile,
 };

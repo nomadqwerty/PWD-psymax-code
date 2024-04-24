@@ -218,6 +218,8 @@ const save = async (req, res, next) => {
                 message: 'Begründung hinzugefügt',
                 data: { base64Pdf, fileName: pdf_name, raw },
               };
+              console.log(newBrief._id);
+              await BriefSchema.findByIdAndDelete({_id:newBrief._id})
               return res.status(200).send(response);
             }
           }

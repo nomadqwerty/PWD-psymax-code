@@ -14,9 +14,10 @@ import { KlientContext } from '../../context/klient.context';
 import PrivateRoute from '../../components/PrivateRoute';
 import { BriefHeader, Options } from '../../components/brief/HeadersAndInfo';
 import vaultContext from '@/context/vault.context';
+
 import {
   deriveAllKeys,
-  encryptData,
+  encryptFile,
   passwordGenerator,
   decryptData,
 } from '@/utils/utilityFn';
@@ -320,17 +321,48 @@ const BriefPage = React.memo(() => {
       const responseData = response?.data?.data;
       console.log(responseData);
       if (responseData) {
-        let data = new Uint8Array(responseData.raw.data).buffer;
-        let name = responseData.fileName.split('.')[0];
-        console.log(data);
-        // TODO: encrypt file, store in DB.
-        let file = new Blob([data]);
-        let elem = window.document.createElement('a');
-        elem.href = window.URL.createObjectURL(file);
-        elem.download = `${name}.${'pdf'}`;
-        console.log('here');
+        if (responseData?.raw) {
+          const operations = window.crypto.subtle || window.crypto.webkitSubtle;
+          let serverVaultLength = Object.keys(serverVault).length;
+          let userData = localStorage.getItem('psymax-user-data');
+          if (serverVaultLength > 0 && userData) {
+            userData = JSON.parse(userData);
+            let filePass = passwordGenerator();
+            let ePass = userData.emergencyPassword;
+            let dualKeySalt = serverVault.dualKeySalt;
+            let masterKeySalt = serverVault.masterKeySalt;
+            let allKeys = await deriveAllKeys(
+              filePass,
+              ePass,
+              dualKeySalt,
+              masterKeySalt,
+              window
+            );
+            // console.log(allKeys);
 
-        elem.click();
+            let keysLength = Object.keys(allKeys).length;
+
+            if (keysLength > 0) {
+              const { masterKey, iv } = allKeys;
+
+              let data = new Uint8Array(responseData.raw.data).buffer;
+              let name = responseData.fileName.split('.')[0];
+
+              let encFile = await encryptFile(operations, data, masterKey, iv);
+              let file = new Blob([data]);
+
+              // TODO: Store file data in vault, store encfile data in DB.
+
+              console.log(file, encFile);
+              let elem = window.document.createElement('a');
+              elem.href = window.URL.createObjectURL(file);
+              elem.download = `${name}.${'pdf'}`;
+              console.log('here');
+
+              elem.click();
+            }
+          }
+        }
       }
 
       // if (klientState?.brief?.length > 0) {

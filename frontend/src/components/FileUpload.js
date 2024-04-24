@@ -11,7 +11,7 @@ const FileUpload = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: acceptExtensions,
-    maxSize: maxSize * 1024 * 1024,
+    maxSize: 50 * 1024 * 1024,
     onDrop: (acceptedFiles) => {
       const isValidFile =
         acceptedFiles.length > 0 &&
@@ -20,7 +20,6 @@ const FileUpload = ({
             file.type.startsWith(`${extension}`)
           )
         );
-
       if (isValidFile) {
         const validFiles = acceptedFiles.filter((file) =>
           acceptExtensions.some((extension) =>

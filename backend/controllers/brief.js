@@ -207,6 +207,8 @@ const save = async (req, res, next) => {
               // convert binary data to base64 encoded string
               let base64Pdf = Buffer.from(bitmap).toString('base64');
 
+              let raw = Buffer.from(bitmap)
+
               if (fs.existsSync(pdfFilePath)) {
                 fs.unlinkSync(pdfFilePath);
               }
@@ -214,7 +216,7 @@ const save = async (req, res, next) => {
               let response = {
                 status_code: 200,
                 message: 'Begründung hinzugefügt',
-                data: { base64Pdf, fileName: pdf_name },
+                data: { base64Pdf, fileName: pdf_name, raw },
               };
               return res.status(200).send(response);
             }

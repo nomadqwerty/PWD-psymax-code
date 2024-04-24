@@ -9,7 +9,7 @@ const ModelDialogue = ({
   agreeModel,
   closeModel,
   className,
-  options,
+  children,
   cancelHide = false,
   submitHide = false,
 }) => {
@@ -48,7 +48,7 @@ const ModelDialogue = ({
         <div className="interFonts text-[#707070] text-base font-normal">
           {confirmationText}
         </div>
-        {options}
+        {children}
         <div className="pt-6">
           {!cancelHide && (
             <Button

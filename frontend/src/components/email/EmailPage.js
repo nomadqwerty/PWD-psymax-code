@@ -120,6 +120,7 @@ const EmailPage = React.memo(() => {
     try {
       console.log(data);
       const formData = new FormData();
+      // TODO: Encrypt file
       uploadedFiles.forEach((file) => {
         formData.append('attachments', file);
       });
@@ -131,24 +132,27 @@ const EmailPage = React.memo(() => {
       formData.append('Inhalt', data?.Inhalt);
       formData.append('KlientId', params?.id);
 
-      const response = await axiosInstance.post('/email/send', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      if (response?.status === 200) {
-        if (klientState?.email?.length > 0) {
-          router.push(`/dashboard/email/${klientState?.email?.[0]}`);
-        } else {
-          router.push('/dashboard/klientinnen');
-        }
-        reset();
-        setSelectedBriefvorlage('');
-        reset({
-          Briefvorlage: '',
-        });
-        setUploadedFiles([]);
+      for (const value of formData.keys()) {
+        console.log(value, ': ', formData.get(value));
       }
+      // const response = await axiosInstance.post('/email/send', formData, {
+      //   headers: {
+      //     'Content-Type': 'multipart/form-data',
+      //   },
+      // });
+      // if (response?.status === 200) {
+      //   if (klientState?.email?.length > 0) {
+      //     router.push(`/dashboard/email/${klientState?.email?.[0]}`);
+      //   } else {
+      //     router.push('/dashboard/klientinnen');
+      //   }
+      //   reset();
+      //   setSelectedBriefvorlage('');
+      //   reset({
+      //     Briefvorlage: '',
+      //   });
+      //   setUploadedFiles([]);
+      // }
     } catch (error) {
       handleApiError(error, router);
     }

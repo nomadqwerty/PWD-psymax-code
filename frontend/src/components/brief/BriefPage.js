@@ -12,7 +12,15 @@ import { AuthContext } from '../../context/auth.context';
 import { useParams } from 'next/navigation';
 import { KlientContext } from '../../context/klient.context';
 import PrivateRoute from '../../components/PrivateRoute';
-import { BriefHeader, options } from '../../components/brief/HeadersAndInfo';
+import { BriefHeader, Options } from '../../components/brief/HeadersAndInfo';
+import vaultContext from '@/context/vault.context';
+import {
+  deriveAllKeys,
+  encryptData,
+  passwordGenerator,
+  decryptData,
+} from '@/utils/utilityFn';
+
 import {
   Cancel,
   Confirm,
@@ -38,6 +46,7 @@ const BriefPage = React.memo(() => {
   const { state } = useContext(AuthContext);
   const { state: klientState, dispatch: klientDispatch } =
     useContext(KlientContext);
+  const { vaultState } = useContext(vaultContext);
 
   const router = useRouter();
   const [empfaenger, setEmpfaenger] = useState({});
@@ -49,11 +58,101 @@ const BriefPage = React.memo(() => {
   const [open, setOpen] = useState(false);
   const editor = useRef(null);
 
+  const {
+    fileVault,
+    clientVault,
+    setClientVault,
+    serverVault,
+    updateFileVault,
+    updateClientVault,
+    setUpdateClientVault,
+  } = vaultState;
+
   const getKlientById = async () => {
     try {
       const response = await axiosInstance.get(`klient/getById/${params?.id}`);
       const responseData = response?.data?.data;
-      setEmpfaenger(responseData);
+      if (responseData._id) {
+        // console.log(responseData);
+        const operations = window.crypto.subtle || window.crypto.webkitSubtle;
+        let serverVaultLength = Object.keys(serverVault).length;
+        let userData = localStorage.getItem('psymax-user-data');
+        if (serverVaultLength > 0 && userData) {
+          userData = JSON.parse(userData);
+          // console.log(userData);
+          let ePass = userData.emergencyPassword;
+          let pass;
+          let dualKeySalt = serverVault.dualKeySalt;
+          let masterKeySalt = serverVault.masterKeySalt;
+
+          if (params?.id) {
+            if (clientVault?.data?.length >= 0) {
+              clientVault.data.forEach((vault) => {
+                let clientId = vault.clientId;
+                let clientKey = vault.clientKey;
+                if (params.id === clientId) {
+                  pass = clientKey;
+                }
+              });
+            }
+          }
+
+          let allKeys = await deriveAllKeys(
+            pass,
+            ePass,
+            dualKeySalt,
+            masterKeySalt,
+            window
+          );
+          // console.log(allKeys);
+
+          let keysLength = Object.keys(allKeys).length;
+
+          if (keysLength > 0) {
+            const { masterKey, iv } = allKeys;
+
+            const fieldsToDec = [
+              'Anrede',
+              'Titel',
+              'Firma',
+              'Vorname',
+              'Nachname',
+              'Strasse_und_Hausnummer',
+              'PLZ',
+              'Ort',
+              'Land',
+              'Diagnose',
+              'Geburtsdatum',
+              'ArztTitel',
+              'ArztAnrede',
+              'ArztVorname',
+              'ArztNachname',
+              'ArztStrasse_und_Hausnummer',
+              'ArztPLZ',
+              'ArztOrt',
+              'ArztLand',
+            ];
+            for (let i = 0; i < fieldsToDec.length; i++) {
+              if (responseData[fieldsToDec[i]]) {
+                // console.log(responseData[fieldsToDec[i]]);
+                const dataField = new Uint8Array(
+                  responseData[fieldsToDec[i]].data
+                );
+                const decField = await decryptData(
+                  operations,
+                  masterKey,
+                  iv,
+                  dataField
+                );
+
+                responseData[fieldsToDec[i]] = decField;
+              }
+            }
+            console.log('dec client fields');
+            setEmpfaenger(responseData);
+          }
+        }
+      }
     } catch (error) {
       handleApiError(error, router);
     }
@@ -104,6 +203,7 @@ const BriefPage = React.memo(() => {
   };
 
   const handleBriefvorlageChange = (value) => {
+    console.log(value);
     if (value !== 'none') {
       if (briefData?.Empfaenger) {
         handleChange('Briefvorlage', value);
@@ -218,27 +318,32 @@ const BriefPage = React.memo(() => {
       };
       const response = await axiosInstance.post(`brief/save`, data);
       const responseData = response?.data?.data;
+      console.log(responseData);
       if (responseData) {
-        const link = document.createElement('a');
-        link.href = 'data:application/pdf;base64,' + responseData?.base64Pdf;
-        link.setAttribute('download', responseData?.fileName);
-        link.setAttribute('target', '_blank');
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode.removeChild(link);
+        let data = new Uint8Array(responseData.raw.data).buffer;
+        let name = responseData.fileName.split('.')[0];
+        console.log(data);
+        // TODO: encrypt file, store in DB.
+        let file = new Blob([data]);
+        let elem = window.document.createElement('a');
+        elem.href = window.URL.createObjectURL(file);
+        elem.download = `${name}.${'pdf'}`;
+        console.log('here');
+
+        elem.click();
       }
 
-      if (klientState?.brief?.length > 0) {
-        router.push(`/dashboard/brief/${klientState?.brief?.[0]}`);
-      } else {
-        router.push('/dashboard/klientinnen');
-      }
-      setOpen(false);
-      setBriefData({
-        Empfaenger: '',
-        Briefvorlage: 'none',
-      });
-      reset();
+      // if (klientState?.brief?.length > 0) {
+      //   router.push(`/dashboard/brief/${klientState?.brief?.[0]}`);
+      // } else {
+      //   router.push('/dashboard/klientinnen');
+      // }
+      // setOpen(false);
+      // setBriefData({
+      //   Empfaenger: '',
+      //   Briefvorlage: 'none',
+      // });
+      // reset();
     } catch (error) {
       handleApiError(error, router);
     }
@@ -349,10 +454,11 @@ const BriefPage = React.memo(() => {
         }
         agreeModel={() => console.log('hidden')}
         closeModel={closeModel}
-        options={options()}
         cancelHide={false}
         submitHide={true}
-      />
+      >
+        <Options handleBriefAction={handleBriefAction}></Options>
+      </ModelDialogue>
     </AppLayout>
   );
 });

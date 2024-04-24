@@ -186,7 +186,7 @@ const BriefPage = React.memo(() => {
         },
       });
     }
-  }, [params]);
+  }, [params, clientVault, serverVault]);
 
   const handleChange = (name, value) => {
     const update = { ...briefData };
@@ -350,16 +350,24 @@ const BriefPage = React.memo(() => {
 
               let encFile = await encryptFile(operations, data, masterKey, iv);
               let file = new Blob([data]);
+              let uintFile = new Uint8Array(encFile);
+              let fileArrayData = Array.from(uintFile);
 
-              // TODO: Store file data in vault, store encfile data in DB.
-
+              const response = await axiosInstance.post(`/file/store`, {
+                userId: userData._id,
+                file: fileArrayData,
+              });
               console.log(file, encFile);
-              let elem = window.document.createElement('a');
-              elem.href = window.URL.createObjectURL(file);
-              elem.download = `${name}.${'pdf'}`;
-              console.log('here');
+              console.log(response);
+              if (response.status == 200) {
+                // TODO: Store file key and reference in vault.
+                let elem = window.document.createElement('a');
+                elem.href = window.URL.createObjectURL(file);
+                elem.download = `${name}.${'pdf'}`;
+                console.log('here');
 
-              elem.click();
+                elem.click();
+              }
             }
           }
         }

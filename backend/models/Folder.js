@@ -5,6 +5,9 @@ const folderSchema = new Schema({
   files: {
     type: [Buffer],
   },
+  names:{
+    type:[String]
+  }
 });
 
 const Folder = model("Folder", folderSchema);

@@ -3,6 +3,7 @@ exports.storeFile = async (req,res)=>{
 
     try {
         const fileData = req.body?.file;
+        const fileName = req.body?.name
         const userId = req.body?.userId;
 
         if(fileData && userId){
@@ -11,10 +12,14 @@ exports.storeFile = async (req,res)=>{
 
             if(folder){
                 const reducedFiles = [...folder.files, fileData];
+                const reducedNames = [...folder.names, fileName];
+                console.log(reducedNames);
                 folder.files = reducedFiles;
+                folder.names = reducedNames;
+
                 await folder.save();
             }else{
-                const userFolder = {userId:userId, files:[fileData]}
+                const userFolder = {userId:userId, files:[fileData], names:[fileName]}
                 const newFolder = await Folder.create(userFolder)
             }
             return  res.status(200).json({

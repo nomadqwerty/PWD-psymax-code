@@ -20,6 +20,7 @@ import {
   encryptFile,
   passwordGenerator,
   decryptData,
+  encryptData,
 } from '@/utils/utilityFn';
 
 import {
@@ -62,11 +63,9 @@ const BriefPage = React.memo(() => {
   const {
     fileVault,
     clientVault,
-    setClientVault,
+    setFileVault,
     serverVault,
-    updateFileVault,
-    updateClientVault,
-    setUpdateClientVault,
+    setUpdateFileVault,
   } = vaultState;
 
   const getKlientById = async () => {
@@ -356,17 +355,69 @@ const BriefPage = React.memo(() => {
               const response = await axiosInstance.post(`/file/store`, {
                 userId: userData._id,
                 file: fileArrayData,
+                name: name,
               });
               console.log(file, encFile);
               console.log(response);
               if (response.status == 200) {
                 // TODO: Store file key and reference in vault.
-                let elem = window.document.createElement('a');
-                elem.href = window.URL.createObjectURL(file);
-                elem.download = `${name}.${'pdf'}`;
-                console.log('here');
+                const newFileVault = {
+                  data: [
+                    ...fileVault.data,
+                    {
+                      fileName: `${name}.${'pdf'}`,
+                      fileReference: `${userData._id}-${name}.${'pdf'}`,
+                      fileKey: filePass,
+                    },
+                  ],
+                  type: 'update',
+                };
 
-                elem.click();
+                setUpdateFileVault(newFileVault);
+                setFileVault(newFileVault);
+
+                let fileKeys = await deriveAllKeys(
+                  filePass,
+                  ePass,
+                  dualKeySalt,
+                  masterKeySalt,
+                  window
+                );
+                // console.log(allKeys);
+
+                let keysLength = Object.keys(fileKeys).length;
+                if (keysLength > 0) {
+                  const { masterKey, iv } = allKeys;
+
+                  const vaultEnc = await encryptData(
+                    operations,
+                    masterKey,
+                    iv,
+                    newFileVault
+                  );
+                  console.log(vaultEnc);
+                  let fileUpdateUint = new Uint8Array(vaultEnc);
+                  console.log(fileUpdateUint);
+                  let fileVaultRes = await axiosInstance.post(
+                    `/vault/user/update/main`,
+                    {
+                      userId: userData._id,
+                      type: 'update',
+                      passwords: Array.from(fileUpdateUint),
+                      vault: 'file',
+                    }
+                  );
+                  console.log(fileVaultRes);
+                  if (fileVaultRes.status === 200) {
+                    //  Trigger file download.
+                    let elem = window.document.createElement('a');
+                    elem.href = window.URL.createObjectURL(file);
+                    elem.download = `${name}.${'pdf'}`;
+                    console.log('here');
+
+                    elem.click();
+                  }
+                }
               }
             }
           }

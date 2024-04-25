@@ -6,7 +6,7 @@ import { fetchUserMedia } from "@/utils/utils";
 
 const userName = "user123";
 const accessKey = "test123";
-const socket = io.connect("https://192.168.8.148:3000", {
+const socket = io.connect("https://192.168.0.148:3005", {
   auth: {
     userName,
     accessKey,
@@ -63,9 +63,10 @@ const Call = () => {
   // });
 
   useEffect(() => {
-    if (socket.connected) {
-      // console.log(socket.id);
+    console.log(socket.connected);
+    if (socket.connected === true) {
       try {
+        console.log(socket);
         (async () => {
           const localVideoEl = document.querySelector("#local-video");
 
@@ -192,7 +193,7 @@ const Call = () => {
             }
             return;
           },
-          10000,
+          1000,
           addedIce,
           answerIce
         );

@@ -6,7 +6,7 @@ import io from "socket.io-client";
 const userName = "user123";
 const accessKey = "test123";
 
-const socket = io.connect("https://192.168.8.148:3000", {
+const socket = io.connect("https://192.168.0.148:3005", {
   auth: {
     userName,
     accessKey,

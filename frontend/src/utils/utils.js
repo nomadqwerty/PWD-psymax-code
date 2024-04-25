@@ -12,7 +12,7 @@ const fetchUserMedia = (videoEl, setLocalStream) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        // audio: true,
+        audio: true,
       });
 
       videoEl.srcObject = stream;

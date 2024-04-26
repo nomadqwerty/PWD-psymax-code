@@ -63,6 +63,7 @@ const BriefPage = React.memo(() => {
   const {
     fileVault,
     clientVault,
+    updateClientVault,
     setFileVault,
     serverVault,
     setUpdateFileVault,
@@ -72,22 +73,34 @@ const BriefPage = React.memo(() => {
     try {
       const response = await axiosInstance.get(`klient/getById/${params?.id}`);
       const responseData = response?.data?.data;
-      if (responseData._id) {
-        // console.log(responseData);
+      if (responseData?._id) {
+        console.log(responseData);
         const operations = window.crypto.subtle || window.crypto.webkitSubtle;
         let serverVaultLength = Object.keys(serverVault).length;
         let userData = localStorage.getItem('psymax-user-data');
         if (serverVaultLength > 0 && userData) {
           userData = JSON.parse(userData);
-          // console.log(userData);
+          console.log(userData);
           let ePass = userData.emergencyPassword;
           let pass;
           let dualKeySalt = serverVault.dualKeySalt;
           let masterKeySalt = serverVault.masterKeySalt;
-
+          console.log(updateClientVault);
+          console.log(clientVault);
           if (params?.id) {
-            if (clientVault?.data?.length >= 0) {
+            if (clientVault?.data?.length > 0) {
               clientVault.data.forEach((vault) => {
+                console.log('main vault');
+                let clientId = vault.clientId;
+                let clientKey = vault.clientKey;
+                if (params.id === clientId) {
+                  pass = clientKey;
+                }
+              });
+            }
+            if (updateClientVault?.data?.length > 0 && !pass) {
+              updateClientVault.data.forEach((vault) => {
+                console.log('update vault');
                 let clientId = vault.clientId;
                 let clientKey = vault.clientKey;
                 if (params.id === clientId) {
@@ -96,60 +109,64 @@ const BriefPage = React.memo(() => {
               });
             }
           }
+          console.log(pass);
+          if (pass !== undefined) {
+            let allKeys = await deriveAllKeys(
+              pass,
+              ePass,
+              dualKeySalt,
+              masterKeySalt,
+              window
+            );
+            console.log(allKeys);
 
-          let allKeys = await deriveAllKeys(
-            pass,
-            ePass,
-            dualKeySalt,
-            masterKeySalt,
-            window
-          );
-          // console.log(allKeys);
+            let keysLength = Object.keys(allKeys).length;
 
-          let keysLength = Object.keys(allKeys).length;
+            if (keysLength > 0) {
+              const { masterKey, iv } = allKeys;
 
-          if (keysLength > 0) {
-            const { masterKey, iv } = allKeys;
+              const fieldsToDec = [
+                'Anrede',
+                'Titel',
+                'Firma',
+                'Vorname',
+                'Nachname',
+                'Strasse_und_Hausnummer',
+                'PLZ',
+                'Ort',
+                'Land',
+                'Diagnose',
+                'Geburtsdatum',
+                'ArztTitel',
+                'ArztAnrede',
+                'ArztVorname',
+                'ArztNachname',
+                'ArztStrasse_und_Hausnummer',
+                'ArztPLZ',
+                'ArztOrt',
+                'ArztLand',
+              ];
+              for (let i = 0; i < fieldsToDec.length; i++) {
+                if (responseData[fieldsToDec[i]]) {
+                  // console.log(responseData[fieldsToDec[i]]);
+                  const dataField = new Uint8Array(
+                    responseData[fieldsToDec[i]].data
+                  );
+                  const decField = await decryptData(
+                    operations,
+                    masterKey,
+                    iv,
+                    dataField
+                  );
 
-            const fieldsToDec = [
-              'Anrede',
-              'Titel',
-              'Firma',
-              'Vorname',
-              'Nachname',
-              'Strasse_und_Hausnummer',
-              'PLZ',
-              'Ort',
-              'Land',
-              'Diagnose',
-              'Geburtsdatum',
-              'ArztTitel',
-              'ArztAnrede',
-              'ArztVorname',
-              'ArztNachname',
-              'ArztStrasse_und_Hausnummer',
-              'ArztPLZ',
-              'ArztOrt',
-              'ArztLand',
-            ];
-            for (let i = 0; i < fieldsToDec.length; i++) {
-              if (responseData[fieldsToDec[i]]) {
-                // console.log(responseData[fieldsToDec[i]]);
-                const dataField = new Uint8Array(
-                  responseData[fieldsToDec[i]].data
-                );
-                const decField = await decryptData(
-                  operations,
-                  masterKey,
-                  iv,
-                  dataField
-                );
-
-                responseData[fieldsToDec[i]] = decField;
+                  responseData[fieldsToDec[i]] = decField;
+                }
+              }
+              console.log('dec client fields');
+              if (responseData?._id !== undefined) {
+                setEmpfaenger(responseData);
               }
             }
-            console.log('dec client fields');
-            setEmpfaenger(responseData);
           }
         }
       }
@@ -372,7 +389,7 @@ const BriefPage = React.memo(() => {
                   ],
                   type: 'update',
                 };
-
+                console.log(newFileVault);
                 setUpdateFileVault(newFileVault);
                 setFileVault(newFileVault);
 

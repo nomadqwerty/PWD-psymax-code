@@ -61,12 +61,13 @@ const LoginPage = () => {
 
           let clientEncrypted = isEncrypted(clientVault);
           let fileEncrypted = isEncrypted(fileVault);
+          //
+          // TODO: create user vault if none is found.
           if (!clientEncrypted && !fileEncrypted) {
             if (!operations) {
               alert('Web Crypto is not supported on this browser');
               console.warn('Web Crypto API not supported');
             } else {
-              // TODO: request server vault.
               let userData = responseData;
               const response = await axiosInstance.get(`/vault/server`);
               await encryptOnLoginA(
@@ -129,7 +130,13 @@ const LoginPage = () => {
     let serverVaultLength = Object.keys(serverVault).length;
     let updateFileVaultLength = Object.keys(updateFileVault).length;
     let updateClientVaultLength = Object.keys(updateClientVault).length;
-
+    // console.log(
+    //   fileVaultLength,
+    //   clientVaultLength,
+    //   serverVaultLength,
+    //   updateClientVaultLength,
+    //   updateFileVaultLength
+    // );
     if (
       fileVaultLength > 0 &&
       clientVaultLength > 0 &&
@@ -139,7 +146,7 @@ const LoginPage = () => {
     ) {
       const vaultStateJson = JSON.stringify(vaultState);
       sessionStorage.setItem('vaultState', vaultStateJson);
-      console.log(vaultState);
+      // console.log(vaultState);
       if (userData?.isAdmin === 1) {
         router.push('/admin');
       } else if (userData?.isAdmin === 0) {

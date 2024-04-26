@@ -82,22 +82,25 @@ const decryptData = async (
 ) => {
   try {
     ////////////////////////////
+    console.log(data, 'data');
     const decrypted = await operations.decrypt(
       {
         name: algoName,
         iv,
       },
       decKey,
-      data
+      data.buffer
     );
+    console.log(decrypted);
     const uint8Dec = new Uint8Array(decrypted);
 
     let decoder = new TextDecoder();
     let decodeDec = decoder.decode(uint8Dec);
     let decData = JSON.parse(decodeDec);
+    // console.log(decData);
     return decData;
   } catch (error) {
-    console.log(error.message);
+    // console.log(error);
   }
 };
 

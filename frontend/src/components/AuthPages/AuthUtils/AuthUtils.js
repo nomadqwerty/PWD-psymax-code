@@ -300,6 +300,7 @@ let encryptOnLoginB = async (
       let decryptedFiles = [];
       let decryptedArchive = [];
       encryptedVaults[0].forEach(async (e) => {
+        console.log(e.type);
         let dataDec = await decryptData(operations, backUpMaster, iv, e.data);
 
         dataDec.type = e.type;
@@ -545,37 +546,39 @@ const fetchData_encrypyOnLogout = async (
           recoveryKeyEnc,
         } = allKeys;
 
-        const fileUpdateEnc = await encryptData(
-          operations,
-          masterKey,
-          iv,
-          updateFileVault
-        );
-        let fileUpdateUint = new Uint8Array(fileUpdateEnc);
+        if (updateFileVault.data.length > 0) {
+          const fileUpdateEnc = await encryptData(
+            operations,
+            masterKey,
+            iv,
+            updateFileVault
+          );
+          let fileUpdateUint = new Uint8Array(fileUpdateEnc);
+          console.log(fileUpdateUint);
+          await axiosInstance.post(`/vault/user/update/main`, {
+            userId: userData._id,
+            type: 'update',
+            passwords: Array.from(fileUpdateUint),
+            vault: 'file',
+          });
+        }
 
-        const clientUpdateEnc = await encryptData(
-          operations,
-          masterKey,
-          iv,
-          updateClientVault
-        );
-        let clientUpdateUint = new Uint8Array(clientUpdateEnc);
-
-        console.log(fileUpdateUint, clientUpdateUint);
-
-        // TODO: send update vault to DB.
-        await axiosInstance.post(`/vault/user/update/main`, {
-          userId: userData._id,
-          type: 'update',
-          passwords: Array.from(fileUpdateUint),
-          vault: 'file',
-        });
-        await axiosInstance.post(`/vault/user/update/main`, {
-          userId: userData._id,
-          type: 'update',
-          clients: Array.from(clientUpdateUint),
-          vault: 'client',
-        });
+        if (updateClientVault.data.length > 0) {
+          const clientUpdateEnc = await encryptData(
+            operations,
+            masterKey,
+            iv,
+            updateClientVault
+          );
+          let clientUpdateUint = new Uint8Array(clientUpdateEnc);
+          console.log(clientUpdateUint);
+          await axiosInstance.post(`/vault/user/update/main`, {
+            userId: userData._id,
+            type: 'update',
+            clients: Array.from(clientUpdateUint),
+            vault: 'client',
+          });
+        }
       }
     }
 

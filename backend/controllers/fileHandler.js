@@ -11,16 +11,23 @@ exports.storeFile = async (req,res)=>{
             const folder = await Folder.findOne({userId:userId});
 
             if(folder){
-                const reducedFiles = [...folder.files, fileData];
-                const reducedNames = [...folder.names, fileName];
-                console.log(reducedNames);
+                let reducedFiles;
+                let reducedNames;
+                if(fileName?.length > 0 && fileData?.length > 0){
+                    reducedFiles = [...folder.files, ...fileData];
+                    reducedNames = [...folder.names, ...fileName];
+                }else{
+                    reducedFiles = [...folder.files, fileData];
+                    reducedNames = [...folder.names, fileName];
+                }
+                
                 folder.files = reducedFiles;
                 folder.names = reducedNames;
 
                 await folder.save();
             }else{
-                const userFolder = {userId:userId, files:[fileData], names:[fileName]}
-                const newFolder = await Folder.create(userFolder)
+                const userFolder = {userId:userId, files:[fileData], names:[fileName]};
+                const newFolder = await Folder.create(userFolder);
             }
             return  res.status(200).json({
                 status: "success",

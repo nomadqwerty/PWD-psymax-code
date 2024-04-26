@@ -190,7 +190,7 @@ const ClientAddEdit = React.memo(() => {
         console.log(isEdit);
         console.log(params);
         let pass;
-        if (params?.id) {
+        if (params?.id !== 'add') {
           if (clientVault?.data?.length >= 0) {
             clientVault.data.forEach((vault) => {
               let clientId = vault.clientId;

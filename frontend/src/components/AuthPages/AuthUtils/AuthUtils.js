@@ -366,6 +366,7 @@ let encryptOnLoginB = async (
           const mergedVaults = vaultMerger('file', updateVault, mainVault);
 
           let newMainVault = { data: mergedVaults, type: 'main' };
+          console.log(newMainVault);
           // TODO: add state to params
           setFileVault(newMainVault);
           const encMainVault = await encryptData(
@@ -500,6 +501,7 @@ const fetchData_encrypyOnLogout = async (
   serverVault,
   updateFileVault,
   updateClientVault,
+  storeFile,
   router
 ) => {
   try {
@@ -546,7 +548,7 @@ const fetchData_encrypyOnLogout = async (
           recoveryKeyEnc,
         } = allKeys;
 
-        if (updateFileVault.data.length > 0) {
+        if (updateFileVault.data.length > 0 && storeFile) {
           const fileUpdateEnc = await encryptData(
             operations,
             masterKey,
@@ -561,6 +563,13 @@ const fetchData_encrypyOnLogout = async (
             passwords: Array.from(fileUpdateUint),
             vault: 'file',
           });
+          console.log(storeFile);
+          const response = await axiosInstance.post(`/file/store`, {
+            userId: userData._id,
+            file: storeFile.file,
+            name: storeFile.name,
+          });
+          console.log(response);
         }
 
         if (updateClientVault.data.length > 0) {

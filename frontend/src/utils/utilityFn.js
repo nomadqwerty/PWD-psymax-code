@@ -82,7 +82,6 @@ const decryptData = async (
 ) => {
   try {
     ////////////////////////////
-    console.log(data, 'data');
     const decrypted = await operations.decrypt(
       {
         name: algoName,
@@ -91,7 +90,6 @@ const decryptData = async (
       decKey,
       data.buffer
     );
-    console.log(decrypted);
     const uint8Dec = new Uint8Array(decrypted);
 
     let decoder = new TextDecoder();

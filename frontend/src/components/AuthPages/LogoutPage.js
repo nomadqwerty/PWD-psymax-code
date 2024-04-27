@@ -14,6 +14,7 @@ const LogoutPage = () => {
     serverVault,
     updateFileVault,
     updateClientVault,
+    storeFile,
   } = vaultState;
 
   useEffect(() => {
@@ -23,8 +24,11 @@ const LogoutPage = () => {
       serverVault,
       updateFileVault,
       updateClientVault,
+      storeFile,
       router
-    ).then((res)=>console.log('done')).catch(err=>console.log(err)); 
+    )
+      .then((res) => console.log('done'))
+      .catch((err) => console.log(err));
     // Call the async function immediately
   }, []);
 

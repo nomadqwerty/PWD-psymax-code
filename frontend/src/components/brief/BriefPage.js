@@ -67,6 +67,7 @@ const BriefPage = React.memo(() => {
     setFileVault,
     serverVault,
     setUpdateFileVault,
+    setStoreFile,
   } = vaultState;
 
   const getKlientById = async () => {
@@ -369,14 +370,9 @@ const BriefPage = React.memo(() => {
               let uintFile = new Uint8Array(encFile);
               let fileArrayData = Array.from(uintFile);
 
-              const response = await axiosInstance.post(`/file/store`, {
-                userId: userData._id,
-                file: fileArrayData,
-                name: name,
-              });
-              console.log(file, encFile);
-              console.log(response);
-              if (response.status == 200) {
+              setStoreFile({ name, file: fileArrayData });
+
+              if (file) {
                 // TODO: Store file key and reference in vault.
                 const newFileVault = {
                   data: [
@@ -393,48 +389,13 @@ const BriefPage = React.memo(() => {
                 setUpdateFileVault(newFileVault);
                 setFileVault(newFileVault);
 
-                let fileKeys = await deriveAllKeys(
-                  filePass,
-                  ePass,
-                  dualKeySalt,
-                  masterKeySalt,
-                  window
-                );
-                // console.log(allKeys);
+                //  Trigger file download.
+                let elem = window.document.createElement('a');
+                elem.href = window.URL.createObjectURL(file);
+                elem.download = `${name}.${'pdf'}`;
+                console.log('here');
 
-                let keysLength = Object.keys(fileKeys).length;
-                if (keysLength > 0) {
-                  const { masterKey, iv } = allKeys;
-
-                  const vaultEnc = await encryptData(
-                    operations,
-                    masterKey,
-                    iv,
-                    newFileVault
-                  );
-                  console.log(vaultEnc);
-                  let fileUpdateUint = new Uint8Array(vaultEnc);
-                  console.log(fileUpdateUint);
-                  let fileVaultRes = await axiosInstance.post(
-                    `/vault/user/update/main`,
-                    {
-                      userId: userData._id,
-                      type: 'update',
-                      passwords: Array.from(fileUpdateUint),
-                      vault: 'file',
-                    }
-                  );
-                  console.log(fileVaultRes);
-                  if (fileVaultRes.status === 200) {
-                    //  Trigger file download.
-                    let elem = window.document.createElement('a');
-                    elem.href = window.URL.createObjectURL(file);
-                    elem.download = `${name}.${'pdf'}`;
-                    console.log('here');
-
-                    elem.click();
-                  }
-                }
+                elem.click();
               }
             }
           }

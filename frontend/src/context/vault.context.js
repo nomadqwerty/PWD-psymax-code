@@ -8,6 +8,7 @@ const VaultProvider = ({ children }) => {
   const [serverVault, setServerVault] = useState({});
   const [updateFileVault, setUpdateFileVault] = useState({});
   const [updateClientVault, setUpdateClientVault] = useState({});
+  const [storeFile, setStoreFile] = useState(null);
 
   let state = {
     vaultState: {
@@ -21,6 +22,8 @@ const VaultProvider = ({ children }) => {
       setUpdateFileVault,
       updateClientVault,
       setUpdateClientVault,
+      storeFile,
+      setStoreFile,
     },
   };
 

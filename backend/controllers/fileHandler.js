@@ -13,13 +13,9 @@ exports.storeFile = async (req,res)=>{
             if(folder){
                 let reducedFiles;
                 let reducedNames;
-                if(fileName?.length > 0 && fileData?.length > 0){
-                    reducedFiles = [...folder.files, ...fileData];
-                    reducedNames = [...folder.names, ...fileName];
-                }else{
-                    reducedFiles = [...folder.files, fileData];
-                    reducedNames = [...folder.names, fileName];
-                }
+               
+                reducedFiles = [...folder.files, fileData];
+                reducedNames = [...folder.names, fileName];
                 
                 folder.files = reducedFiles;
                 folder.names = reducedNames;

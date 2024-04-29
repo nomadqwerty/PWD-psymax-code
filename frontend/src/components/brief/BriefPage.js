@@ -67,6 +67,7 @@ const BriefPage = React.memo(() => {
     setFileVault,
     serverVault,
     setUpdateFileVault,
+    storeFile,
     setStoreFile,
   } = vaultState;
 
@@ -370,7 +371,7 @@ const BriefPage = React.memo(() => {
               let uintFile = new Uint8Array(encFile);
               let fileArrayData = Array.from(uintFile);
 
-              setStoreFile({ name, file: fileArrayData });
+              setStoreFile([...storeFile, { name, file: fileArrayData }]);
 
               if (file) {
                 // TODO: Store file key and reference in vault.

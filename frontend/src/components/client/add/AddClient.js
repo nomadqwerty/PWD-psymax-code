@@ -465,7 +465,7 @@ const ClientAddEdit = React.memo(() => {
       }
       fetchData();
     }
-  }, [params]);
+  }, [params, clientVault]);
 
   const agreeModel = async () => {
     try {

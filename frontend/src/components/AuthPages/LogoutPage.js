@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useContext } from 'react';
 import PrivateRoute from '../../components/PrivateRoute';
 import vaultContext from '@/context/vault.context';
-import { fetchData_encrypyOnLogout } from './AuthUtils/AuthUtils';
+import { fetchData_encryptOnLogout } from './AuthUtils/AuthUtils';
 
 const LogoutPage = () => {
   const router = useRouter();
@@ -18,7 +18,7 @@ const LogoutPage = () => {
   } = vaultState;
 
   useEffect(() => {
-    fetchData_encrypyOnLogout(
+    fetchData_encryptOnLogout(
       fileVault,
       clientVault,
       serverVault,

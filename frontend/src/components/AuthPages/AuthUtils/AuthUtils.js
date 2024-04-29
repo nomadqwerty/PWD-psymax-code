@@ -495,7 +495,7 @@ let encryptOnLoginB = async (
   }
 };
 ///////////////////////////////
-const fetchData_encrypyOnLogout = async (
+const fetchData_encryptOnLogout = async (
   fileVault,
   clientVault,
   serverVault,
@@ -563,13 +563,15 @@ const fetchData_encrypyOnLogout = async (
             passwords: Array.from(fileUpdateUint),
             vault: 'file',
           });
-          console.log(storeFile);
-          const response = await axiosInstance.post(`/file/store`, {
-            userId: userData._id,
-            file: storeFile.file,
-            name: storeFile.name,
+          storeFile.forEach(async (data, i) => {
+            console.log(storeFile);
+            const response = await axiosInstance.post(`/file/store`, {
+              userId: userData._id,
+              file: data.file,
+              name: data.name,
+            });
+            console.log(response);
           });
-          console.log(response);
         }
 
         if (updateClientVault.data.length > 0) {
@@ -606,4 +608,4 @@ const fetchData_encrypyOnLogout = async (
   }
 };
 
-export { encryptOnLoginA, encryptOnLoginB, fetchData_encrypyOnLogout };
+export { encryptOnLoginA, encryptOnLoginB, fetchData_encryptOnLogout };

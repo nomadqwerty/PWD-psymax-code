@@ -49,6 +49,9 @@ const Register = () => {
           passwords: fileVault,
           clients: clientVault,
         });
+        const resFile = await axiosInstance.post(`/file/create`, {
+          userId: user_id,
+        });
         dispatch({ type: 'INITIAL_STATE' });
         router.push('/login');
         toast.success(responseData?.message);

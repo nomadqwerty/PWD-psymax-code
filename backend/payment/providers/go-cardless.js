@@ -78,7 +78,7 @@ class GoCardlessProvider extends PaymentProvider {
    * @param {SequenceType} sequenceType
    * @returns
    */
-  async processPayment(
+  async createPayment(
     amount,
     cardToken,
     currency,
@@ -360,7 +360,7 @@ class GoCardlessProvider extends PaymentProvider {
       {
         subscriptionId: newSubscriptionParams.id,
         startDate: newSubscriptionParams.start_date,
-        startDate: newSubscriptionParams.end_date,
+        endDate: newSubscriptionParams.end_date,
       }
     );
   }
@@ -414,7 +414,7 @@ class GoCardlessProvider extends PaymentProvider {
    */
 
     switch (event.action) {
-      case 'payment_created':
+      case 'payment_created': {
         const subscription = await SubscriptionSchema.findOneAndUpdate(
           {
             subscriptionId: event.links.subscription,
@@ -483,6 +483,7 @@ class GoCardlessProvider extends PaymentProvider {
         await this.rewardReferrer(referrer._id, referrerSubscription._id);
 
         return `Subscription ${event.links.subscription} has new payment ${event.links.payment} created.\n`;
+      }
       default:
         return `Do not know how to process an event with action ${event.action}`;
     }

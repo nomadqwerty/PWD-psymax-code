@@ -1,3 +1,4 @@
+const Joi = require('joi');
 const { UserSchema } = require('../models/userModel');
 
 /**

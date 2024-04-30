@@ -10,6 +10,7 @@ const { randomCodeStr } = require('../utils/common');
 const fs = require('fs');
 const zxcvbn = require('zxcvbn');
 const { GlobalPointsSchema } = require('../models/globalPointsModel');
+const dayjs = require('dayjs');
 
 const register = async (req, res, next) => {
   try {
@@ -55,9 +56,19 @@ const register = async (req, res, next) => {
 
     const encryptedPassword = await bcrypt.hash(password, 10);
 
-    const getInvitedUser = UserSchema.findOne({ inviteCode: inviteCode });
+    const getInvitedUser = await UserSchema.findOne({ inviteCode: inviteCode });
 
     const randomCode = randomCodeStr(4);
+
+    // 7 days trial if no referral, 90 days if referred by admin, else 30 days
+    const numberOfTrialDays = getInvitedUser
+      ? getInvitedUser.isAdmin
+        ? 90
+        : 30
+      : 7;
+
+    // NOTE: This considers DST, which might not be expected behavior
+    const trialEnd = dayjs().add(numberOfTrialDays, 'day').toDate();
 
     const user = new UserSchema({
       email: email.toLowerCase(),
@@ -66,6 +77,7 @@ const register = async (req, res, next) => {
       inviteCode: randomCode,
       invitedUserId: getInvitedUser?._id ? getInvitedUser?._id : null,
       isAdmin: 0,
+      trialEnd,
     });
     await user.save();
     if (user) {

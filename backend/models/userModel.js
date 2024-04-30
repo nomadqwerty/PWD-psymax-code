@@ -154,6 +154,10 @@ const userAppSchema = new Schema({
   deletedAt: {
     type: Date,
   },
+  trialEnd: {
+    type: Date,
+  },
+  referralBonusCycles: { type: Number },
 });
 
 const UserSchema = mongoose.model('users', userAppSchema);

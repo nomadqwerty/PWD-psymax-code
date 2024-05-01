@@ -1,4 +1,49 @@
 const Folder = require('../models/Folder')
+const { UserSchema } = require("../models/userModel");
+const UserVault = require("../models/UserVault");
+const ServerVault = require("../models/ServerVault");
+
+
+exports.getFileDetails = async (req,res)=>{
+    try {
+// get user details: password, epassword.
+// get uservault
+// get file that is to be downloaded.
+    const {userId,name} = req.body
+    console.log(userId, name);
+    const user = await UserSchema.findOne({_id:userId})
+
+    if(user){
+      const userVault = await UserVault.findOne({userId:userId, type:"main"})
+
+      if(userVault){
+        const userFolder = await Folder.findOne({userId:userId})
+        if(userFolder){
+          const serverVault = await ServerVault.find()
+
+          const fileIdx = userFolder.names.indexOf(name)
+          const fileFound = userFolder.files[fileIdx]
+
+          let detailObject = {password:user.password, ePassword:user.emergencyPassword,vault: userVault, fileData:fileFound, serverVault: serverVault[0]}
+          
+         
+         return res.status(200).json(detailObject);
+        
+        }
+      }
+    }
+
+    res.end('here')
+        
+    } catch (error) {
+        res.status(405).json({
+            status: "fail",
+            message: error.message,
+          });
+    }
+
+}
+
 exports.storeFile = async (req,res)=>{
 
     try {

@@ -55,6 +55,33 @@ const encryptData = async (
     console.log(error.message, ':- encryption error');
   }
 };
+let downloadFile = (file, fileName) => {
+  file = new Blob([file]);
+  let elem = window.document.createElement('a');
+  elem.href = window.URL.createObjectURL(file);
+  elem.download = `${fileName}`;
+  console.log('here');
+
+  elem.click();
+};
+const decryptFile = async (
+  operations,
+  file,
+  encKey,
+  iv,
+  algoName = 'AES-GCM'
+) => {
+  const decryptedData = await operations.decrypt(
+    {
+      name: algoName,
+      iv,
+    },
+    encKey,
+    file
+  );
+
+  return decryptedData;
+};
 const encryptFile = async (
   operations,
   file,
@@ -90,6 +117,7 @@ const decryptData = async (
       decKey,
       data.buffer
     );
+
     const uint8Dec = new Uint8Array(decrypted);
 
     let decoder = new TextDecoder();
@@ -240,6 +268,7 @@ let vaultMerger = (type, vault1, vault2) => {
     return { error: true, message: error.message };
   }
 };
+
 /*
 {
   "data": [
@@ -271,4 +300,6 @@ export {
   isEncrypted,
   vaultMerger,
   encryptFile,
+  decryptFile,
+  downloadFile,
 };

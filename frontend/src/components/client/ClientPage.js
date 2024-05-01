@@ -41,13 +41,20 @@ import {
   AbrechnungData,
   StatusData,
 } from '../../components/client/Data';
+import { update } from 'lodash';
 
 const ClientPage = () => {
   // TODO: set client states to context.
   const { clientState } = useContext(clientContext);
   const { vaultState } = useContext(vaultContext);
 
-  const { clientVault, serverVault } = vaultState;
+  const {
+    clientVault,
+    serverVault,
+    setClientVault,
+    setUpdateClientVault,
+    updateClientVault,
+  } = vaultState;
 
   const {
     activeKlients,
@@ -97,6 +104,38 @@ const ClientPage = () => {
           if (deleteData?.isActive === 0) {
             setDeleteData({});
             fetchArchivedKlient(archivedPage?.pagenum);
+          }
+          if (clientVault?.data) {
+            console.log(clientVault);
+            let clientIdx;
+            clientVault.data.forEach((e, i) => {
+              if (e.clientId === deleteData?.id) {
+                console.log(e.clientId);
+                console.log(deleteData?.id);
+                clientIdx = i;
+              }
+            });
+            const clientVaultClone = { ...clientVault };
+            clientVaultClone.data.splice(clientIdx, 1);
+            console.log(clientVaultClone);
+            setClientVault(clientVaultClone);
+            // setUpdateClientVault(clientVaultClone);
+          }
+          if (updateClientVault?.data) {
+            console.log(updateClientVault);
+            let clientIdx;
+            updateClientVault.data.forEach((e, i) => {
+              if (e.clientId === deleteData?.id) {
+                console.log(e.clientId);
+                console.log(deleteData?.id);
+                clientIdx = i;
+              }
+            });
+            const clientVaultClone = { ...updateClientVault };
+            clientVaultClone.data.splice(clientIdx, 1);
+            console.log(clientVaultClone);
+            // setClientVault(clientVaultClone);
+            setUpdateClientVault(clientVaultClone);
           }
           toast.success(response?.data?.message);
         }
@@ -551,6 +590,7 @@ const ClientPage = () => {
           setDeleteData={setDeleteData}
           setActionTitle={setActionTitle}
           setConfirmTxt={setConfirmTxt}
+          confirmTxt={confirmTxt}
         />
         {/* active client List */}
 
@@ -584,6 +624,7 @@ const ClientPage = () => {
           setDeleteData={setDeleteData}
           setActionTitle={setActionTitle}
           setConfirmTxt={setConfirmTxt}
+          confirmTxt={confirmTxt}
         />
         {/* newList */}
 
@@ -612,6 +653,7 @@ const ClientPage = () => {
           setDeleteData={setDeleteData}
           setActionTitle={setActionTitle}
           setConfirmTxt={setConfirmTxt}
+          confirmTxt={confirmTxt}
         />
         {/* Achive list */}
 

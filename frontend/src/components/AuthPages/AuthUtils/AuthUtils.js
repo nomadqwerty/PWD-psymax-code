@@ -574,7 +574,7 @@ const fetchData_encryptOnLogout = async (
           });
         }
 
-        if (updateClientVault.data.length > 0) {
+        if (updateClientVault.data) {
           const clientUpdateEnc = await encryptData(
             operations,
             masterKey,
@@ -587,6 +587,22 @@ const fetchData_encryptOnLogout = async (
             userId: userData._id,
             type: 'update',
             clients: Array.from(clientUpdateUint),
+            vault: 'client',
+          });
+        }
+        if (clientVault.data) {
+          const clientEnc = await encryptData(
+            operations,
+            masterKey,
+            iv,
+            clientVault
+          );
+          let clientUint = new Uint8Array(clientEnc);
+          console.log(clientUint);
+          await axiosInstance.post(`/vault/user/update/main`, {
+            userId: userData._id,
+            type: 'main',
+            clients: Array.from(clientUint),
             vault: 'client',
           });
         }

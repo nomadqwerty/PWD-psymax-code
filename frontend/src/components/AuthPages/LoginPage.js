@@ -150,7 +150,7 @@ const LoginPage = () => {
       if (userData?.isAdmin === 1) {
         router.push('/admin');
       } else if (userData?.isAdmin === 0) {
-        router.push('/dashboard');
+        router.push(`/twofactorauthentication/${userData._id}`);
       }
     }
   }, [fileVault, clientVault, serverVault, updateFileVault, updateClientVault]);

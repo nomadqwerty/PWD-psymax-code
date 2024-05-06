@@ -150,7 +150,7 @@ const LoginPage = () => {
       if (userData?.isAdmin === 1) {
         router.push('/admin');
       } else if (userData?.isAdmin === 0) {
-        router.push(`/twofactorauthentication/${userData._id}`);
+        router.push(`/twofactorauthentication/${userData._id}-login`);
       }
     }
   }, [fileVault, clientVault, serverVault, updateFileVault, updateClientVault]);
@@ -249,6 +249,10 @@ const LoginPage = () => {
                     fontSize: 12,
                     fontWeight: 400,
                     lineHeight: '20px',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    router.push(`/accountrecovery`);
                   }}
                 >
                   Passwort vergessen?

@@ -483,24 +483,73 @@ const saveLogo = async (req, res, next) => {
 const TwoFaAuth = async (req, res, next) => {
   try {
     const code = req.body.code;
+    const userId = req.body.userId;
+    const userEmail = req.body.email;
+    
   
-    let contactObject = {
-      email:'davexmike72@gmail.com',
-      name: 'psymax',
-    };
-    console.log(code);
+  let user ;
+  if(userId){
+    user = await UserSchema.findOne({_id: userId})
+  } 
+  if(userEmail){
+    user = await UserSchema.findOne({email: userEmail})
+  }
 
-    const mailer = new Email(contactObject)
-    const sent = await mailer.send('two factor authentication', code)
+    if(user && userId){
+      let contactObject = {
+        email:'davexmike72@gmail.com',
+        name: 'psymax',
+      };
+  
+      const mailer = new Email(contactObject)
+      const sent = await mailer.send('two factor authentication', code)
+  
+      // send target email
+      // console.log(sent);
+      if (sent?.status === "success" || sent?.response.startsWith("250")) {
+        console.log('sent');
+        return res.status(200).json({
+          status: 'success',
+          message: 'sent'
+        });
+      }else{
+        throw new Error('failed')
+      }
+    }else if(user && userEmail){
+      return res.status(200).json({
+        status: 'success',
+        data: {email:user.email, userId:user._id}
+      });
 
-    // send target email
-    if (sent?.status === "success" || sent?.response.startsWith("250")) {
-      console.log('sent');
-      return res.status(200).send('done');
-    }else{
-      throw new Error('failed')
+    }
+    else{
+      throw new Error('no user found.')
     }
     
+  } catch (error) {
+    next(error);
+  }
+}
+
+const validateRecoveryPhrase = async (req,res,next)=>{
+  try {
+    const userId = req.body.userId;
+    const recoveryPhrase = req.body.phrase;
+    const user = await UserSchema.findOne({_id: userId})
+    if(user){
+      let phrase = user.recoveryPhrase
+      const isMatch = (await bcrypt.compare(recoveryPhrase, phrase));
+      if(isMatch){
+        return res.status(200).json({
+          status: 'success',
+          data: {userId}
+        });
+      }else{
+        throw new Error('not a match')
+      }
+    }else{
+      throw new Error('no user found')
+    }
   } catch (error) {
     next(error);
   }
@@ -513,5 +562,6 @@ module.exports = {
   get,
   save,
   saveLogo,
-  TwoFaAuth
+  TwoFaAuth,
+  validateRecoveryPhrase
 };

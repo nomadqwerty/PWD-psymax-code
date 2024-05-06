@@ -8,12 +8,8 @@ import { passwordGenerator } from '@/utils/utilityFn';
 import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
 let twoFaCode;
-(async () => {
-  twoFaCode = passwordGenerator();
-  console.log(twoFaCode);
-})();
 
-const TwoFactorAuthPage = ({ id, type }) => {
+const TwoFactorEmailAuth = ({ id }) => {
   const [sent, setSent] = useState(false);
   const [timeSent, setTimeSent] = useState(false);
   const [code, setCode] = useState(false);
@@ -29,44 +25,22 @@ const TwoFactorAuthPage = ({ id, type }) => {
 
   const onSubmit = (data) => {
     console.log(data);
-    if (sent && code) {
-      const inputVal = data.code;
-      console.log(inputVal, code);
-      console.log('submit');
-      if (inputVal == code) {
-        if (timeSent > Date.now()) {
-          if (type === 'login') {
-            router.push('/dashboard');
-          }
-          if (type === 'recovery') {
-            // TODO: navigate to recovery question page
-            router.push(`/recoveryphrase/${id}`);
-          }
-          console.log('on time');
-        } else {
-          router.push('/login');
-        }
+    (async () => {
+      const twoFaRes = await axiosInstance.post(`/user/twofactor`, {
+        code: twoFaCode,
+        email: data.email,
+      });
+      console.log(twoFaRes);
+      if (twoFaRes.status === 200) {
+        console.log(twoFaRes.data.data.userId);
+        router.push(
+          `/twofactorauthentication/${twoFaRes.data.data.userId}-recovery`
+        );
+      } else {
+        router.push(`/login`);
       }
-    }
+    })();
   };
-
-  useEffect(() => {
-    if (twoFaCode) {
-      (async () => {
-        const twoFaRes = await axiosInstance.post(`/user/twofactor`, {
-          code: twoFaCode,
-          userId: id,
-        });
-        if (twoFaRes.status === 200) {
-          setCode(twoFaCode);
-          console.log(twoFaCode);
-
-          setSent(true);
-          setTimeSent(Date.now() + 900000);
-        }
-      })();
-    }
-  }, []);
 
   return (
     <>
@@ -85,7 +59,7 @@ const TwoFactorAuthPage = ({ id, type }) => {
                 className="text-center mt-16 interFonts text-2xl font-semibold text[#0e0e0e]"
                 style={{ marginTop: '150px' }}
               >
-                Two Factor Authentication
+                Verify Your Email.
               </p>
             </Grid>
             <Grid container>
@@ -100,19 +74,19 @@ const TwoFactorAuthPage = ({ id, type }) => {
               >
                 <CssTextField
                   fullWidth
-                  name="code"
-                  type="code"
+                  name="email"
+                  type="email"
                   focusColor="#3C3C3C"
-                  id="code"
-                  label="code"
+                  id="email"
+                  label="email"
                   variant="outlined"
-                  {...register('code', { required: true })}
-                  error={!!errors.code}
+                  {...register('email', { required: true })}
+                  error={!!errors.email}
                   inputProps={{
                     className: 'interFonts',
                   }}
                 />
-                {errors?.code && (
+                {errors?.email && (
                   <p className="validationErr">
                     Dieses Feld ist ein Pflichtfeld
                   </p>
@@ -154,4 +128,4 @@ const TwoFactorAuthPage = ({ id, type }) => {
   );
 };
 
-export default TwoFactorAuthPage;
+export default TwoFactorEmailAuth;

@@ -8,12 +8,8 @@ import { passwordGenerator } from '@/utils/utilityFn';
 import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
 let twoFaCode;
-(async () => {
-  twoFaCode = passwordGenerator();
-  console.log(twoFaCode);
-})();
 
-const TwoFactorAuthPage = ({ id, type }) => {
+const RecoveryPhrasePage = ({ id }) => {
   const [sent, setSent] = useState(false);
   const [timeSent, setTimeSent] = useState(false);
   const [code, setCode] = useState(false);
@@ -28,45 +24,21 @@ const TwoFactorAuthPage = ({ id, type }) => {
   } = useForm();
 
   const onSubmit = (data) => {
-    console.log(data);
-    if (sent && code) {
-      const inputVal = data.code;
-      console.log(inputVal, code);
-      console.log('submit');
-      if (inputVal == code) {
-        if (timeSent > Date.now()) {
-          if (type === 'login') {
-            router.push('/dashboard');
-          }
-          if (type === 'recovery') {
-            // TODO: navigate to recovery question page
-            router.push(`/recoveryphrase/${id}`);
-          }
-          console.log('on time');
-        } else {
-          router.push('/login');
-        }
+    // TODO: verify phrase.
+    (async () => {
+      console.log(data);
+      const recoveryRes = await axiosInstance.post(`/user/recoveryphrase`, {
+        userId: id,
+        phrase: data.phrase,
+      });
+      console.log(recoveryRes);
+      if (recoveryRes.status === 200) {
+        router.push(`/passwordreset/${recoveryRes.data.data.userId}`);
+      } else {
+        router.push(`/login`);
       }
-    }
+    })();
   };
-
-  useEffect(() => {
-    if (twoFaCode) {
-      (async () => {
-        const twoFaRes = await axiosInstance.post(`/user/twofactor`, {
-          code: twoFaCode,
-          userId: id,
-        });
-        if (twoFaRes.status === 200) {
-          setCode(twoFaCode);
-          console.log(twoFaCode);
-
-          setSent(true);
-          setTimeSent(Date.now() + 900000);
-        }
-      })();
-    }
-  }, []);
 
   return (
     <>
@@ -85,7 +57,7 @@ const TwoFactorAuthPage = ({ id, type }) => {
                 className="text-center mt-16 interFonts text-2xl font-semibold text[#0e0e0e]"
                 style={{ marginTop: '150px' }}
               >
-                Two Factor Authentication
+                Verify Your recovery phrase.
               </p>
             </Grid>
             <Grid container>
@@ -100,19 +72,19 @@ const TwoFactorAuthPage = ({ id, type }) => {
               >
                 <CssTextField
                   fullWidth
-                  name="code"
-                  type="code"
+                  name="phrase"
+                  type="phrase"
                   focusColor="#3C3C3C"
-                  id="code"
-                  label="code"
+                  id="phrase"
+                  label="phrase"
                   variant="outlined"
-                  {...register('code', { required: true })}
-                  error={!!errors.code}
+                  {...register('phrase', { required: true })}
+                  error={!!errors.phrase}
                   inputProps={{
                     className: 'interFonts',
                   }}
                 />
-                {errors?.code && (
+                {errors?.phrase && (
                   <p className="validationErr">
                     Dieses Feld ist ein Pflichtfeld
                   </p>
@@ -154,4 +126,4 @@ const TwoFactorAuthPage = ({ id, type }) => {
   );
 };
 
-export default TwoFactorAuthPage;
+export default RecoveryPhrasePage;

@@ -554,6 +554,36 @@ const validateRecoveryPhrase = async (req,res,next)=>{
     next(error);
   }
 }
+
+const resetPassword = async (req,res,next)=>{
+  try {
+    const userId = req.body.userId;
+    const newPassword = req.body.password;
+
+    const passwordStrength = zxcvbn(newPassword);
+
+    if (passwordStrength?.score < 3) {
+      let response = {
+        status_code: 400,
+        message: 'Das Passwort sollte sicher sein',
+      };
+      return res.status(400).send(response);
+    }
+
+    const user = await UserSchema.findOne({_id: userId})
+    if(user && newPassword){
+      const newPassHash = await bcrypt.hash(newPassword, 10);
+      user.password = newPassHash;
+      await user.save()
+    }
+    return res.status(200).json({
+      status: 'success',
+      data: {userId}
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 module.exports = {
   register,
   login,
@@ -563,5 +593,6 @@ module.exports = {
   save,
   saveLogo,
   TwoFaAuth,
-  validateRecoveryPhrase
+  validateRecoveryPhrase,
+  resetPassword
 };

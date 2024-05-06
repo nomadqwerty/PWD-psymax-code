@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { passwordGenerator } from '@/utils/utilityFn';
 import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
+import { Password } from '@mui/icons-material';
 let twoFaCode;
 
 const PasswordResetPage = ({ id }) => {
@@ -26,17 +27,24 @@ const PasswordResetPage = ({ id }) => {
   const onSubmit = (data) => {
     // TODO: rest password.
     (async () => {
-      console.log(data);
-      //   const recoveryRes = await axiosInstance.post(`/user/recoveryphrase`, {
-      //     userId: id,
-      //     phrase: data.phrase,
-      //   });
-      //   console.log(recoveryRes);
-      //   if (recoveryRes.status === 200) {
-      //     router.push(`/passwordreset/${recoveryRes.data.data.userId}`);
-      //   } else {
-      //     router.push(`/login`);
-      //   }
+      let password = data.password;
+      let passwordConfirm = data.passwordConfirm;
+
+      if (password === passwordConfirm) {
+        console.log(data);
+        const recoveryRes = await axiosInstance.post(`/user/resetpassword`, {
+          userId: id,
+          password: password,
+        });
+        console.log(recoveryRes);
+      }
+
+      // console.log(recoveryRes);
+      // if (recoveryRes.status === 200) {
+      //   router.push(`/passwordreset/${recoveryRes.data.data.userId}`);
+      // } else {
+      //   router.push(`/login`);
+      // }
     })();
   };
 

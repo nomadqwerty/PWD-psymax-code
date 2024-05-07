@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { UserSchema } = require('../models/userModel');
 const Joi = require('joi');
 const UserVault = require('../models/UserVault');
+const ClientVault = require("../models/ClientVault");
 const {
   TimeForTokenExpire,
   GLOBAL_POINT_VALUE,
@@ -12,6 +13,7 @@ const fs = require('fs');
 const zxcvbn = require('zxcvbn');
 const { GlobalPointsSchema } = require('../models/globalPointsModel');
 const Email = require('./contactUtil/contactUtil')
+const ServerVault = require("../models/ServerVault");
 
 const register = async (req, res, next) => {
   try {
@@ -571,15 +573,32 @@ const resetPassword = async (req,res,next)=>{
     }
 
     const user = await UserSchema.findOne({_id: userId})
+
     if(user && newPassword){
       const newPassHash = await bcrypt.hash(newPassword, 10);
-      user.password = newPassHash;
-      await user.save()
+      const oldPasswordHash = user.password
+      const emergencyPasswordHash = user.emergencyPassword
+
+      if(oldPasswordHash && emergencyPasswordHash && newPassHash){
+        let vault = await UserVault.find({ userId: userId });
+        let clientVault = await ClientVault.find({ userId: userId });
+        let serverVault = await ServerVault.find();
+       
+        if (vault.length === 3 && clientVault.length === 3 && serverVault[0]) {
+          user.password = newPassHash;
+          await user.save()
+
+          return res.status(200).json({
+            status: 'success',
+            data: {fileVaults: vault, clientVaults: clientVault, serverVault:serverVault, oldPasswordHash: oldPasswordHash, emergencyPassword:user.emergencyPassword, newPassword:newPassHash}
+          });
+        }
+      }else{
+        throw new Error('failed to update password')
+      }
+    }else{
+      throw new Error('no user or new password available')
     }
-    return res.status(200).json({
-      status: 'success',
-      data: {userId}
-    });
   } catch (error) {
     next(error);
   }

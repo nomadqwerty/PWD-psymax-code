@@ -95,12 +95,14 @@ let encryptOnLoginA = async (
         iv,
         clientsUpdate
       );
+
       const clientMainEnc = await encryptData(
         operations,
         masterKey,
         iv,
         clientsMain
       );
+
       const clientArchiveEnc = await encryptData(
         operations,
         masterKey,
@@ -159,6 +161,7 @@ let encryptOnLoginA = async (
       let masterKeyEncUint = new Uint8Array(masterKeyEnc);
 
       // TODO: import axiosInstance
+      console.log(fileVaultArray, clientVaultArray);
       const resVault = await axiosInstance.post(`/vault/user/update`, {
         fileVault: fileVaultArray,
         clientVault: clientVaultArray,
@@ -299,16 +302,19 @@ let encryptOnLoginB = async (
       // file
       let decryptedFiles = [];
       let decryptedArchive = [];
+
       encryptedVaults[0].forEach(async (e) => {
-        console.log(e.type);
+        console.log(e);
+
+        let vault = {};
         let dataDec = await decryptData(operations, backUpMaster, iv, e.data);
+        vault.data = dataDec;
+        vault.type = e.type;
 
-        dataDec.type = e.type;
-
-        if (dataDec.type !== 'archive') {
-          decryptedFiles.push(dataDec);
+        if (e.type !== 'archive') {
+          decryptedFiles.push(vault);
         } else {
-          decryptedArchive.push(dataDec);
+          decryptedArchive.push(vault);
         }
 
         if (decryptedFiles.length == 2 && decryptedArchive.length == 1) {
@@ -365,6 +371,8 @@ let encryptOnLoginB = async (
 
           const mergedVaults = vaultMerger('file', updateVault, mainVault);
 
+          console.log(mergedVaults);
+
           let newMainVault = { data: mergedVaults, type: 'main' };
           console.log(newMainVault);
           // TODO: add state to params
@@ -395,13 +403,16 @@ let encryptOnLoginB = async (
       let decryptedClients = [];
       let decClientArchive = [];
       encryptedVaults[1].forEach(async (e) => {
+        let vault = {};
+
         let dataDec = await decryptData(operations, backUpMaster, iv, e.data);
 
-        dataDec.type = e.type;
-        if (dataDec.type !== 'archive') {
-          decryptedClients.push(dataDec);
+        vault.data = dataDec;
+        vault.type = e.type;
+        if (e.type !== 'archive') {
+          decryptedClients.push(vault);
         } else {
-          decClientArchive.push(dataDec);
+          decClientArchive.push(vault);
         }
         if (decryptedClients.length == 2 && decClientArchive.length == 1) {
           let updateVault =
@@ -415,7 +426,7 @@ let encryptOnLoginB = async (
               : decryptedClients[1];
 
           let archiveVault = decClientArchive[0];
-
+          console.log(decryptedClients);
           if (mainVault.data.length >= 250) {
             const newArchive = vaultMerger('client', archiveVault, mainVault);
 

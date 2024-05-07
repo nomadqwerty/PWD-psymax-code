@@ -17,10 +17,10 @@ import { Password } from '@mui/icons-material';
 let twoFaCode;
 
 const PasswordResetPage = ({ id }) => {
-  const [sent, setSent] = useState(false);
-  const [timeSent, setTimeSent] = useState(false);
-  const [code, setCode] = useState(false);
-  const [userInput, setUserInput] = useState('');
+  const [fileEncVault, setFileEncVault] = useState(false);
+  const [clientEncVault, setClientEncVault] = useState(false);
+  const [newRecoveryKey, setNewRecoveryKey] = useState(false);
+
   const router = useRouter();
 
   const {
@@ -30,6 +30,20 @@ const PasswordResetPage = ({ id }) => {
     formState: { errors },
   } = useForm();
 
+  useEffect(() => {
+    if (fileEncVault && clientEncVault && newRecoveryKey) {
+      console.log(fileEncVault, clientEncVault, newRecoveryKey);
+      (async () => {
+        const resVault = await axiosInstance.post(`/vault/user/update`, {
+          fileVault: fileEncVault,
+          clientVault: clientEncVault,
+          recoveryKey: newRecoveryKey,
+        });
+        console.log(resVault);
+      })();
+    }
+  }, [fileEncVault, clientEncVault, newRecoveryKey]);
+
   const onSubmit = (data) => {
     // TODO: rest password.
     (async () => {
@@ -37,7 +51,7 @@ const PasswordResetPage = ({ id }) => {
       let passwordConfirm = data.passwordConfirm;
 
       if (password === passwordConfirm) {
-        console.log(data);
+        // console.log(data);
 
         const recoveryRes = await axiosInstance.post(`/user/resetpassword`, {
           userId: id,
@@ -46,7 +60,7 @@ const PasswordResetPage = ({ id }) => {
 
         if (recoveryRes.status === 200) {
           let vaults = recoveryRes.data.data;
-          console.log(vaults);
+          // console.log(vaults);
           if (vaults) {
             const {
               oldPasswordHash,
@@ -85,7 +99,9 @@ const PasswordResetPage = ({ id }) => {
                 masterKeySalt,
                 window
               );
+
               let newKeysLength = Object.keys(newKeys).length;
+
               if (newKeysLength > 0 && clientEncrypted && fileEncrypted) {
                 let newMaster = newKeys.masterKey;
                 let newIv = newKeys.iv;
@@ -150,16 +166,16 @@ const PasswordResetPage = ({ id }) => {
 
                 let masterKeyEncUint = new Uint8Array(masterKeyEnc);
 
+                setNewRecoveryKey(Array.from(masterKeyEncUint));
+
                 // decrypt vaults
                 let decryptedFiles = [];
                 let encryptedFiles = [];
                 let decryptedClients = [];
                 let encryptedClients = [];
 
-                console.log(encryptedVaults);
-
                 encryptedVaults[0].forEach(async (e) => {
-                  console.log(e.type);
+                  // console.log(e.type);
                   let dataDec = await decryptData(
                     operations,
                     oldMaster,
@@ -167,10 +183,8 @@ const PasswordResetPage = ({ id }) => {
                     e.data
                   );
                   if (dataDec) {
-                    console.log(dataDec);
                     dataDec.type = e.type;
                     decryptedFiles.push(dataDec);
-                    console.log(dataDec.data);
                     const encrypted = await encryptData(
                       operations,
                       newMaster,
@@ -179,9 +193,14 @@ const PasswordResetPage = ({ id }) => {
                     );
                     let encUint = new Uint8Array(encrypted);
                     encryptedFiles.push({
-                      data: Array.from(encUint),
+                      passwords: Array.from(encUint),
                       type: e.type,
+                      userId: id,
                     });
+                    if (encryptedFiles.length === 3) {
+                      setFileEncVault([...encryptedFiles]);
+                      console.log(encryptedFiles);
+                    }
                   }
                 });
                 encryptedVaults[1].forEach(async (e) => {
@@ -192,10 +211,8 @@ const PasswordResetPage = ({ id }) => {
                     e.data
                   );
                   if (dataDec) {
-                    console.log(dataDec);
                     dataDec.type = e.type;
                     decryptedClients.push(dataDec);
-                    console.log(dataDec.data);
                     const encrypted = await encryptData(
                       operations,
                       newMaster,
@@ -204,15 +221,16 @@ const PasswordResetPage = ({ id }) => {
                     );
                     let encUint = new Uint8Array(encrypted);
                     encryptedClients.push({
-                      data: Array.from(encUint),
+                      clients: Array.from(encUint),
                       type: e.type,
+                      userId: id,
                     });
+                    if (encryptedClients.length === 3) {
+                      console.log(encryptedClients);
+                      setClientEncVault([...encryptedClients]);
+                    }
                   }
                 });
-
-                console.log(masterKeyEncUint);
-                console.log(encryptedFiles);
-                console.log(encryptedClients);
               }
             } else {
               console.log(clientEncrypted, fileEncrypted);
@@ -220,13 +238,6 @@ const PasswordResetPage = ({ id }) => {
           }
         }
       }
-
-      // console.log(recoveryRes);
-      // if (recoveryRes.status === 200) {
-      //   router.push(`/passwordreset/${recoveryRes.data.data.userId}`);
-      // } else {
-      //   router.push(`/login`);
-      // }
     })();
   };
 

@@ -62,21 +62,21 @@ let encryptOnLoginA = async (
         operations,
         masterKey,
         iv,
-        passwordUpdateDirectory
+        passwordUpdateDirectory.data
       );
 
       const passMainDirEnc = await encryptData(
         operations,
         masterKey,
         iv,
-        passwordMainDirectory
+        passwordMainDirectory.data
       );
 
       const passArchiveDirEnc = await encryptData(
         operations,
         masterKey,
         iv,
-        passwordArchiveDirectory
+        passwordArchiveDirectory.data
       );
 
       const clientsUpdate = {
@@ -93,21 +93,21 @@ let encryptOnLoginA = async (
         operations,
         masterKey,
         iv,
-        clientsUpdate
+        clientsUpdate.data
       );
 
       const clientMainEnc = await encryptData(
         operations,
         masterKey,
         iv,
-        clientsMain
+        clientsMain.data
       );
 
       const clientArchiveEnc = await encryptData(
         operations,
         masterKey,
         iv,
-        clientsArchive
+        clientsArchive.data
       );
 
       const passUpdateUintArr = new Uint8Array(passUpdateDirEnc);
@@ -307,7 +307,7 @@ let encryptOnLoginB = async (
         console.log(e);
 
         let vault = {};
-        let dataDec = await decryptData(operations, backUpMaster, iv, e.data);
+        let dataDec = await decryptData(operations, masterKey, iv, e.data);
         vault.data = dataDec;
         vault.type = e.type;
 
@@ -316,7 +316,7 @@ let encryptOnLoginB = async (
         } else {
           decryptedArchive.push(vault);
         }
-
+        console.log(vault, e);
         if (decryptedFiles.length == 2 && decryptedArchive.length == 1) {
           let updateVault =
             decryptedFiles[0].type !== 'update'
@@ -345,14 +345,14 @@ let encryptOnLoginB = async (
               operations,
               masterKey,
               iv,
-              newMainVault
+              newMainVault.data
             );
 
             const encArchiveVault = await encryptData(
               operations,
               masterKey,
               iv,
-              newArchiveVault
+              newArchiveVault.data
             );
 
             let mainUint = new Uint8Array(encMainVault);
@@ -381,7 +381,7 @@ let encryptOnLoginB = async (
             operations,
             masterKey,
             iv,
-            newMainVault
+            newMainVault.data
           );
 
           let mergeUint = new Uint8Array(encMainVault);
@@ -405,7 +405,7 @@ let encryptOnLoginB = async (
       encryptedVaults[1].forEach(async (e) => {
         let vault = {};
 
-        let dataDec = await decryptData(operations, backUpMaster, iv, e.data);
+        let dataDec = await decryptData(operations, masterKey, iv, e.data);
 
         vault.data = dataDec;
         vault.type = e.type;
@@ -414,6 +414,7 @@ let encryptOnLoginB = async (
         } else {
           decClientArchive.push(vault);
         }
+        console.log(vault);
         if (decryptedClients.length == 2 && decClientArchive.length == 1) {
           let updateVault =
             decryptedClients[0].type !== 'update'
@@ -441,14 +442,14 @@ let encryptOnLoginB = async (
               operations,
               masterKey,
               iv,
-              newMainVault
+              newMainVault.data
             );
 
             const encArchiveVault = await encryptData(
               operations,
               masterKey,
               iv,
-              newArchiveVault
+              newArchiveVault.data
             );
 
             let mainUint = new Uint8Array(encMainVault);
@@ -474,7 +475,7 @@ let encryptOnLoginB = async (
             operations,
             masterKey,
             iv,
-            newMainVault
+            newMainVault.data
           );
           let mergeUint = new Uint8Array(encMainVault);
           // update main vault
@@ -491,7 +492,7 @@ let encryptOnLoginB = async (
         }
       });
 
-      // // TODO: add vault to state, add keys to ram.
+      // TODO: add vault to state, add keys to ram.
       sessionStorage.setItem('dualKeyOne', dualKeyOne);
       setServerVault(vault);
       setUpdateFileVault({
@@ -564,7 +565,7 @@ const fetchData_encryptOnLogout = async (
             operations,
             masterKey,
             iv,
-            updateFileVault
+            updateFileVault.data
           );
           let fileUpdateUint = new Uint8Array(fileUpdateEnc);
           console.log(fileUpdateUint);
@@ -590,7 +591,7 @@ const fetchData_encryptOnLogout = async (
             operations,
             masterKey,
             iv,
-            updateClientVault
+            updateClientVault.data
           );
           let clientUpdateUint = new Uint8Array(clientUpdateEnc);
           console.log(clientUpdateUint);
@@ -606,7 +607,7 @@ const fetchData_encryptOnLogout = async (
             operations,
             masterKey,
             iv,
-            clientVault
+            clientVault.data
           );
           let clientUint = new Uint8Array(clientEnc);
           console.log(clientUint);

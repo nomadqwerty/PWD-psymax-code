@@ -48,36 +48,38 @@ const ClientFileDownLoad = () => {
 
           let dataDec = await decryptData(operations, masterKey, iv, fileVault);
 
-          const fileKeys = dataDec.data.forEach(async (e) => {
-            if (e.fileName.includes(fileName)) {
-              const { fileKey, fileName } = e;
-              setStage('decrypting file...');
-              let allKeys = await deriveAllKeys(
-                fileKey,
-                ePassword,
-                dualKeySalt,
-                masterKeySalt,
-                window
-              );
-              // console.log(allKeys);
-
-              let keysLength = Object.keys(allKeys).length;
-
-              if (keysLength > 0) {
-                const { masterKey, iv } = allKeys;
-
-                const decFile = await decryptFile(
-                  operations,
-                  data,
-                  masterKey,
-                  iv
+          if (dataDec) {
+            dataDec.forEach(async (e) => {
+              if (e.fileName.includes(fileName)) {
+                const { fileKey, fileName } = e;
+                setStage('decrypting file...');
+                let allKeys = await deriveAllKeys(
+                  fileKey,
+                  ePassword,
+                  dualKeySalt,
+                  masterKeySalt,
+                  window
                 );
-                setStage('downloading file...');
-                downloadFile(decFile, fileName);
-                setStage('file download successful...');
+                // console.log(allKeys);
+
+                let keysLength = Object.keys(allKeys).length;
+
+                if (keysLength > 0) {
+                  const { masterKey, iv } = allKeys;
+
+                  const decFile = await decryptFile(
+                    operations,
+                    data,
+                    masterKey,
+                    iv
+                  );
+                  setStage('downloading file...');
+                  downloadFile(decFile, fileName);
+                  setStage('file download successful...');
+                }
               }
-            }
-          });
+            });
+          }
         }
       }
     })();

@@ -31,6 +31,7 @@ const PasswordResetPage = ({ id }) => {
   } = useForm();
 
   useEffect(() => {
+    console.log(fileEncVault, clientEncVault, newRecoveryKey);
     if (fileEncVault && clientEncVault && newRecoveryKey) {
       console.log(fileEncVault, clientEncVault, newRecoveryKey);
       (async () => {
@@ -40,6 +41,9 @@ const PasswordResetPage = ({ id }) => {
           recoveryKey: newRecoveryKey,
         });
         console.log(resVault);
+        if (resVault.status === 200) {
+          router.push(`/login`);
+        }
       })();
     }
   }, [fileEncVault, clientEncVault, newRecoveryKey]);
@@ -173,6 +177,8 @@ const PasswordResetPage = ({ id }) => {
                 let encryptedFiles = [];
                 let decryptedClients = [];
                 let encryptedClients = [];
+                console.log(oldPasswordHash);
+                console.log(encryptedVaults);
 
                 encryptedVaults[0].forEach(async (e) => {
                   // console.log(e.type);
@@ -182,14 +188,16 @@ const PasswordResetPage = ({ id }) => {
                     oldIv,
                     e.data
                   );
+                  console.log(dataDec);
                   if (dataDec) {
                     dataDec.type = e.type;
                     decryptedFiles.push(dataDec);
+                    console.log(dataDec.data);
                     const encrypted = await encryptData(
                       operations,
                       newMaster,
                       newIv,
-                      dataDec.data
+                      dataDec
                     );
                     let encUint = new Uint8Array(encrypted);
                     encryptedFiles.push({
@@ -210,14 +218,16 @@ const PasswordResetPage = ({ id }) => {
                     oldIv,
                     e.data
                   );
+                  console.log(dataDec);
                   if (dataDec) {
                     dataDec.type = e.type;
                     decryptedClients.push(dataDec);
+                    console.log(dataDec.data);
                     const encrypted = await encryptData(
                       operations,
                       newMaster,
                       newIv,
-                      dataDec.data
+                      dataDec
                     );
                     let encUint = new Uint8Array(encrypted);
                     encryptedClients.push({
@@ -225,6 +235,7 @@ const PasswordResetPage = ({ id }) => {
                       type: e.type,
                       userId: id,
                     });
+
                     if (encryptedClients.length === 3) {
                       console.log(encryptedClients);
                       setClientEncVault([...encryptedClients]);

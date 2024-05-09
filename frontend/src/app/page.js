@@ -1,11 +1,18 @@
-"use client";
+import Image from "next/image";
+import styles from "./page.module.css";
+// import HomePage from "@/Components/Homepage/Homepage";
 import Link from "next/link";
 
-const CreateCall = () => {
+export default function Home() {
   return (
-    <div>
-      <a href={"/call"}>Create call</a>
-    </div>
+  <>
+    <Link href="/jitsi">
+    Jitsi implementation</Link>
+<br/>
+    <Link href="/rtc">
+    FULL RTC</Link>
+    
+  </>
+    
   );
-};
-export default CreateCall;
+}

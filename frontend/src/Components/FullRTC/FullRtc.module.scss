@@ -1,0 +1,41 @@
+#videos {
+  /* display: grid; */
+  grid-template-columns: 1fr 1fr;
+  gap: 2em;
+  margin: auto;
+  align-items: center;
+  justify-content: center !important;
+  text-align: center;
+  width: 90%;
+  border: 1px solid red;
+}
+
+.videoPlayer {
+  background-color: black;
+  width: 100%;
+  height: 300px;
+  display: block;
+  margin: auto;
+}
+
+#user2, #user2_div{
+    display: none !important;
+}
+// .noDisplay {
+//   display: none;
+// }
+
+.clientName {
+  text-align: center;
+}
+
+#controls {
+    // display: none !important;
+  border: 1px solid red;
+
+}
+
+.controlContainer {
+
+//   border: 1px solid red;
+}

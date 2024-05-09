@@ -1,8 +1,13 @@
 import { Inter } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
-import AppWrap from "./appWrap";
-import PeerListener from "./peerConnection";
+import React from "react";
+
+//bootstrap imports
+import BootstrapClient from "@/utils/bootstrap/BootstrapClient";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+// import { SocketContext, socket } from "./context/SocketContext";
+import { Container } from "react-bootstrap";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,9 +19,15 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head></head>
+      <head>
+      </head>
       <body className={inter.className}>
-        <AppWrap>{children}</AppWrap>
+        <div id="root" >
+          <Container className="p-0 m-0" fluid>
+            {children}
+          </Container>
+        </div>
+        <BootstrapClient />
       </body>
     </html>
   );

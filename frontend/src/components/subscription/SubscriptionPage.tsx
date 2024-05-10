@@ -7,6 +7,7 @@ import AirplayOutlinedIcon from '@mui/icons-material/AirplayOutlined';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import PostAddOutlinedIcon from '@mui/icons-material/PostAddOutlined';
+import Link from 'next/link';
 
 export default function SubscriptionPage() {
   return (
@@ -37,9 +38,12 @@ export default function SubscriptionPage() {
                 <AccountCircleOutlinedIcon htmlColor="#2B86FC" />
                 <p className="text-[#707070]">1 Nutzer</p>
               </div>
-              <button className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border text-sm bg-gray-100 rounded-md font-medium w-full mt-6">
+              <Link
+                href="/login"
+                className="text-center inline-block px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border text-sm bg-gray-100 rounded-md font-medium w-full mt-6"
+              >
                 Jetzt buchen
-              </button>
+              </Link>
             </div>
           </div>
           {/* 2 */}
@@ -63,9 +67,12 @@ export default function SubscriptionPage() {
                 <AccountCircleOutlinedIcon htmlColor="#2B86FC" />
                 <p className="text-[#707070]">1 Nutzer</p>
               </div>
-              <button className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border text-sm bg-gray-100 rounded-md font-medium w-full mt-6">
+              <Link
+                href="/subscription-complete"
+                className="text-center inline-block px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border text-sm bg-gray-100 rounded-md font-medium w-full mt-6"
+              >
                 Jetzt buchen
-              </button>
+              </Link>
             </div>
             <div className="p-4">
               <p className="text-[#707070]">

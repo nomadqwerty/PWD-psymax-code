@@ -1,11 +1,203 @@
 'use client';
 import AppLayout from '@/components/AppLayout';
-import { Checkbox } from '@mui/material';
+import {
+  Checkbox,
+  FormControl,
+  FormControlLabel,
+  Modal,
+  Radio,
+  RadioGroup,
+} from '@mui/material';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import CssTextField from '../CssTextField';
-import { useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
+import axiosInstance from '@/utils/axios';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { SOMETHING_WRONG } from '@/utils/constants';
+import { handleApiError } from '@/utils/apiHelpers';
+import kontoContext from '@/context/konto.context';
+import { addDays, differenceInDays, format, isAfter, isEqual } from 'date-fns';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import useSWR from 'swr';
+import ModelDialogue from '../../components/Dialog/ModelDialogue';
 
 export default function SubscriptionDetails() {
+  const context = useContext(kontoContext);
+  const { kontoData, setKontoData } = context.menuState;
+
+  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [isCancelDialogModalOpen, setIsCancelDialogModalOpen] = useState(false);
+  const [isOpenPaymentMethodModal, setIsOpenPaymentMethodModal] =
+    useState(false);
+
+  const router = useRouter();
+
+  const fetchData = async (url: string) => {
+    const response = await axiosInstance.get(url);
+    return response.data;
+  };
+
+  const {
+    data: subscriptionData,
+    // error: subscriptionError,
+    isLoading: isSubscriptionLoading,
+    mutate: mutateSubscriptionData,
+  } = useSWR(
+    kontoData._id ? `/subscriptions/${kontoData._id}` : null,
+    fetchData
+  );
+  const {
+    data: invoicesData,
+    // error: invoicesError,
+    isLoading: isInvoicesLoading,
+  } = useSWR(
+    kontoData._id ? `/subscription/${kontoData._id}/invoices/` : null,
+    fetchData
+  );
+
+  const [search, setSearch] = useState('');
+
+  const filteredInvoices = useMemo(() => {
+    if (!invoicesData?.invoices) return [];
+    return invoicesData.invoices.filter((invoice) =>
+      invoice.referenceId.includes(search)
+    );
+  }, [search, invoicesData]);
+
+  function cyclesToDays(cycles: number) {
+    return cycles * 30;
+  }
+  console.log('data', kontoData, subscriptionData);
+
+  const exportInvoices = async () => {
+    const invoiceIds = selectedRows.map((index) => filteredInvoices[index]._id);
+    try {
+      if (invoiceIds.length === 0) return;
+      // setIsExporting(() => true);
+
+      const res = await axiosInstance.post('/invoice/download-summary', {
+        invoiceIds,
+      });
+
+      const responseData = res?.data?.data;
+      if (responseData) {
+        // create a new JSZip instance
+        let zip = new JSZip();
+
+        // loop through the pdf data array
+        for (let i = 0; i < responseData.length; i++) {
+          // get the base64 encoded pdf and the file name
+          let base64Pdf = responseData[i].base64Pdf;
+          let fileName = responseData[i].fileName;
+
+          // add the pdf file to the zip
+          zip.file(fileName, base64Pdf, { base64: true });
+        }
+
+        // generate the zip file as a blob
+        zip.generateAsync({ type: 'blob' }).then(function (content) {
+          // save the zip file using FileSaver.js
+          saveAs(content, 'psymax-invoice.zip');
+        });
+
+        // reset the selection model
+        // setSelectionModel(() => []);
+        toast.success('Anlagen erfolgreich exportiert');
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(SOMETHING_WRONG);
+    }
+
+    // setIsExporting(() => false);
+  };
+
+  const trialInfo = useMemo(() => {
+    console.log('JOnto is ', kontoData);
+
+    return {
+      trialEnd: kontoData?.trialEnd
+        ? format(kontoData.trialEnd, 'E..EEE LLLL yyyy, kk:mm:ss')
+        : 'N/A',
+      trialDays: kontoData?.trialDays,
+    };
+  }, [kontoData]);
+
+  const referralCycles = useMemo(() => {
+    return {
+      totalDays: cyclesToDays(kontoData.referralBonusCycles ?? 0),
+      endDate: subscriptionData?.data?.startDate
+        ? format(
+            addDays(new Date(subscriptionData?.data?.startDate), 1),
+            'E..EEE LLLL yyyy, kk:mm:ss'
+          )
+        : 'N/A',
+    };
+  }, [kontoData, subscriptionData]);
+
+  // const rows = [
+  //   {
+  //     id: 1,
+  //     date: '{Date}',
+  //     invoice: '{Rechnungsnummer}',
+  //     name: '{documentname}',
+  //   },
+  //   {
+  //     id: 2,
+  //     date: '{Date}',
+  //     invoice: '{Rechnungsnummer}',
+  //     name: '{documentname}',
+  //   },
+  //   {
+  //     id: 3,
+  //     date: '{Date}',
+  //     invoice: '{Rechnungsnummer}',
+  //     name: '{documentname}',
+  //   },
+  // ];
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await axiosInstance.get(`/user/get`);
+        const responseData = response?.data?.data;
+        if (response?.status === 200) {
+          setKontoData(responseData);
+          // router.push('/dashboard');
+        } else {
+          toast.error(SOMETHING_WRONG);
+        }
+      } catch (error) {
+        handleApiError(error, router);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  async function cancelSubscription() {
+    // TODO: Redirect user out of dashboard
+    try {
+      const response = await axiosInstance.post(
+        `/subscriptions/${kontoData._id}/cancel`
+      );
+      if (response?.status === 200) {
+        toast.success('Subscription cancelled successfully');
+      } else {
+        toast.error(SOMETHING_WRONG);
+      }
+    } catch (error) {
+      handleApiError(error, router);
+    }
+    setIsCancelDialogModalOpen(false);
+  }
+
+  function closeModal() {
+    setIsCancelDialogModalOpen(false);
+  }
+
   return (
     <AppLayout>
       <div>
@@ -13,7 +205,10 @@ export default function SubscriptionDetails() {
         <div className="mt-8">
           <div className="flex justify-between items-center">
             <h2 className="font-bold text-3xl">Abonnement</h2>
-            <button className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6">
+            <button
+              className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6"
+              onClick={() => setIsCancelDialogModalOpen(true)}
+            >
               Abonnement kündigen
             </button>
           </div>
@@ -26,7 +221,14 @@ export default function SubscriptionDetails() {
               </span>
             </p>
             <p className="my-2 text-[#707070]">
-              Ihr Abonnement wird in {'{ X }'} Tage(n) verlängert.
+              Ihr Abonnement wird in{' '}
+              {differenceInDays(
+                subscriptionData?.data?.nextChargeDate || new Date(),
+                new Date()
+              )}{' '}
+              {/* TODO: No need for optional operator */}
+              {/* {differenceInDays(subscriptionData?.nextChargeDate, new Date())}{' '} */}
+              Tage(n) verlängert.
             </p>
             <div className="flex items-center gap-2">
               <AccountCircleOutlinedIcon htmlColor="#2B86FC" />
@@ -37,7 +239,10 @@ export default function SubscriptionDetails() {
         <div className="mt-16">
           <div className="flex justify-between items-center">
             <h2 className="font-bold text-3xl">Zahlungsmethode</h2>
-            <button className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6">
+            <button
+              className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6"
+              onClick={() => setIsOpenPaymentMethodModal(true)}
+            >
               Zahlungsmethode ändern
             </button>
           </div>
@@ -52,11 +257,57 @@ export default function SubscriptionDetails() {
           </div>
           <ul className="text-[#707070]">
             <li>Praxis/Instiut/Firma</li>
-            <li>Vorname Nachname</li>
-            <li>Strasse und Hausnummer</li>
-            <li>Postleitzahl Ort</li>
-            <li>Land</li>
+            <li>
+              {kontoData?.Vorname} {kontoData?.Nachname}
+            </li>
+            <li>{kontoData?.Strasse_und_Hausnummer}</li>
+            <li>
+              {kontoData?.PLZ} {kontoData?.Ort}
+            </li>
+            <li>{kontoData?.Land}</li>
           </ul>
+        </div>
+        <div className="mt-16">
+          <div className="flex justify-between items-center">
+            <h2 className="font-bold text-3xl">Empfehlungsbonus</h2>
+            {/* <button className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6">
+              Rechnungsangaben ändern
+            </button> */}
+          </div>
+          <div className="mt-2">
+            {/* <p>
+              Your current subscription is set to renew at
+              <span className="text-[#707070]">
+                {' '}
+                Mon February 2024, 12:00:00
+              </span>
+            </p> */}
+            <p>
+              You are currently on a free trial of {trialInfo.trialDays} days,
+              your trial ends at
+              <span className="text-[#707070]"> {trialInfo.trialEnd}</span>
+            </p>
+            ***
+            {/* If startDate is still in the future */}
+            {isAfter(subscriptionData?.data?.startDate, new Date()) ||
+            isEqual(subscriptionData?.data?.startDate, new Date()) ? (
+              <p>
+                Sie befinden sich derzeit in Ihren {referralCycles.totalDays}{' '}
+                kostenlosen Testtagen, diese würden um ablaufen
+                <span className="text-[#707070]">
+                  {' '}
+                  {referralCycles.endDate}
+                </span>
+              </p>
+            ) : (
+              <p>
+                Aufgrund der Empfehlungsboni stehen Ihnen noch{' '}
+                {referralCycles.totalDays} kostenlose Tage zur Verfügung. Diese
+                werden nach der Zahlung Ihres nächsten Abonnements
+                berücksichtigt.
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="mt-16">
@@ -64,6 +315,7 @@ export default function SubscriptionDetails() {
             <h2 className="font-bold text-3xl">Rechnungen</h2>
             <CssTextField
               name="suche"
+              onChange={(e) => setSearch(e.target.value)}
               type="text"
               id="suche"
               label="Suche"
@@ -74,7 +326,10 @@ export default function SubscriptionDetails() {
             />
           </div>
 
-          <div className="flex gap-3 text-[#2B86FC] mt-8 mb-12 items-center font-medium">
+          <button
+            className="flex gap-3 text-[#2B86FC] mt-8 mb-12 items-center font-medium"
+            onClick={exportInvoices}
+          >
             <svg
               width="32"
               height="32"
@@ -106,51 +361,93 @@ export default function SubscriptionDetails() {
             </svg>
 
             <p>Anlage(n) exportieren</p>
-          </div>
+          </button>
 
-          <BillingTable />
+          <BillingTable
+            selectedRows={selectedRows}
+            setSelectedRows={setSelectedRows}
+            rows={filteredInvoices ?? []}
+            isLoading={isInvoicesLoading}
+          />
         </div>
       </div>
+
+      <PaymentModal
+        open={isOpenPaymentMethodModal}
+        setOpen={setIsOpenPaymentMethodModal}
+        userId={kontoData?._id}
+        initialMethod={subscriptionData?.data?.paymentMethod}
+        mutate={mutateSubscriptionData}
+      />
+
+      <ModelDialogue
+        actionTitle={'Confirm Cancellation'}
+        options={''}
+        open={isCancelDialogModalOpen}
+        setOpen={setIsCancelDialogModalOpen}
+        confirmationText="Bitte überprüfen Sie Ihre Aktion. Die von Ihnen beabsichtigte Aktion kann nicht rückgängig gemacht werden."
+        agreeModel={cancelSubscription}
+        closeModel={closeModal}
+      />
     </AppLayout>
   );
 }
 
-const rows = [
-  {
-    id: 1,
-    date: '{Date}',
-    invoice: '{Rechnungsnummer}',
-    name: '{documentname}',
-  },
-  {
-    id: 2,
-    date: '{Date}',
-    invoice: '{Rechnungsnummer}',
-    name: '{documentname}',
-  },
-  {
-    id: 3,
-    date: '{Date}',
-    invoice: '{Rechnungsnummer}',
-    name: '{documentname}',
-  },
-];
-
-function BillingTable() {
-  const [selected, setSelected] = useState<number[]>([]);
-
+function BillingTable({
+  selectedRows: selected,
+  setSelectedRows: setSelected,
+  isLoading,
+  rows,
+}) {
   const isSelected = (id: number) => selected.indexOf(id) !== -1;
+
+  const downloadInvoice = async (id) => {
+    try {
+      // setIsExporting(() => true);
+
+      const res = await axiosInstance.post(`/invoice/${id}/download-receipt`);
+
+      const responseData = res?.data?.data;
+      if (responseData) {
+        // create a new JSZip instance
+        let zip = new JSZip();
+
+        // loop through the pdf data array
+        for (let i = 0; i < responseData.length; i++) {
+          // get the base64 encoded pdf and the file name
+          let base64Pdf = responseData[i].base64Pdf;
+          let fileName = responseData[i].fileName;
+
+          // add the pdf file to the zip
+          zip.file(fileName, base64Pdf, { base64: true });
+        }
+
+        // generate the zip file as a blob
+        zip.generateAsync({ type: 'blob' }).then(function (content) {
+          // save the zip file using FileSaver.js
+          saveAs(content, 'psymax-invoice.zip');
+        });
+
+        // reset the selection model
+        // setSelectionModel(() => []);
+        toast.success('Anlagen erfolgreich exportiert');
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(SOMETHING_WRONG);
+    }
+
+    // setIsExporting(() => false);
+  };
 
   function handleSelectAll(event: React.ChangeEvent<HTMLInputElement>) {
     if (event.target.checked) {
-      console.log('Fooooo');
-      const newSelected = rows.map((n) => n.id);
+      const newSelected = rows.map((n) => n._id);
       console.log(newSelected);
 
       setSelected(newSelected);
       return;
     }
-    console.log('Baaa');
     setSelected([]);
   }
 
@@ -198,26 +495,141 @@ function BillingTable() {
         </tr>
       </thead>
       <tbody>
-        {rows.map((row) => {
-          const isItemSelected = isSelected(row.id);
-          return (
-            <tr key={row.id} onClick={(event) => handleClick(event, row.id)}>
-              <td className="p-3 border-t border-b border-l border-[#D6D8DC] rounded-tl-md rounded-bl-md">
-                <Checkbox color="primary" checked={isItemSelected} />
-              </td>
-              <td className="p-3 border-t border-b border-[#D6D8DC] ">
-                {row.date}
-              </td>
-              <td className="p-3 border-t border-b border-[#D6D8DC] ">
-                {row.invoice}
-              </td>
-              <td className="p-3 border-t border-b border-r border-[#D6D8DC]  rounded-tr-md rounded-br-md text-[#2B86FC]">
-                {row.name}
-              </td>
-            </tr>
-          );
-        })}
+        {isLoading ? (
+          <tr>
+            <td colSpan={4} className="text-center">
+              Loading...
+            </td>
+          </tr>
+        ) : rows.length ? (
+          rows.map((row) => {
+            const isItemSelected = isSelected(row._id);
+            return (
+              <tr
+                key={row._id}
+                onClick={(event) => handleClick(event, row._id)}
+              >
+                <td className="p-3 border-t border-b border-l border-[#D6D8DC] rounded-tl-md rounded-bl-md">
+                  <Checkbox color="primary" checked={isItemSelected} />
+                </td>
+                <td className="p-3 border-t border-b border-[#D6D8DC] ">
+                  {row.createdAt}
+                </td>
+                <td className="p-3 border-t border-b border-[#D6D8DC] ">
+                  {row.referenceId}
+                </td>
+                <td className="p-3 border-t border-b border-r border-[#D6D8DC]  rounded-tr-md rounded-br-md text-[#2B86FC]">
+                  <button onClick={() => downloadInvoice(row._id)}>
+                    Download
+                  </button>
+                  {/* {row.name} */}
+                </td>
+              </tr>
+            );
+          })
+        ) : (
+          <tr>
+            <td colSpan={4} className="text-center">
+              No invoice found
+            </td>
+          </tr>
+        )}
       </tbody>
     </table>
+  );
+}
+
+import Box from '@mui/material/Box';
+// import Typography from '@mui/material/Typography';
+
+const style = {
+  position: 'absolute' as 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 400,
+  bgcolor: 'background.paper',
+  border: '2px solid #000',
+  boxShadow: 24,
+  p: 4,
+  borderRadius: '0.375rem',
+};
+
+function PaymentModal({ open, setOpen, userId, initialMethod, mutate }) {
+  const handleClose = () => setOpen(false);
+
+  const router = useRouter();
+  const [currentMethod, setCurrentMethod] = useState('');
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    try {
+      const response = await axiosInstance.put(
+        `/subscription/${userId}/method`,
+        {
+          method: currentMethod,
+        }
+      );
+
+      if (response?.status === 200) {
+        toast.success('Payment method updated successfully');
+        await mutate();
+      } else {
+        toast.error(SOMETHING_WRONG);
+      }
+    } catch (error) {
+      handleApiError(error, router);
+    }
+  }
+
+  function handlePaymentMethodChange(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    setCurrentMethod((event.target as HTMLInputElement).value);
+  }
+
+  return (
+    <div>
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="payment-modal-title"
+        aria-describedby="payment-modal-description"
+      >
+        <Box sx={style}>
+          <h2 className="mb-2 font-semibold text-lg">Choose payment method</h2>
+          <p className="text-sm text-[#707070]">
+            Your current cycle payment would still be collected at the end of
+            the cycle
+          </p>
+
+          <form onChange={handleSubmit}>
+            <FormControl className="mt-2">
+              <RadioGroup
+                aria-labelledby="payment-method-radios"
+                defaultValue={initialMethod}
+                name="paymentMethod"
+                onChange={handlePaymentMethodChange}
+              >
+                <FormControlLabel
+                  value="DIRECT_DEBIT"
+                  control={<Radio />}
+                  label="Direct Debit"
+                />
+                <FormControlLabel
+                  value="WIRE_TRANSFER"
+                  control={<Radio />}
+                  label="Wire Transfer"
+                />
+              </RadioGroup>
+              <button className="px-2 py-2 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium mt-3">
+                Save
+              </button>
+            </FormControl>
+          </form>
+        </Box>
+      </Modal>
+    </div>
   );
 }

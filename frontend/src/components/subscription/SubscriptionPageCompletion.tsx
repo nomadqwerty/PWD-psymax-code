@@ -4,8 +4,53 @@ import Layout from '@/components/Layout';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import CssTextField from '../CssTextField';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
+import axiosInstance from '@/utils/axios';
+import { useForm } from 'react-hook-form';
+import kontoContext from '@/context/konto.context';
+import { useContext, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import { SOMETHING_WRONG } from '@/utils/constants';
+import { handleApiError } from '@/utils/apiHelpers';
+import { useRouter } from 'next/navigation';
 
 export default function SubscriptionPageCompletion() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
+
+  const context = useContext(kontoContext);
+  const { kontoData, setKontoData } = context.menuState;
+  const router = useRouter();
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await axiosInstance.get(`/user/get`);
+        const responseData = response?.data?.data;
+        if (response?.status === 200) {
+          setKontoData(responseData);
+          router.push('/dashboard');
+        } else {
+          toast.error(SOMETHING_WRONG);
+        }
+      } catch (error) {
+        handleApiError(error, router);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  const onSubmit = async (data) => {
+    console.log(data, kontoData, context);
+
+    await axiosInstance.post(`/subscriptions`, {
+      ...data,
+      email: kontoData?.email || '',
+    });
+  };
   return (
     <Layout>
       <div className="mx-auto max-w-xl flex flex-col items-center my-16">
@@ -62,7 +107,10 @@ export default function SubscriptionPageCompletion() {
         {/* 2 */}
         <div className="my-4">
           <h2 className="text-center text-3xl font-semibold">Abonnement</h2>
-          <div className="border rounded border-[#D6D8DC] mt-10">
+          <form
+            className="border rounded border-[#D6D8DC] mt-10"
+            onSubmit={handleSubmit(onSubmit)}
+          >
             <div className="border-b border-[#D6D8DC] flex pb-4">
               <div className="flex flex-col p-4 flex-1 justify-between">
                 <div>
@@ -121,84 +169,222 @@ export default function SubscriptionPageCompletion() {
               </p>
 
               <div className="mt-6 grid gap-6">
-                <CssTextField
-                  fullWidth
-                  name="email"
-                  type="text"
-                  id="email"
-                  label="Praxis/Institut/Firma"
-                  variant="outlined"
-                  inputProps={{
-                    className: 'interFonts',
-                  }}
-                />
+                <div>
+                  <CssTextField
+                    fullWidth
+                    name="iban"
+                    type="text"
+                    id="iban"
+                    label="IBAN"
+                    variant="outlined"
+                    {...register('iban', {
+                      required: true,
+                    })}
+                    error={!!errors.iban}
+                    inputProps={{
+                      className: 'interFonts',
+                    }}
+                  />
+                  {errors?.iban && (
+                    <p className="validationErr">
+                      Dieses Feld ist ein Pflichtfeld
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <CssTextField
+                    fullWidth
+                    name="account_holder_name"
+                    type="text"
+                    id="account_holder_name"
+                    label="Name des Kontoinhabers"
+                    variant="outlined"
+                    // disabled
+                    {...register('account_holder_name', {
+                      required: true,
+                    })}
+                    // value={`${watchFields[0]} ${watchFields[1]}`}
+                    error={!!errors.account_holder_name}
+                    inputProps={{
+                      className: 'interFonts',
+                    }}
+                  />
+                  {errors?.account_holder_name && (
+                    <p className="validationErr">
+                      Dieses Feld ist ein Pflichtfeld
+                    </p>
+                  )}
+                </div>
+                {/* <div>
+                  <CssTextField
+                    fullWidth
+                    name="account_number"
+                    type="text"
+                    id="account_number"
+                    label="Kontonummer"
+                    // label="Praxis/Institut/Firma"
+                    // account
+                    variant="outlined"
+                    {...register('account_number', {
+                      required: true,
+                      maxLength: 10,
+                    })}
+                    error={!!errors.account_number}
+                    inputProps={{
+                      className: 'interFonts',
+                    }}
+                  />
+                  {errors?.account_number && (
+                    <p className="validationErr">
+                      Dieses Feld ist ein Pflichtfeld
+                    </p>
+                  )}
+                </div> */}
+                {/* <div>
+                  <CssTextField
+                    fullWidth
+                    name="bank_code"
+                    type="text"
+                    id="bank_code"
+                    label="Bankleitzahl"
+                    variant="outlined"
+                    {...register('bank_code', {
+                      required: true,
+                      maxLength: 8,
+                      minLength: 8,
+                    })}
+                    error={!!errors.bank_code}
+                    inputProps={{
+                      className: 'interFonts',
+                    }}
+                  />
+                  {errors?.bank_code && (
+                    <p className="validationErr">
+                      Dieses Feld ist ein Pflichtfeld
+                    </p>
+                  )}
+                </div> */}
                 <div className="grid grid-cols-2 gap-7">
-                  <CssTextField
-                    fullWidth
-                    name="email"
-                    type="text"
-                    id="email"
-                    label="Vorname"
-                    variant="outlined"
-                    inputProps={{
-                      className: 'interFonts',
-                    }}
-                  />
-                  <CssTextField
-                    fullWidth
-                    name="email"
-                    type="text"
-                    id="email"
-                    label="Nachname"
-                    variant="outlined"
-                    inputProps={{
-                      className: 'interFonts',
-                    }}
-                  />
-                  <CssTextField
-                    fullWidth
-                    name="email"
-                    type="text"
-                    id="email"
-                    label="Strasse und Hausnummer"
-                    variant="outlined"
-                    inputProps={{
-                      className: 'interFonts',
-                    }}
-                  />
-                  <CssTextField
-                    fullWidth
-                    name="email"
-                    type="text"
-                    id="email"
-                    label="PLZ"
-                    variant="outlined"
-                    inputProps={{
-                      className: 'interFonts',
-                    }}
-                  />
-                  <CssTextField
-                    fullWidth
-                    name="email"
-                    type="text"
-                    id="email"
-                    label="Ort"
-                    variant="outlined"
-                    inputProps={{
-                      className: 'interFonts',
-                    }}
-                  />
-                  <CssTextField
-                    fullWidth
-                    name="email"
-                    type="text"
-                    id="email"
-                    label="Land"
-                    variant="outlined"
-                    inputProps={{
-                      className: 'interFonts',
-                    }}
-                  />
+                  <div>
+                    <CssTextField
+                      fullWidth
+                      name="given_name"
+                      type="text"
+                      id="given_name"
+                      label="Vorname"
+                      variant="outlined"
+                      {...register('given_name', { required: true })}
+                      error={!!errors.given_name}
+                      inputProps={{
+                        className: 'interFonts',
+                      }}
+                    />
+                    {errors?.given_name && (
+                      <p className="validationErr">
+                        Dieses Feld ist ein Pflichtfeld
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <CssTextField
+                      fullWidth
+                      name="family_name"
+                      type="text"
+                      id="family_name"
+                      label="Nachname"
+                      variant="outlined"
+                      {...register('family_name', { required: true })}
+                      error={!!errors.family_name}
+                      inputProps={{
+                        className: 'interFonts',
+                      }}
+                    />
+                    {errors?.family_name && (
+                      <p className="validationErr">
+                        Dieses Feld ist ein Pflichtfeld
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <CssTextField
+                      fullWidth
+                      name="address_line1"
+                      type="text"
+                      id="address_line1"
+                      label="Strasse und Hausnummer"
+                      variant="outlined"
+                      {...register('address_line1', { required: true })}
+                      error={!!errors.address_line1}
+                      inputProps={{
+                        className: 'interFonts',
+                      }}
+                    />
+                    {errors?.address_line1 && (
+                      <p className="validationErr">
+                        Dieses Feld ist ein Pflichtfeld
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <CssTextField
+                      fullWidth
+                      name="postal_code"
+                      type="text"
+                      id="postal_code"
+                      label="PLZ"
+                      variant="outlined"
+                      {...register('postal_code', { required: true })}
+                      error={!!errors.postal_code}
+                      inputProps={{
+                        className: 'interFonts',
+                      }}
+                    />
+                    {errors?.postal_code && (
+                      <p className="validationErr">
+                        Dieses Feld ist ein Pflichtfeld
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <CssTextField
+                      fullWidth
+                      name="city"
+                      type="text"
+                      id="city"
+                      label="Ort"
+                      variant="outlined"
+                      {...register('city', { required: true })}
+                      error={!!errors.city}
+                      inputProps={{
+                        className: 'interFonts',
+                      }}
+                    />
+                    {errors?.city && (
+                      <p className="validationErr">
+                        Dieses Feld ist ein Pflichtfeld
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <CssTextField
+                      fullWidth
+                      name="country_code"
+                      type="text"
+                      id="country_code"
+                      label="Land"
+                      variant="outlined"
+                      {...register('country_code', { required: true })}
+                      error={!!errors.country_code}
+                      inputProps={{
+                        className: 'interFonts',
+                      }}
+                    />
+                    {errors?.country_code && (
+                      <p className="validationErr">
+                        Dieses Feld ist ein Pflichtfeld
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -216,7 +402,7 @@ export default function SubscriptionPageCompletion() {
                 </div>
               </div>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </Layout>
@@ -232,6 +418,7 @@ function RadioGroup() {
           name="payment_method"
           id="payment_method_1"
           className="appearance-none sr-only peer"
+          defaultChecked
         />
         <label
           className="p-3 cursor-pointer h-full w-full leading-loose border border-[#D6D8DC] peer-checked:border-[#2B86FC] rounded absolute inset-0"

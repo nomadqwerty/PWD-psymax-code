@@ -41,14 +41,16 @@ const Register = () => {
           data: [{ clientId: '', clientKey: '' }],
         });
 
+        // create user file and client vaults.
         const resVault = await axiosInstance.post(`/vault/user`, {
           userId: user_id,
           type: 'main',
           isEncrypted: false,
 
-          passwords: fileVault,
-          clients: clientVault,
+          passwords: fileVault.data,
+          clients: clientVault.data,
         });
+        // create user file store.
         const resFile = await axiosInstance.post(`/file/create`, {
           userId: user_id,
         });

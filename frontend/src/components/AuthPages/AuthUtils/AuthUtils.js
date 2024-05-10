@@ -122,6 +122,7 @@ let encryptOnLoginA = async (
       let clientVaultArray = [];
 
       fileVault.map((e) => {
+        console.log(e);
         if (e.type === 'update') {
           e.passwords = Array.from(passUpdateUintArr);
         }
@@ -136,6 +137,7 @@ let encryptOnLoginA = async (
       });
 
       clientVault.map((e) => {
+        console.log(e);
         if (e.type === 'update') {
           e.clients = Array.from(clientsUpdateUintArr);
         }
@@ -603,6 +605,7 @@ const fetchData_encryptOnLogout = async (
           });
         }
         if (clientVault.data) {
+          console.log(clientVault.data);
           const clientEnc = await encryptData(
             operations,
             masterKey,

@@ -302,7 +302,7 @@ const ClientAddEdit = React.memo(() => {
                 operations,
                 clientKeys.masterKey,
                 clientKeys.iv,
-                updateVault
+                updateVault.data
               );
               console.log(vaultEnc);
               let clientUpdateUint = new Uint8Array(vaultEnc);

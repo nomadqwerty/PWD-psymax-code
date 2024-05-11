@@ -12,6 +12,8 @@ const FullRtc = () => {
 
   const [stream, setStream] = useState(null); //video stream
   const [remoteStream, setRemoteStream] = useState(null);
+  const [remoteScreenStream, setRemoteScreenStream] = useState(null);
+
 
   const [offerCreated, setOfferCreated] = useState(false); //set offer state
   const [socketID, setSocketID] = useState(""); //set offer state
@@ -19,29 +21,27 @@ const FullRtc = () => {
   const [roomAccessKey, setRoomAccessKey] = useState(null);
   const [remoteClientName, setremoteClientName] = useState(null);
 
-
   //VIDEO APP STATE CONTROLS
-  
+
   //add video quality
   let constraints = {
-    video:{
-      width:{min:640, ideal:1920, max:1920},
-      height:{min:640, ideal:1920, max:1920},
+    video: {
+      noiseSuppression: true,
+      width: { min: 640, ideal: 1920, max: 1920 },
+      height: { min: 640, ideal: 1920, max: 1920 },
     },
     audio: {
-    echoCancellation:true,
-    noiseSuppression:true,
+      echoCancellation: true,
+      noiseSuppression: true,
     },
-   
-  }
+  };
 
-  let screenRecordConstraints={
+  let screenRecordConstraints = {
     video: {
-      cursor: 'always',
-      displaySurface: 'application' | 'browser' | 'monitor' | 'window'
-  },
-
-  }
+      cursor: "always",
+      displaySurface: "application" | "browser" | "monitor" | "window",
+    },
+  };
   //check for media devices
   const [isCameraOn, setIsCameraOn] = useState(null); //camera
 
@@ -142,9 +142,9 @@ const FullRtc = () => {
   //user leaves server handler
   const handleUserLeft = async (data) => {
     try {
-      document.getElementById("user2_div").style.display = "none"; //set user2 element display to none when the user/disconnects leaves
+      document.getElementById("user2").style.display = "none"; //set user2 element display to none when the user/disconnects leaves
 
-      document.getElementById("user1_div").classList.remove('smallFrame') //set localuser//user1 element display to full view
+      document.getElementById("user1_div").classList.remove("smallFrame"); //set localuser//user1 element display to full view
     } catch (e) {
       console.log("could not set none", e);
     }
@@ -173,49 +173,53 @@ const FullRtc = () => {
   //get local stream
   useEffect(() => {
     const getLocalStream = async () => {
-      try{
-          if (roomAccessKey) {
-          const stream = await navigator.mediaDevices.getUserMedia(constraints)
-            // .then((stream) => {
-              // const videoTracks = stream.getVideoTracks();
-              // console.log(videoTracks);
-              setStream(stream);
-              const localVideoEl = document.getElementById("user1");
-              localVideoEl.srcObject = stream;
-              // localStream.current.srcObject = stream;
+      try {
+        if (roomAccessKey) {
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          // .then((stream) => {
+          // const videoTracks = stream.getVideoTracks();
+          // console.log(videoTracks);
+          setStream(stream);
+          const localVideoEl = document.getElementById("user1");
+          localVideoEl.srcObject = stream;
+          // localStream.current.srcObject = stream;
         }
+      } catch {
+        (error) => console.log("Error accessing media devices: ", error);
       }
-        catch{((error) =>
-            console.log("Error accessing media devices: ", error)
-          );}    
-}
-  
-  getLocalStream();
-// })
+    };
+
+    getLocalStream();
+    // })
   }, [roomAccessKey]);
 
-   //check status of media devices and update control icons accordingly 
-   useEffect(() => {
+  //check status of media devices and update control icons accordingly
+  useEffect(() => {
     // Function to check camera state and set initial state
     const checkCameraState = async () => {
-      if (stream){
-        let videoTrack = stream.getTracks().find(track => track.kind === 'video');
-        setIsCameraOn(videoTrack.enabled);}
+      if (stream) {
+        let videoTrack = stream
+          .getTracks()
+          .find((track) => track.kind === "video");
+        setIsCameraOn(videoTrack.enabled);
+      }
     };
 
     const checkMicState = async () => {
-      if (stream){
-        let audioTrack = stream.getTracks().find(track => track.kind === 'audio');
-        if (audioTrack){
-        setIsMicOn(audioTrack.enabled);
-      }
+      if (stream) {
+        let audioTrack = stream
+          .getTracks()
+          .find((track) => track.kind === "audio");
+        if (audioTrack) {
+          setIsMicOn(audioTrack.enabled);
+        }
       }
     };
 
     // Call the function when component mounts
     checkCameraState();
     checkMicState();
-}, [stream]);
+  }, [stream]);
 
   //create socket connection & initialise events if !socketconn && stream
   useEffect(() => {
@@ -262,13 +266,16 @@ const FullRtc = () => {
     remoteVideoEl.srcObject = remoteStream; //set remote elemt srcobject to remotestream
     remoteVideoEl.style.display = "block";
 
-    document.getElementById('user1_div').classList.add('smallFrame')
+    // const remoteScreenStream = new MediaStream();
+    // setRemoteScreenStream(remoteScreenStream);
+    // const remoteScreenEl = document.getElementById("screenShare"); //get user2 element and assign to remoteVideoEl
+    // remoteScreenEl.srcObject = remoteStream; //set remote elemt srcobject to remotestream
+    // remoteScreenEl.style.display = "block";
+
+    document.getElementById("user1_div").classList.add("smallFrame");
 
     if (!stream) {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       const localVideoEl = document.getElementById("user1");
       localVideoEl.srcObject = stream;
     }
@@ -280,18 +287,40 @@ const FullRtc = () => {
       });
     }
 
-    if (screenStream) {
-      screenStream.getTracks().forEach((track) => {
-          peerConnection.addTrack(track, screenStream);
-      });
-  }
+    // if (!screenStream) {
+    //      const stream = await navigator.mediaDevices.getDisplayMedia(
+    //       screenRecordConstraints
+    //     ); 
+    //   stream.getTracks().forEach((track) => {
+    //     peerConnection.addTrack(track, stream);
+    //   });
+    // }
 
     //add remote peer tracks on remote track added
     peerConnection.ontrack = (event) => {
       console.log("a track has been found! adding to peerconnection ");
+      console.log(event.streams);
       event.streams[0].getTracks().forEach((track) => {
-        remoteStream.addTrack(track, remoteStream);
+
+        if (track.kind ==='video'){
+
+          remoteStream.addTrack(track, remoteStream);
+        }
+
+        else if (track.kind === 'screen') {
+          const screenShareEl = document.getElementById("screenshare");
+          if (screenShareEl) {
+            screenShareEl.srcObject = new MediaStream([track]);
+            screenShareEl.style.display = 'block';
+          }
+          // For screen share tracks, add them to screen share element
+          // remoteStream.addTrack(track, remoteStream);
+        }
       });
+
+      // event.streams[1].getTracks().forEach((track) => {
+      //   remoteScreenStream.addTrack(track, remoteScreenStream);
+      // });
     };
 
     //check for ICE candidate
@@ -359,73 +388,102 @@ const FullRtc = () => {
   };
 
   // user camera toggler
-  let toggleCamera = async() =>{
-    let videoTrack = stream.getTracks().find(track => track.kind === 'video')
+  let toggleCamera = async () => {
+    let videoTrack = stream.getTracks().find((track) => track.kind === "video");
 
-    if (videoTrack.enabled){
+    if (videoTrack.enabled) {
       videoTrack.enabled = false;
       setIsCameraOn(false); // Toggle the state
-    }
-    else{
+    } else {
       videoTrack.enabled = true;
-      setIsCameraOn(true)
+      setIsCameraOn(true);
     }
-  }
+  };
 
   //user mic toggler
-  let toggleMic = async() =>{
-    let audioTrack = stream.getTracks().find(track => track.kind === 'audio')
+  let toggleMic = async () => {
+    let audioTrack = stream.getTracks().find((track) => track.kind === "audio");
 
-    if (audioTrack && audioTrack.enabled){
+    if (audioTrack && audioTrack.enabled) {
       audioTrack.enabled = false;
       setIsMicOn(false); // Toggle the state
-    }
-    else {
+    } else {
       audioTrack.enabled = true;
-      setIsMicOn(true)
+      setIsMicOn(true);
     }
-  }
+  };
 
- // Function to start screen sharing
+   // somebody clicked on "Stop sharing"
+ 
+  // Function to start screen sharing
   const toggleScreenSharing = async () => {
-    if(!screenStream)
-    {try {
+    let screenShareEl;
+    if (!isScreenSharing) {
       setIsScreenSharing(true);
-    const stream = await  navigator.mediaDevices.getDisplayMedia(screenRecordConstraints)
-      setScreenStream(stream);
-      const screenShareEl = document.getElementById("screenShare");
-      
-      if(screenShareEl){
-        screenShareEl.srcObject = stream;
-      }
-    }
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia(
+          screenRecordConstraints
+        ); 
+        if (!stream){
+          setIsScreenSharing(false)
+        }
 
-     catch (error) {
+        setScreenStream(stream);
+        setRemoteStream(stream);
+         screenShareEl = document.getElementById("screenShare");
+
+        if (screenShareEl && stream) {
+          screenShareEl.style.display='block';
+          screenShareEl.srcObject = stream;
+        }
+
+          // Send screen stream to remote peer
+          if (peerConnection && stream) {
+            localStream.getTracks().forEach(track => {
+              peerConnection.addTrack(track, localStream);
+            });
+
+            stream.getTracks().forEach(track => {
+              peerConnection.addTrack(track, stream);
+            });
+          }
+        console.log("screenStream added to elememt ")
+      } catch (error) {
         console.error("Error starting screen sharing:", error);
-    }}
+      }
+    } 
+    
+    else  {
+      try {
+        screenShareEl = document.getElementById("screenShare");
 
-    else if (await screenStream){
-      try{
-        screenStream.getTracks().forEach(track => track.stop());
+        screenShareEl.style.display='none';
+        screenStream.getTracks().forEach((track) => track.stop());
         setScreenStream(null);
         setIsScreenSharing(false);
-      } 
-      catch (error) {
+      } catch (error) {
         console.error("Error ending screen sharing:", error);
       }
-      }
-};
+    }
+  };
+ //listen for end of stream from outside screen toggle button 
+  screenStream?screenStream.getVideoTracks()[0].onended = function () {
+    setIsScreenSharing(false);
+    // doWhatYouNeedToDo();
+  }:null;
+
+  // let displayFrame = document.getElementById
+
 
   return (
-    <main className="containerr m-0">
-      <div id="room_container">
+    <main className="containerr m-0 p-0">
+      <Row id="room_container" className="p-0 m-0">
 
-
-<Row id="members_container" className="p-0 m-0">
-      <div id="videos" className="p-0">
-        {typeof window !== undefined && (
-          <>
-            <div id="user1_div">
+        <Col xs={12} id="members_container" className="p-0 m-0">
+        <Row id="videos" className="p-0 m-0">
+          
+          {typeof window !== "undefined" && (
+            <Col className="p-0 m-0" id="user1_div">
               {/* <h1 className="clientName">{localClientName}</h1> */}
               <video
                 className="videoPlayer"
@@ -433,110 +491,112 @@ const FullRtc = () => {
                 autoPlay
                 playsInline
               ></video>
-            </div>
+            </Col>
+          )}
 
-            <div id="user2_div">
-              {/* <h1 className="clientName">{remoteClientName}</h1> */}
+          {typeof window !== "undefined" &&  (
+            // <Col  className="p-0" id="user2_div">
               <video
-                className="videoPlayer"
+                className="videoPlayer p-0"
                 id="user2"
                 autoPlay
                 playsInline
               ></video>
-            </div>
-          </>
-        )}
-      </div>
-</Row>
+            // </Col>
+          )}
+        </Row>
+        </Col>
 
-<Row id="stream-container p-0 m-0">
-  <Col>
-{isScreenSharing && (
-            <div id="screenShareContainer screenShare">
-                            <video
-                                id="screenShare"
-                                className="videoPlayer smallFrame"
-                                autoPlay
-                                playsInline
-                                // srcobject={screenStream}
-                            ></video>          
-            </div>
-                        )}
-  </Col>
+        <Col xs={12} id="stream-container p-0 m-0">
 
-<Col className="footer-container">
-        <Row className="footer p-3">
-          <Col  className="logo_div logo">
-            <img className="logo_icon" src="/icons/logo.svg" alt="logo" />
-          </Col>
+          <div id="stream_box">
 
-          <Col  id="controls" className="">
-            <div className="control-container" id="mic-btn">
-              <img 
-              className="icon" 
-              src={isMicOn ? "/icons/mic-on.svg" : "/icons/mic-off.svg"} alt="mic button" 
-              onClick={toggleMic}
-              />
+          </div>
+        
+          {isScreenSharing && (
+            // <div id="screenShareContainer smallerFrame">
+              <video
+                id="screenShare"
+                className="videoPlayer smallerFrame"
+                autoPlay
+                playsInline
+                // srcobject={screenStream}
+              ></video>
+            // </div>
+          )}
+        </Col>
 
-            </div>
+        <Col xs={12} className="footer-container">
+          <Row className="footer p-3">
+            <Col className="logo_div logo">
+              <img className="logo_icon" src="/icons/logo.svg" alt="logo" />
+            </Col>
 
-            <div className="control-container" id="camera-btn">
-              <img
-                id="cameraBtn"
-                className="icon"
-                src={isCameraOn ? "/icons/camera-on.svg" : "/icons/camera-off.svg"}
-                alt="camera button"
-                onClick={toggleCamera}
-              />
-            </div>
-
-            <div className="control-container" id="pres-btn">
-              <img
-                className="icon"
-                src={isScreenSharing ? "/icons/pres-on.svg" : "/icons/pres-off.svg"}
-                alt="presentation button"
-                onClick={toggleScreenSharing}
-              />
-              {/* <button onClick={stopScreenSharing}>stop ss</button> */}
-            </div>
-
-            <div className="control-container" id="settings-btn">
-              <img
-                className="icon"
-                src="/icons/settings.svg"
-                alt="settings button"
-              />
-            </div>
-
-            <a href="/lobby">
-              <div className="control-container" id="leave-call-btn">
+            <Col id="controls" className="">
+              <div className="control-container" id="mic-btn">
                 <img
                   className="icon"
-                  src="/icons/leave-call.svg"
-                  alt="leave call button"
+                  src={isMicOn ? "/icons/mic-on.svg" : "/icons/mic-off.svg"}
+                  alt="mic button"
+                  onClick={toggleMic}
                 />
               </div>
-            </a>
-          </Col>
 
-          <Col className="chat_div control-container" id="chat-btn">
-            <img className="icon" 
-            src="/icons/chat.svg" 
-            alt="chat button" />
-          </Col>
-        </Row>
-      </Col>
+              <div className="control-container" id="camera-btn">
+                <img
+                  id="cameraBtn"
+                  className="icon"
+                  src={
+                    isCameraOn
+                      ? "/icons/camera-on.svg"
+                      : "/icons/camera-off.svg"
+                  }
+                  alt="camera button"
+                  onClick={toggleCamera}
+                />
+              </div>
 
-</Row>
+              {/* <div className="control-container" id="pres-btn">
+                <img
+                  className="icon"
+                  src={
+                    isScreenSharing
+                      ? "/icons/pres-on.svg"
+                      : "/icons/pres-off.svg"
+                  }
+                  alt="presentation button"
+                  onClick={toggleScreenSharing}
+                />
+              </div> */}
 
-      
-<Row id="messages_container">
+              <div className="control-container" id="settings-btn">
+                <img
+                  className="icon"
+                  src="/icons/settings.svg"
+                  alt="settings button"
+                />
+              </div>
 
-</Row>
+              <a href="/lobby">
+                <div className="control-container" id="leave-call-btn">
+                  <img
+                    className="icon"
+                    src="/icons/leave-call.svg"
+                    alt="leave call button"
+                  />
+                </div>
+              </a>
+            </Col>
 
-      </div>
+            <Col className="chat_div control-container" id="chat-btn">
+              <img className="icon" src="/icons/chat.svg" alt="chat button" />
+            </Col>
+          </Row>
+        </Col>
+
+        <Col id="messages_container"></Col>
+      </Row>
     </main>
-
   );
 };
 // };

@@ -9,14 +9,15 @@
   overflow: hidden;
   /* border: 1px solid black; */
   height: 100vh;
+  position: relative;
 }
 
 #room_container{
   width: 100%;
   height: 100%;
   /* border: 1px solid red; */
-  position: relative;
-  /* margin: auto; */
+  /* position: relative; */
+  margin: auto;
 }
 
 #members_container{
@@ -26,34 +27,37 @@
   overflow: hidden;
 }
 
+.clientName{
+  display: none;
+}
 #videos {
   display: grid;
   grid-template-columns: 1fr;
   height: 100%;
   width: 100%;
-  /* overflow: hidden; */
+  overflow: hidden;
   /* position: relative; */
   /* margin: auto; */
-  /* border: 1px solid red; */
+  border: 1px solid red;
 }
 
 .videoPlayer {
-  /* background-color: black; */
+  background-color: black;
   /* border:1px solid red; */
   width: 100%;
-  height: 100%;
+  height: 100% !important;
   object-fit: cover;
   /* position: absolute; */
   border-radius: 5px;
   /* padding: 0.2rem; */
   overflow: hidden;
-  /* display: block; */
+  display: block;
   /* z-index: 0; */
 }
 
-/* #user2_div{
+#user2_div{
   display: none;
-} */
+}
 
 #user2 {
   display: none;
@@ -61,22 +65,48 @@
 
 .stream-container{
   width: 100vw;
-  height: auto;
+  height: 50vh;
   padding: 10px;
   display: none;
+  border: 1px solid yellow;
 }
+
+#stream_box{
+  background-color: #3f434a;
+}
+
+.screenShareContainer{
+  display: none;
+  border: 1px solid green;
+}
+
 .screenShare{
   position: fixed;
 top: 0px;
 right: 0px;
-/* border: 1px solid red; */
-z-index: 999;
+display: none;
+/* /* border: 1px solid red; */
+/* z-index: 999; */
+
 }
 
 .smallFrame {
-  /* position: fixed;
+  position: absolute;
   bottom: 8.5vh;
-  left: 20px; */
+  left: 20px;
+  height: 135px;
+  width: 265px;
+  border-radius: 5px;
+  /* border: 2px solid; */
+  -webkit-box-shadow: 3px 3px 15px -1px rgb(0, 0, 0, 0.77);
+  box-shadow: 3px 3px 15px -1px rgb(0, 0, 0, 0.77);
+  z-index: 999;
+}
+
+.smallerFrame{
+  position: fixed;
+  top: 0px;
+  right: 20px;
   height: 135px;
   width: 265px;
   border-radius: 5px;

@@ -1,5 +1,5 @@
 'use client';
-
+import Worker from 'worker-loader!./AuthUtils/authWorker';
 import { Grid, Typography } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import CssTextField from '../../components/CssTextField';
@@ -86,24 +86,58 @@ const LoginPage = () => {
           }
           //
           else {
+            const authWorker = new Worker();
+
             if (!operations) {
               alert('Web Crypto is not supported on this browser');
               console.warn('Web Crypto API not supported');
             } else {
               let userData = responseData;
               const response = await axiosInstance.get(`/vault/server`);
-              await encryptOnLoginB(
-                clientVault,
-                fileVault,
-                response,
-                userData,
-                operations,
-                setFileVault,
-                setClientVault,
-                setServerVault,
-                setUpdateFileVault,
-                setUpdateClientVault
-              );
+              // console.log(
+              //   clientVault,
+              //   fileVault,
+              //   response,
+              //   userData
+              //   //   operations
+              //   //   // setFileVault,
+              //   //   // setClientVault,
+              //   //   // setServerVault,
+              //   //   // setUpdateFileVault,
+              //   //   // setUpdateClientVault
+              // );
+              const psymaxToken = localStorage.getItem('psymax-token');
+              authWorker.postMessage({
+                type: 'encryptOnLoginB',
+                data: JSON.stringify({
+                  clientVault,
+                  fileVault,
+                  response,
+                  userData,
+                  psymaxToken,
+                }),
+              });
+              authWorker.onmessage = (message) => {
+                const decryptedData = JSON.parse(message.data);
+
+                setClientVault(decryptedData.setClientVault);
+                setFileVault(decryptedData.setFileVault);
+                setServerVault(decryptedData.setServerVault);
+                setUpdateClientVault(decryptedData.setUpdateClientVault);
+                setUpdateFileVault(decryptedData.setUpdateFileVault);
+              };
+              // await encryptOnLoginB(
+              //   clientVault,
+              //   fileVault,
+              //   response,
+              //   userData,
+              //   operations,
+              //   setFileVault,
+              //   setClientVault,
+              //   setServerVault,
+              //   setUpdateFileVault,
+              //   setUpdateClientVault
+              // );
             }
           }
         }
@@ -130,13 +164,13 @@ const LoginPage = () => {
     let serverVaultLength = Object.keys(serverVault).length;
     let updateFileVaultLength = Object.keys(updateFileVault).length;
     let updateClientVaultLength = Object.keys(updateClientVault).length;
-    // console.log(
-    //   fileVaultLength,
-    //   clientVaultLength,
-    //   serverVaultLength,
-    //   updateClientVaultLength,
-    //   updateFileVaultLength
-    // );
+    console.log(
+      fileVault,
+      clientVault,
+      serverVault,
+      updateClientVault,
+      updateFileVault
+    );
     if (
       fileVaultLength > 0 &&
       clientVaultLength > 0 &&
@@ -146,7 +180,7 @@ const LoginPage = () => {
     ) {
       const vaultStateJson = JSON.stringify(vaultState);
       sessionStorage.setItem('vaultState', vaultStateJson);
-      // console.log(vaultState);
+      console.log(vaultState);
       if (userData?.isAdmin === 1) {
         router.push('/admin');
       } else if (userData?.isAdmin === 0) {

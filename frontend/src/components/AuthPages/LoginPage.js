@@ -68,20 +68,29 @@ const LoginPage = () => {
               alert('Web Crypto is not supported on this browser');
               console.warn('Web Crypto API not supported');
             } else {
+              const authWorker = new Worker();
               let userData = responseData;
               const response = await axiosInstance.get(`/vault/server`);
-              await encryptOnLoginA(
-                clientVault,
-                fileVault,
-                response,
-                userData,
-                operations,
-                setFileVault,
-                setClientVault,
-                setServerVault,
-                setUpdateFileVault,
-                setUpdateClientVault
-              );
+              const psymaxToken = localStorage.getItem('psymax-token');
+              authWorker.postMessage({
+                type: 'encryptOnLoginA',
+                data: JSON.stringify({
+                  clientVault,
+                  fileVault,
+                  response,
+                  userData,
+                  psymaxToken,
+                }),
+              });
+              authWorker.onmessage = (message) => {
+                const decryptedData = JSON.parse(message.data);
+                console.log(decryptedData);
+                setClientVault(decryptedData.setClientVault);
+                setFileVault(decryptedData.setFileVault);
+                setServerVault(decryptedData.setServerVault);
+                setUpdateClientVault(decryptedData.setUpdateClientVault);
+                setUpdateFileVault(decryptedData.setUpdateFileVault);
+              };
             }
           }
           //
@@ -94,18 +103,7 @@ const LoginPage = () => {
             } else {
               let userData = responseData;
               const response = await axiosInstance.get(`/vault/server`);
-              // console.log(
-              //   clientVault,
-              //   fileVault,
-              //   response,
-              //   userData
-              //   //   operations
-              //   //   // setFileVault,
-              //   //   // setClientVault,
-              //   //   // setServerVault,
-              //   //   // setUpdateFileVault,
-              //   //   // setUpdateClientVault
-              // );
+
               const psymaxToken = localStorage.getItem('psymax-token');
               authWorker.postMessage({
                 type: 'encryptOnLoginB',
@@ -126,18 +124,6 @@ const LoginPage = () => {
                 setUpdateClientVault(decryptedData.setUpdateClientVault);
                 setUpdateFileVault(decryptedData.setUpdateFileVault);
               };
-              // await encryptOnLoginB(
-              //   clientVault,
-              //   fileVault,
-              //   response,
-              //   userData,
-              //   operations,
-              //   setFileVault,
-              //   setClientVault,
-              //   setServerVault,
-              //   setUpdateFileVault,
-              //   setUpdateClientVault
-              // );
             }
           }
         }

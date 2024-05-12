@@ -113,19 +113,6 @@ const PORT = 3050;
       socket.id +" connected. Total connected clients:",
       connectedClients
     );
-    
-    // YT implementation exampln
-
-    // // Listen for messages from peer1 and forward them to peer2
-    // socket.on("sendOffer", (data) => {
-    //   // Assuming data contains { recipientId, message }
-    //   const { recipientId, offer } = data;
-    //   // Send the message to the recipient
-    //   io.to(recipientId).emit("incomingMessage", {
-    //     senderId: socket.id,
-    //     offer,
-    //   });
-    // })
 
       // Listen for sendoffer event and forward to recepient
       socket.on("sendMessage", (data) => {
@@ -135,31 +122,14 @@ const PORT = 3050;
         // Send the message to the a user who just joined the server
        socket.broadcast.to(roomAccessKey).emit("incomingMsg", {userID:socket.id, text});
       })
-      // socket.on("sendIce", (data) => {
-      //   // Assuming data contains { recipientId, message }
-      //   const { userID, text } = data;
-      //   console.log(data)
-      //   // Send the message to the recipient who just joined the server
-      //   io.to(userID).emit("incomingMessage", {userID, text});
-      // })
-
-      // //   // Assuming data contains { recipientId, message }
-      // //   const { userID, text } = data;
-      // try{
-
-      //   console.log(data)
-      // }
-      // catch (e){
-      //   console.log('cannot log candidiate data', e)
-      // }
-      // //   // Send the message to the recipient who just joined the server
-      // //   io.to(userID).emit("incomingMessage", {userID, text});
-      // })
       
-    
-    //   //   socket.on('chat message', async (msg, clientOffset, callback) => {
-    // //   console.log('message: ' + msg);
-    // });
+        socket.on("chat message", (data) => {
+          const {msg, clientOffset,roomAccessKey, clientName } = data;
+          console.log('message: ' + msg, clientOffset);
+
+          io.to(roomAccessKey).emit("chat message",
+          { msg:msg, serverOffset:clientOffset, clientName:clientName})
+    });
 
     socket.on("disconnect", () => {
       connectedClients--;
@@ -170,15 +140,16 @@ const PORT = 3050;
       socket.broadcast.to(roomAccessKey).emit("userDisconnected",{userID:socket.id})
     });
 
-    socket.on("hello", async (data) => {
-        // Assuming data contains { recipientId, message }
-        // const { recipientId, message } = data;
-        // Send the message to the recipient
-        // io.emit("incomingMessage", data);
+    // socket.on("hello", async (data) => {
+    //     // Assuming data contains { recipientId, message }
+    //     // const { recipientId, message } = data;
+    //     // Send the message to the recipient
+    //     // io.emit("incomingMessage", data);
   
-        //   socket.on('chat message', async (msg, clientOffset, callback) => {
-        console.log('message: ' + data);
-      });
+    //     //   socket.on('chat message', async (msg, clientOffset, callback) => {
+    //     console.log('message: ' + data);
+    //   });
+
     })
 
   server.listen(PORT, () =>

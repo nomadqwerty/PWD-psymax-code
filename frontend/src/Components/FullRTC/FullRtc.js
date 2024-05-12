@@ -14,12 +14,36 @@ const FullRtc = () => {
   const [remoteStream, setRemoteStream] = useState(null);
   const [remoteScreenStream, setRemoteScreenStream] = useState(null);
 
-
   const [offerCreated, setOfferCreated] = useState(false); //set offer state
   const [socketID, setSocketID] = useState(""); //set offer state
 
   const [roomAccessKey, setRoomAccessKey] = useState(null);
   const [remoteClientName, setremoteClientName] = useState(null);
+
+  //check for media devices
+  const [isCameraOn, setIsCameraOn] = useState(null); //camera
+
+  const [isMicOn, setIsMicOn] = useState(null); //audio
+
+  const [screenStream, setScreenStream] = useState(null); // State to store screen stream
+  const [isScreenSharing, setIsScreenSharing] = useState(false); // State to track screen sharing status
+
+  const [isChatVisible, setIsChatVisible] = useState(false); // State to track chat view status
+
+  const [messages, setMessages] = useState([]); //track messages
+
+  //get time stamp
+  const getTime = () => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, "0");
+    const minutes = now.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+  // let sharedScreenStream;
+
+  const searchParams = useSearchParams();
+  const accessKey = searchParams.get("accessKey");
+  const localClientName = searchParams.get("clientName");
 
   //VIDEO APP STATE CONTROLS
 
@@ -42,20 +66,6 @@ const FullRtc = () => {
       displaySurface: "application" | "browser" | "monitor" | "window",
     },
   };
-  //check for media devices
-  const [isCameraOn, setIsCameraOn] = useState(null); //camera
-
-  const [isMicOn, setIsMicOn] = useState(null); //audio
-
-  const [screenStream, setScreenStream] = useState(null); // State to store screen stream
-  const [isScreenSharing, setIsScreenSharing] = useState(false); // State to track screen sharing status
-
-  // let sharedScreenStream;
-
-  const searchParams = useSearchParams();
-  const accessKey = searchParams.get("accessKey");
-  const localClientName = searchParams.get("clientName");
-
   //useeffect to redirect user to lobby if no accesskey is found
   useEffect(() => {
     if (accessKey) {
@@ -170,6 +180,27 @@ const FullRtc = () => {
     remoteName ? setremoteClientName(remoteName) : null;
   };
 
+
+  const handleChatMsg = async (data)=>{
+   const  {msg, serverOffset, clientName} = await data;
+   console.log(serverOffset, clientName, msg);
+  //  let msgWrapper = document.getElementById("messages");
+
+   // Create a new message object
+   const newMessage = {
+    id: serverOffset, // Assuming serverOffset can be used as a unique identifier
+    clientName,
+    message: msg,
+    time: getTime(),
+  };
+
+  // Update messages state with the new message
+  setMessages((prevMessages) => [...prevMessages, newMessage]);
+
+      window.scrollTo(0, document.body.scrollHeight);
+      // socketRef.current.auth.serverOffset = serverOffset;
+    };
+
   //get local stream
   useEffect(() => {
     const getLocalStream = async () => {
@@ -238,6 +269,8 @@ const FullRtc = () => {
 
       socketRef.current.on("remoteName", handleRemoteName);
 
+      socketRef.current.on("chat message", handleChatMsg) ;
+
       let leaveChannel = async () => {
         if (socketRef.current) {
           socketRef.current.disconnect();
@@ -246,6 +279,7 @@ const FullRtc = () => {
           socketRef.current.off("userDisconnected", handleUserLeft);
           socketRef.current.off("connect", handleSocketConnected);
           socketRef.current.off("remoteName", handleRemoteName);
+          socketRef.current.off("chat message", handleChatMsg);
 
           socketRef.current = null;
         }
@@ -416,7 +450,7 @@ const FullRtc = () => {
    // somebody clicked on "Stop sharing"
  
   // Function to start screen sharing
-  const toggleScreenSharing = async () => {
+  let toggleScreenSharing = async () => {
     let screenShareEl;
     if (!isScreenSharing) {
       setIsScreenSharing(true);
@@ -472,6 +506,58 @@ const FullRtc = () => {
     // doWhatYouNeedToDo();
   }:null;
 
+
+  let toggleChat = async () =>{
+    const chatElement = document.getElementById("messages_container");
+    const membersVideoContainer = document.getElementById("members_container");
+    const input = document.getElementById("msgInput");
+    
+    if (!isChatVisible ){
+      try{
+        setIsChatVisible(true);
+        chatElement.style.display='block';
+        membersVideoContainer.style.width='75%';
+        input.focus();
+
+      }
+  
+      catch{
+        console.log("could not set chat visible")
+      }
+  }
+  
+  else{
+    try{
+      setIsChatVisible(false);
+      chatElement.style.display='none';
+      membersVideoContainer.style.width='100%';
+    }
+  
+    catch{
+      console.log("could not set chat not-visible")
+    }
+  }
+  }
+  //chat listener 
+if (typeof Window !== 'undefined'){
+  let counter = 0;
+const form = document.getElementById("form");
+const input = document.getElementById("msgInput");
+// const messages = document.getElementById("messages");
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (input.value) {
+    // compute a unique offset
+    if (socketRef.current){
+    const clientOffset = `${socketRef.current.id}-${counter++}`;
+    socketRef.current.emit("chat message", {msg:input.value, clientOffset:clientOffset, roomAccessKey:roomAccessKey, clientName:localClientName});
+    input.value = "";
+  }
+  }
+});
+}
+  
   // let displayFrame = document.getElementById
 
 
@@ -486,7 +572,7 @@ const FullRtc = () => {
             <Col className="p-0 m-0" id="user1_div">
               {/* <h1 className="clientName">{localClientName}</h1> */}
               <video
-                className="videoPlayer"
+                className="videoPlayer p-0"
                 id="user1"
                 autoPlay
                 playsInline
@@ -505,6 +591,8 @@ const FullRtc = () => {
             // </Col>
           )}
         </Row>
+
+
         </Col>
 
         <Col xs={12} id="stream-container p-0 m-0">
@@ -589,12 +677,66 @@ const FullRtc = () => {
             </Col>
 
             <Col className="chat_div control-container" id="chat-btn">
-              <img className="icon" src="/icons/chat.svg" alt="chat button" />
+              <img className="icon"
+               src="/icons/chat.svg" 
+               alt="chat button" 
+               onClick={toggleChat}
+               />
             </Col>
           </Row>
         </Col>
 
-        <Col id="messages_container"></Col>
+        <Col id="messages_container" className="p-0">
+<div className="">
+   <h2 className="p-3 chat-title mb-0">Chat</h2>
+   <ul 
+   id="messages" 
+   className="p-3"
+   >
+   {messages.map((message) => (
+        <li 
+        key={message.id}
+        className="msgItem mb-1"
+        >
+          <p className={`m-0 mb-1 clientNameDate ${message.clientName === localClientName ? "right" : "left"}`}>
+           <span className="clientName"> {message.clientName} </span> 
+           <span className="chatTimeStamp">{message.time} </span> 
+          </p>
+
+          <p className={`msg m-0 ${message.clientName === localClientName ? "right" : "left"}`}>{message.message}</p>
+        </li>
+      ))}
+  </ul>
+  
+  <form id="form" action="" className="">
+    <Row id="sendMsgRow" className="p-0 m-0">
+      <Col xs={11} className="p-0">
+      <input
+      placeholder="Nachricht absenden"
+      title="message area"
+      id="msgInput"
+      className="border-0 p-2"
+    />
+  
+      </Col>
+
+      <Col xs={1} className="p-0">
+      <button 
+      type="submit"
+      id="sendMsgBtn"
+       title="send message button"
+       className="sendMsgBtn btn"
+       >
+      <img
+      src="/icons/send-chat-msg.svg">
+      </img>
+    </button>
+      </Col>
+    </Row>
+  </form>  
+</div>
+ 
+        </Col>
       </Row>
     </main>
   );

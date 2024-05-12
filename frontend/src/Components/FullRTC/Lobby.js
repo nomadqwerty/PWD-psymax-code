@@ -39,7 +39,7 @@ const Lobby = () => {
                   type="text"
                   className="form-input mt-3 m-0 p-3 "
                   name="client_name"
-                  placeholder="Enter Name Wie möchten Sie sich nennen?"
+                  placeholder="Wie möchten Sie sich nennen?"
                   required
                 ></input>
                 <br></br>
@@ -47,14 +47,14 @@ const Lobby = () => {
                   type="text"
                   className="form-input m-0 mt-3 p-3"
                   name="invite_link"
-                  placeholder="Enter Access Key Wie lautet Ihr Zugangscode? "
+                  placeholder="Wie lautet Ihr Zugangscode? "
                   required
                 ></input>
                 <br></br>
                 <input
                   className="btn submitBtn m-0 mt-3"
                   type="submit"
-                  value="Join / Beitreten "
+                  value="Beitreten "
                 ></input>
               </form>
             </Col>

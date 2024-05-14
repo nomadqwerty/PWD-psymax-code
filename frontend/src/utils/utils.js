@@ -12,7 +12,7 @@ const fetchUserMedia = (videoEl, setLocalStream) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: true,
+        // audio: true,
       });
 
       videoEl.srcObject = stream;
@@ -24,7 +24,23 @@ const fetchUserMedia = (videoEl, setLocalStream) => {
     }
   });
 };
+const fetchDisplayMedia = (videoEl, setLocalStream) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        // audio: true,
+      });
 
+      videoEl.srcObject = stream;
+      setLocalStream(stream);
+      resolve(stream);
+    } catch (err) {
+      console.log(err);
+      reject();
+    }
+  });
+};
 const createPeerConnection = (
   offerObj,
   setPeerConnection,
@@ -89,4 +105,4 @@ const addNewIceCandidate = (iceCandidate) => {
   console.log("======Added Ice Candidate======");
 };
 
-export { peerConfiguration, fetchUserMedia };
+export { peerConfiguration, fetchUserMedia, fetchDisplayMedia };

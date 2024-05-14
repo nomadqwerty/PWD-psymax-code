@@ -1,37 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import io from "socket.io-client";
-import { fetchUserMedia } from "@/utils/utils";
-import CallScreen from "@/components/callScreen";
-import AnswerScreen from "@/components/answerScreen";
+import { fetchDisplayMedia } from "@/utils/utils";
 
 const socket = io.connect("http://localhost:3005");
 const userName = "user123";
 const accessKey = "test123";
 
-const Messages = ({ messages }) => {
-  const messageStamps = Object.keys(messages);
-
-  const chat = messageStamps.map((msg, i) => {
-    console.log(typeof msg);
-    const time = msg;
-    let alignment = messages[msg].path === "from" ? "right" : "left";
-    return (
-      <div key={i} style={{ textAlign: alignment }}>
-        <p style={{ marginBottom: "10px" }}>
-          {" "}
-          {messages[msg].path}: {messages[msg].message}
-        </p>
-      </div>
-    );
-  });
-
-  return (
-    <div style={{ paddingRight: "120px", paddingLeft: "120px" }}>{chat}</div>
-  );
-};
-
-const Answer = () => {
+const CallScreen = ({ socket, socketIds }) => {
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [peerConnection, setPeerConnection] = useState(null);
@@ -42,22 +18,32 @@ const Answer = () => {
   const [myIce, setMyIce] = useState(false);
   const [message, setMessage] = useState(false);
   const [messages, setMessages] = useState({});
-  const [socketIds, setsocketIds] = useState({});
-  const [toShare, setToShare] = useState(false);
-
+  const [shareScreen, setShareScreen] = useState(false);
+  const [display, setDisplay] = useState("none");
   useEffect(() => {
-    if (socket.connected) {
-      try {
-        (async () => {
-          const localVideoEl = document.querySelector("#local-video");
+    if (socket.connected === true) {
+      if (shareScreen) {
+        try {
+          (async () => {
+            const localVideoEl = document.querySelector("#local-videoScreen");
 
-          await fetchUserMedia(localVideoEl, setLocalStream, null, "local");
-        })();
-      } catch (error) {
-        console.log(error);
+            await fetchDisplayMedia(
+              localVideoEl,
+              setLocalStream,
+              null,
+              "local"
+            );
+            console.log(socketIds);
+            socket.emit("sharingScreenTo", socketIds);
+            setDisplay("block");
+            setShareScreen(false);
+          })();
+        } catch (error) {
+          console.log(error);
+        }
       }
     }
-  }, []);
+  }, [shareScreen]);
 
   useEffect(() => {
     if (localStream) {
@@ -71,10 +57,16 @@ const Answer = () => {
           },
         ],
       };
+      localStream.getVideoTracks()[0].onended = function () {
+        console.log("stopped sharing");
+        socket.emit("stopSharingScreenTo", socketIds);
+        setDisplay("none");
+        // doWhatYouNeedToDo();
+      };
       (async () => {
         let peerConnection = await new RTCPeerConnection(peerConfiguration);
         setPeerConnection(peerConnection);
-        const remoteVideoEl = document.querySelector("#remote-video");
+        const remoteVideoEl = document.querySelector("#remote-videoScreen");
         const remoteStream = new MediaStream();
         setRemoteStream(remoteStream);
         remoteVideoEl.srcObject = remoteStream;
@@ -100,11 +92,13 @@ const Answer = () => {
         console.log("........Ice candidate found!......");
         // console.log(e);
         if (e.candidate) {
-          socket.emit("sendIceCandidateToSignalingServer", {
+          console.log(didIOffer);
+          socket.emit("sendIceCandidateToSignalingServerScreen", {
             iceCandidate: e.candidate,
             iceUserName: userName,
             didIOffer,
             iceAccessKey: accessKey,
+            socketIds,
           });
           setMyIce(e.candidate);
         }
@@ -112,7 +106,6 @@ const Answer = () => {
 
       peerConnection.ontrack = (e) => {
         console.log("Got a track from the other peer!! How excting");
-
         // console.log(e);
         e.streams[0].getTracks().forEach((track) => {
           remoteStream.addTrack(track, remoteStream);
@@ -131,12 +124,15 @@ const Answer = () => {
           await peerConnection.setLocalDescription(answer);
           offers[0].answer = answer;
           console.log("set answer SDP");
+          const offerIceCandidates = await socket.emitWithAck(
+            "newAnswerScreen",
+            {
+              offer: offers[0],
+              answerId: socket.id,
+              answererAccessKey: accessKey,
+            }
+          );
 
-          const offerIceCandidates = await socket.emitWithAck("newAnswer", {
-            offer: offers[0],
-            answerId: socket.id,
-            answererAccessKey: accessKey,
-          });
           offerIceCandidates.forEach((c) => {
             peerConnection.addIceCandidate(c);
             console.log("======Added Ice Candidate======");
@@ -163,25 +159,25 @@ const Answer = () => {
     console.log(messages, "msgs");
   }, [messages]);
 
-  socket.on("newOfferAwaiting", (offers) => {
+  socket.on("newOfferAwaitingScreen", (offers) => {
     console.log("listening...");
     if (offers?.length > 0) {
       setOffers(offers);
     }
   });
 
-  socket.on("receivedIceCandidateFromServer", (iceCandidate) => {
+  socket.on("receivedIceCandidateFromServerScreen", (iceCandidate) => {
     if (!callerIce) {
       console.log("set answer ICE.");
       setCallerIce(iceCandidate);
     }
   });
-  socket.on("hasCallerIce", (data) => {
+  socket.on("hasCallerIceScreen", (data) => {
     if (myIce) {
       data.myIce = myIce;
       console.log(data);
 
-      socket.emit("addedCallerIce", data);
+      socket.emit("addedCallerIceScreen", data);
     }
   });
 
@@ -192,97 +188,43 @@ const Answer = () => {
       [data.stamp]: { message: data.message, path: "to" },
     });
   });
-  useEffect(() => {
-    if (socket && offers) {
-      console.log(socket.id, offers[0].callerId);
-      setsocketIds({ fromId: socket.id, toId: offers[0].callerId });
-    }
-  }, [socket, offers]);
-
   return (
     <>
       <div style={{ display: "flex" }}>
         <div>
           <video
             className="video-player"
-            id="local-video"
+            id="local-videoScreen"
             autoPlay
             playsInline
             controls
-            style={{ width: "50%", marginRight: "20px" }}
+            style={{ width: "50%", marginRight: "20px", display: display }}
           ></video>
-          Call
+          <button
+            onClick={() => {
+              if (!shareScreen) {
+                setShareScreen(true);
+              } else {
+                setShareScreen(true);
+              }
+            }}
+          >
+            share
+          </button>
         </div>
         <div>
           <video
             className="video-player"
-            id="remote-video"
+            id="remote-videoScreen"
             autoPlay
             playsInline
             controls
-            style={{ width: "50%", marginRight: "20px" }}
+            style={{ width: "50%", marginRight: "20px", display: "none" }}
           ></video>
           Join
         </div>
       </div>
-      <div style={{ display: "flex" }}>
-        <div>
-          <div>
-            <input
-              onChange={(e) => {
-                setMessage(e.target.value);
-              }}
-              value={message || ""}
-              style={{
-                background: "grey",
-                height: "10vh",
-                width: "50vw",
-              }}
-            ></input>
-          </div>
-          <div>
-            <button
-              onClick={() => {
-                console.log(offers);
-                if (offers[0]) {
-                  let msgObj = {
-                    from: socket.id,
-                    to: offers[0].callerId,
-                    stamp: Date.now(),
-                    message,
-                  };
-                  socket.emit("newMessage", msgObj);
-                  setMessages({
-                    ...messages,
-                    [msgObj.stamp]: { message: msgObj.message, path: "from" },
-                  });
-                  setMessage("");
-                }
-              }}
-            >
-              Send Message
-            </button>
-          </div>
-        </div>
-        <div style={{ background: "grey", height: "auto", width: "50%" }}>
-          <Messages messages={messages}></Messages>
-        </div>
-      </div>
-      <div>
-        <button
-          onClick={() => {
-            setToShare(!toShare);
-          }}
-        >
-          {toShare ? "i wont share" : "i want to share"}
-        </button>
-        {!toShare ? (
-          <AnswerScreen socket={socket} socketIds={socketIds}></AnswerScreen>
-        ) : (
-          <CallScreen socket={socket} socketIds={socketIds}></CallScreen>
-        )}
-      </div>
     </>
   );
 };
-export default Answer;
+export default CallScreen;

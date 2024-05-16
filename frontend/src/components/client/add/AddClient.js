@@ -1,5 +1,6 @@
 'use client';
 import { Grid, useMediaQuery } from '@mui/material';
+import Worker from 'worker-loader!./clientUtils.js/clientWorker';
 import { Controller, useForm } from 'react-hook-form';
 import React, { useEffect, useState, useContext } from 'react';
 import toast from 'react-hot-toast';
@@ -204,130 +205,35 @@ const ClientAddEdit = React.memo(() => {
           pass = passwordGenerator();
         }
         console.log(pass);
-        if (pass !== undefined) {
-          let ePass = userData.emergencyPassword;
-          let dualKeySalt = serverVault.dualKeySalt;
-          let masterKeySalt = serverVault.masterKeySalt;
-
-          let allKeys = await deriveAllKeys(
+        const clientWorker = new Worker();
+        const psymaxToken = localStorage.getItem('psymax-token');
+        console.log(data);
+        clientWorker.postMessage({
+          type: 'encryptClient',
+          data: JSON.stringify({
+            data: data,
             pass,
-            ePass,
-            dualKeySalt,
-            masterKeySalt,
-            window
-          );
-          let clientKeys = await deriveAllKeys(
-            userData.password,
-            ePass,
-            dualKeySalt,
-            masterKeySalt,
-            window
-          );
-          let keysLength = Object.keys(allKeys).length;
-          let clientKeyLength = Object.keys(clientKeys).length;
-          if (keysLength > 0 && clientKeyLength > 0) {
-            const { masterKey, iv } = allKeys;
+            userData,
+            serverVault,
+            updateClientVault,
+            clientVault,
+            psymaxToken,
+            isEdit,
+          }),
+        });
 
-            const fieldsToEncrypt = [
-              'Anrede',
-              'Titel',
-              'Firma',
-              'Vorname',
-              'Nachname',
-              'Strasse_und_Hausnummer',
-              'PLZ',
-              'Ort',
-              'Land',
-              'Diagnose',
-              'Geburtsdatum',
-              'ArztTitel',
-              'ArztAnrede',
-              'ArztVorname',
-              'ArztNachname',
-              'ArztStrasse_und_Hausnummer',
-              'ArztPLZ',
-              'ArztOrt',
-              'ArztLand',
-            ];
-            for (let i = 0; i < fieldsToEncrypt.length; i++) {
-              const dataField = data[fieldsToEncrypt[i]];
-              const encField = await encryptData(
-                operations,
-                masterKey,
-                iv,
-                dataField
-              );
-              const uintField = new Uint8Array(encField);
-              const arrayField = Array.from(uintField);
-              data[fieldsToEncrypt[i]] = arrayField;
-            }
-            if (isEdit) {
-              data.id = params?.id;
-              data.isEncrypted = true;
-              delete data?.Chiffre;
-              delete data?.userChiffre;
-              console.log('here for editing');
-              console.log(data);
-              response = await axiosInstance.put('/klient/update', data);
-            } else {
-              data.isEncrypted = true;
-              console.log(data);
-              response = await axiosInstance.post('/klient/save', data);
-              // TODO: Add client key and id to client vault
+        clientWorker.onmessage = (message) => {
+          const encryptedData = JSON.parse(message.data);
 
-              let updateVault = {
-                data: [
-                  ...updateClientVault.data,
-                  {
-                    clientId: response.data.data._id,
-                    clientKey: pass,
-                  },
-                ],
-                type: 'update',
-              };
-              let mainVault = {
-                data: [
-                  ...clientVault.data,
-                  {
-                    clientId: response.data.data._id,
-                    clientKey: pass,
-                  },
-                ],
-                type: 'update',
-              };
+          if (encryptedData.response?.status === 200) {
+            setUpdateClientVault(encryptedData.setUpdateClientVault);
+            setClientVault(encryptedData.setClientVault);
 
-              setUpdateClientVault(updateVault);
-              setClientVault(mainVault);
-              const vaultEnc = await encryptData(
-                operations,
-                clientKeys.masterKey,
-                clientKeys.iv,
-                updateVault.data
-              );
-              console.log(vaultEnc);
-              let clientUpdateUint = new Uint8Array(vaultEnc);
-              console.log(clientUpdateUint);
-              let clientVaultRes = await axiosInstance.post(
-                `/vault/user/update/main`,
-                {
-                  userId: userData._id,
-                  type: 'update',
-                  clients: Array.from(clientUpdateUint),
-                  vault: 'client',
-                }
-              );
-              console.log(clientVaultRes);
-            }
-          }
-
-          // TODO: encrypt client data fields.
-
-          if (response?.status === 200) {
             const responseData = response?.data;
             toast.success(responseData?.message);
             router.push('/dashboard/klientinnen');
           }
-        }
+        };
       }
     } catch (error) {
       handleApiError(error, router);
@@ -373,92 +279,26 @@ const ClientAddEdit = React.memo(() => {
           for (const key in ArztData) {
             modifiedArzt[`Arzt${key}`] = ArztData[key];
           }
+          let userData = localStorage.getItem('psymax-user-data');
+          const clientWorker = new Worker();
 
-          if (clientVault?.data?.length >= 0) {
-            let fieldsToDec = [
-              'Anrede',
-              'Titel',
-              'Firma',
-              'Vorname',
-              'Nachname',
-              'Strasse_und_Hausnummer',
-              'PLZ',
-              'Ort',
-              'Land',
-              'Diagnose',
-              'Geburtsdatum',
-              'ArztTitel',
-              'ArztAnrede',
-              'ArztVorname',
-              'ArztNachname',
-              'ArztStrasse_und_Hausnummer',
-              'ArztPLZ',
-              'ArztOrt',
-              'ArztLand',
-            ];
-            const operations =
-              window.crypto.subtle || window.crypto.webkitSubtle;
-            const decClientsList = [];
+          clientWorker.postMessage({
+            type: 'decryptClient',
+            data: JSON.stringify({
+              clientVault,
+              params,
+              userData,
+              serverVault,
+              responseData,
+              modifiedArzt,
+            }),
+          });
 
-            clientVault.data.forEach(async (vault) => {
-              let clientId = vault.clientId;
-              let clientKey = vault.clientKey;
-              console.log(params.id === clientId);
-
-              if (params.id === clientId) {
-                let serverVaultLength = Object.keys(serverVault).length;
-                let userData = localStorage.getItem('psymax-user-data');
-                if (serverVaultLength > 0 && userData) {
-                  userData = JSON.parse(userData);
-
-                  let pass = clientKey;
-                  let ePass = userData.emergencyPassword;
-                  let dualKeySalt = serverVault.dualKeySalt;
-                  let masterKeySalt = serverVault.masterKeySalt;
-                  // console.log(pass, ePass, dualKeySalt, masterKeySalt);
-                  if (
-                    pass.length > 0 &&
-                    ePass.length > 0 &&
-                    dualKeySalt.length > 0 &&
-                    masterKeySalt.length > 0
-                  ) {
-                    let allKeys = await deriveAllKeys(
-                      pass,
-                      ePass,
-                      dualKeySalt,
-                      masterKeySalt,
-                      window
-                    );
-
-                    let dataObj = { ...responseData, ...modifiedArzt };
-                    console.log(responseData, modifiedArzt);
-                    for (let i = 0; i < fieldsToDec.length; i++) {
-                      const dataField = new Uint8Array(
-                        dataObj[fieldsToDec[i]].data
-                      );
-
-                      const decField = await decryptData(
-                        operations,
-                        allKeys.masterKey,
-                        allKeys.iv,
-                        dataField
-                      );
-
-                      dataObj[fieldsToDec[i]] = decField;
-                    }
-                    if (
-                      typeof dataObj['Anrede'] === 'string' &&
-                      typeof dataObj['Anrede'] !== '[object][object]'
-                    ) {
-                      setDefaultValues(dataObj);
-                      setEditData(dataObj);
-                      console.log(dataObj);
-                    }
-                  }
-                }
-              }
-            });
-          }
+          clientWorker.onmessage = (message) => {
+            const decryptedData = JSON.parse(message.data);
+            setDefaultValues(decryptedData.setDefaultValues);
+            setEditData(decryptedData.setEditData);
+          };
         } catch (error) {
           handleApiError(error, router);
         }

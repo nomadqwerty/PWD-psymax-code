@@ -3,6 +3,7 @@ import {
   encryptData,
   decryptData,
   vaultMerger,
+  isEncrypted,
 } from '@/utils/utilityFn';
 // import axiosInstance from '@/utils/axios';
 import { axiosWrap } from '@/utils/axios';
@@ -542,7 +543,7 @@ let encryptOnLoginB = async (
           );
           clearInterval(checkInt);
         }
-      }, 1000);
+      });
     }
   }
 };
@@ -670,4 +671,239 @@ const fetchData_encryptOnLogout = async (
   }
 };
 
-export { encryptOnLoginA, encryptOnLoginB, fetchData_encryptOnLogout };
+const restoreEncryption = async (
+  data,
+  id,
+  psymaxToken,
+  self,
+  setFileEncVault = [],
+  setClientEncVault = [],
+  setNewRecoveryKey = []
+) => {
+  let password = data.password;
+  let passwordConfirm = data.passwordConfirm;
+  const axiosInstance = axiosWrap(psymaxToken);
+
+  if (password === passwordConfirm) {
+    // console.log(data);
+
+    const recoveryRes = await axiosInstance.post(`/user/resetpassword`, {
+      userId: id,
+      password: password,
+    });
+
+    if (recoveryRes.status === 200) {
+      let vaults = recoveryRes.data.data;
+      // console.log(vaults);
+      if (vaults) {
+        const {
+          oldPasswordHash,
+          emergencyPassword,
+          serverVault,
+          fileVaults,
+          clientVaults,
+          newPassword,
+          recoveryKey,
+        } = vaults;
+        const { dualKeySalt, masterKeySalt } = serverVault[0];
+        let restoredFiles;
+        let restoredClient;
+
+        let allKeys = await deriveAllKeys(
+          oldPasswordHash,
+          emergencyPassword,
+          dualKeySalt,
+          masterKeySalt,
+          self
+        );
+        let clientEncrypted = isEncrypted(clientVaults);
+        let fileEncrypted = isEncrypted(fileVaults);
+        let keysLength = Object.keys(allKeys).length;
+        if (keysLength > 0 && clientEncrypted && fileEncrypted) {
+          const operations = self.crypto.subtle || self.crypto.webkitSubtle;
+
+          let oldMaster = allKeys.masterKey;
+          let oldIv = allKeys.iv;
+
+          let fileUintArr = [];
+
+          let newKeys = await deriveAllKeys(
+            newPassword,
+            emergencyPassword,
+            dualKeySalt,
+            masterKeySalt,
+            self
+          );
+
+          let newKeysLength = Object.keys(newKeys).length;
+
+          if (newKeysLength > 0 && clientEncrypted && fileEncrypted) {
+            let newMaster = newKeys.masterKey;
+            let newIv = newKeys.iv;
+            fileVaults.forEach((e) => {
+              if (e.type === 'update') {
+                let fileUpdateVault = new Uint8Array(e.passwords.data);
+                fileUintArr.push({
+                  data: fileUpdateVault,
+                  type: e.type,
+                });
+              }
+              if (e.type === 'main') {
+                let fileMainVault = new Uint8Array(e.passwords.data);
+                fileUintArr.push({ data: fileMainVault, type: e.type });
+              }
+              if (e.type === 'archive') {
+                let fileArchiveVault = new Uint8Array(e.passwords.data);
+                fileUintArr.push({
+                  data: fileArchiveVault,
+                  type: e.type,
+                });
+              }
+            });
+
+            let clientUintArr = [];
+
+            clientVaults.forEach((e) => {
+              if (e.type === 'update') {
+                let clientUpdateVault = new Uint8Array(e.clients.data);
+                clientUintArr.push({
+                  data: clientUpdateVault,
+                  type: e.type,
+                });
+              }
+              if (e.type === 'main') {
+                let clientMainVault = new Uint8Array(e.clients.data);
+                clientUintArr.push({
+                  data: clientMainVault,
+                  type: e.type,
+                });
+              }
+              if (e.type === 'archive') {
+                let clientArchiveVault = new Uint8Array(e.clients.data);
+                clientUintArr.push({
+                  data: clientArchiveVault,
+                  type: e.type,
+                });
+              }
+            });
+
+            let encryptedVaults = [fileUintArr, clientUintArr];
+
+            let recKeyEnc = Array.from(newKeys.recoveryKeyEnc);
+            recKeyEnc = { recovery: recKeyEnc };
+
+            const masterKeyEnc = await encryptData(
+              operations,
+              newKeys.dualMasterKey,
+              newKeys.backUpIv,
+              recKeyEnc
+            );
+
+            let masterKeyEncUint = new Uint8Array(masterKeyEnc);
+
+            // return
+            setNewRecoveryKey = Array.from(masterKeyEncUint);
+
+            // decrypt vaults
+            let decryptedFiles = [];
+            let encryptedFiles = [];
+            let decryptedClients = [];
+            let encryptedClients = [];
+            console.log(oldPasswordHash);
+            console.log(encryptedVaults);
+
+            encryptedVaults[0].forEach(async (e) => {
+              // console.log(e.type);
+              let dataDec = await decryptData(
+                operations,
+                oldMaster,
+                oldIv,
+                e.data
+              );
+              console.log(dataDec);
+              if (dataDec) {
+                dataDec.type = e.type;
+                decryptedFiles.push(dataDec);
+                console.log(dataDec.data);
+                const encrypted = await encryptData(
+                  operations,
+                  newMaster,
+                  newIv,
+                  dataDec
+                );
+                let encUint = new Uint8Array(encrypted);
+                encryptedFiles.push({
+                  passwords: Array.from(encUint),
+                  type: e.type,
+                  userId: id,
+                });
+                if (encryptedFiles.length === 3) {
+                  // return object
+                  setFileEncVault = [...encryptedFiles];
+                  console.log(encryptedFiles);
+                  restoredFiles = true;
+                }
+              }
+            });
+            encryptedVaults[1].forEach(async (e) => {
+              let dataDec = await decryptData(
+                operations,
+                oldMaster,
+                oldIv,
+                e.data
+              );
+              console.log(dataDec);
+              if (dataDec) {
+                dataDec.type = e.type;
+                decryptedClients.push(dataDec);
+                console.log(dataDec.data);
+                const encrypted = await encryptData(
+                  operations,
+                  newMaster,
+                  newIv,
+                  dataDec
+                );
+                let encUint = new Uint8Array(encrypted);
+                encryptedClients.push({
+                  clients: Array.from(encUint),
+                  type: e.type,
+                  userId: id,
+                });
+
+                if (encryptedClients.length === 3) {
+                  console.log(encryptedClients);
+
+                  // return Object
+                  setClientEncVault = [...encryptedClients];
+                  restoredClient = true;
+                }
+              }
+            });
+          }
+        } else {
+          console.log(clientEncrypted, fileEncrypted);
+        }
+
+        const checker = setInterval(() => {
+          if (restoredClient === true && restoredFiles === true) {
+            self.postMessage(
+              JSON.stringify({
+                setFileEncVault,
+                setClientEncVault,
+                setNewRecoveryKey,
+              })
+            );
+            clearInterval(checker);
+          }
+        });
+      }
+    }
+  }
+};
+
+export {
+  encryptOnLoginA,
+  encryptOnLoginB,
+  fetchData_encryptOnLogout,
+  restoreEncryption,
+};

@@ -14,6 +14,7 @@ import { KlientContext } from '../../context/klient.context';
 import PrivateRoute from '../../components/PrivateRoute';
 import { BriefHeader, Options } from '../../components/brief/HeadersAndInfo';
 import vaultContext from '@/context/vault.context';
+import Worker from 'worker-loader!./briefUtils/briefWorker';
 
 import {
   deriveAllKeys,
@@ -112,64 +113,25 @@ const BriefPage = React.memo(() => {
             }
           }
           console.log(pass);
-          if (pass !== undefined) {
-            let allKeys = await deriveAllKeys(
+          const briefWorker = new Worker();
+          const psymaxToken = localStorage.getItem('psymax-token');
+
+          briefWorker.postMessage({
+            type: 'decryptClient',
+            data: JSON.stringify({
+              responseData,
               pass,
               ePass,
               dualKeySalt,
               masterKeySalt,
-              window
-            );
-            console.log(allKeys);
+            }),
+          });
 
-            let keysLength = Object.keys(allKeys).length;
+          briefWorker.onmessage = (message) => {
+            const decryptedData = JSON.parse(message.data);
 
-            if (keysLength > 0) {
-              const { masterKey, iv } = allKeys;
-
-              const fieldsToDec = [
-                'Anrede',
-                'Titel',
-                'Firma',
-                'Vorname',
-                'Nachname',
-                'Strasse_und_Hausnummer',
-                'PLZ',
-                'Ort',
-                'Land',
-                'Diagnose',
-                'Geburtsdatum',
-                'ArztTitel',
-                'ArztAnrede',
-                'ArztVorname',
-                'ArztNachname',
-                'ArztStrasse_und_Hausnummer',
-                'ArztPLZ',
-                'ArztOrt',
-                'ArztLand',
-              ];
-              for (let i = 0; i < fieldsToDec.length; i++) {
-                if (responseData[fieldsToDec[i]]) {
-                  // console.log(responseData[fieldsToDec[i]]);
-                  const dataField = new Uint8Array(
-                    responseData[fieldsToDec[i]].data
-                  );
-                  const decField = await decryptData(
-                    operations,
-                    masterKey,
-                    iv,
-                    dataField
-                  );
-
-                  responseData[fieldsToDec[i]] = decField;
-                }
-              }
-              console.log('dec client fields');
-              if (responseData?._id !== undefined) {
-                setEmpfaenger(responseData);
-              }
-            }
-          }
+            setEmpfaenger(decryptedData.setEmpfaenger);
+          };
         }
       }
     } catch (error) {
@@ -339,68 +301,39 @@ const BriefPage = React.memo(() => {
       const responseData = response?.data?.data;
       console.log(responseData);
       if (responseData) {
-        if (responseData?.raw) {
-          const operations = window.crypto.subtle || window.crypto.webkitSubtle;
-          let serverVaultLength = Object.keys(serverVault).length;
-          let userData = localStorage.getItem('psymax-user-data');
-          if (serverVaultLength > 0 && userData) {
-            userData = JSON.parse(userData);
-            let filePass = passwordGenerator();
-            let ePass = userData.emergencyPassword;
-            let dualKeySalt = serverVault.dualKeySalt;
-            let masterKeySalt = serverVault.masterKeySalt;
-            let allKeys = await deriveAllKeys(
-              filePass,
-              ePass,
-              dualKeySalt,
-              masterKeySalt,
-              window
-            );
-            // console.log(allKeys);
+        let userData = localStorage.getItem('psymax-user-data');
 
-            let keysLength = Object.keys(allKeys).length;
+        const briefWorker = new Worker();
+        const psymaxToken = localStorage.getItem('psymax-token');
 
-            if (keysLength > 0) {
-              const { masterKey, iv } = allKeys;
+        briefWorker.postMessage({
+          type: 'encryptClientBrief',
+          data: JSON.stringify({
+            responseData,
+            serverVault,
+            userData,
+            fileVault,
+            storeFile,
+          }),
+        });
 
-              let data = new Uint8Array(responseData.raw.data).buffer;
-              let name = responseData.fileName.split('.')[0];
+        briefWorker.onmessage = (message) => {
+          const encryptedData = JSON.parse(message.data);
 
-              let encFile = await encryptFile(operations, data, masterKey, iv);
-              let file = new Blob([data]);
-              let uintFile = new Uint8Array(encFile);
-              let fileArrayData = Array.from(uintFile);
+          let data = new Uint8Array(encryptedData.file).buffer;
+          let downloadFile = new Blob([data]);
+          setStoreFile(encryptedData.setStoreFile);
+          setUpdateFileVault(encryptedData.setUpdateFileVault);
+          setFileVault(encryptedData.setFileVault);
+          //  Trigger file download.
+          // on return.
+          let elem = window.document.createElement('a');
+          elem.href = window.URL.createObjectURL(downloadFile);
+          elem.download = encryptedData.fileName;
+          console.log('here');
 
-              setStoreFile([...storeFile, { name, file: fileArrayData }]);
-
-              if (file) {
-                // TODO: Store file key and reference in vault.
-                const newFileVault = {
-                  data: [
-                    ...fileVault.data,
-                    {
-                      fileName: `${name}.${'pdf'}`,
-                      fileReference: `${userData._id}-${name}.${'pdf'}`,
-                      fileKey: filePass,
-                    },
-                  ],
-                  type: 'update',
-                };
-                console.log(newFileVault);
-                setUpdateFileVault(newFileVault);
-                setFileVault(newFileVault);
-
-                //  Trigger file download.
-                let elem = window.document.createElement('a');
-                elem.href = window.URL.createObjectURL(file);
-                elem.download = `${name}.${'pdf'}`;
-                console.log('here');
-
-                elem.click();
-              }
-            }
-          }
-        }
+          elem.click();
+        };
       }
 
       // if (klientState?.brief?.length > 0) {

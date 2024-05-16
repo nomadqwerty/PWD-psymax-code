@@ -2,6 +2,7 @@ import {
   encryptOnLoginB,
   encryptOnLoginA,
   fetchData_encryptOnLogout,
+  restoreEncryption,
 } from './AuthUtils';
 
 onmessage = async (message) => {
@@ -56,6 +57,15 @@ onmessage = async (message) => {
       self,
       psymaxToken
     );
+
+    // console.log(results);
+  }
+
+  if (message?.data?.type === 'restoreAccountEncryption') {
+    let { data, id, psymaxToken } = JSON.parse(message.data.data);
+
+    await restoreEncryption(data, id, psymaxToken, self);
+    // console.log(self);
 
     // console.log(results);
   }

@@ -11,7 +11,6 @@ import { KlientContext } from '../../context/klient.context';
 import clientContext from '../../context/client.context';
 import PrivateRoute from '../../components/PrivateRoute';
 import vaultContext from '@/context/vault.context';
-import { decryptData, deriveAllKeys } from '@/utils/utilityFn';
 import {
   AddNewClient,
   Cipher,

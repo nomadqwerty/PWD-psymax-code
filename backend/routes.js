@@ -136,7 +136,27 @@ router.post(
 
 /* Payments */
 router.post('/subscriptions', paymentsController.makeSubscription);
-router.post('/subscriptions/:userId', paymentsController.getSubscriptionByUser);
+router.get('/subscriptions/:userId', paymentsController.getSubscriptionByUser);
+router.post(
+  '/subscriptions/:userId/cancel',
+  paymentsController.cancelSubscription
+);
+router.post(
+  '/invoices/:id/download-receipt',
+  paymentsController.downloadReceiptPDF
+);
+router.post(
+  '/invoices/download-summary',
+  paymentsController.downloadSummaryReceiptPDFs
+);
+router.get(
+  '/subscriptions/:userId/invoices/',
+  paymentsController.getInvoicesByUser
+);
+router.put(
+  '/subscriptions/:userId/method/',
+  paymentsController.changePaymentMethod
+);
 router.post('/webhooks/checkout', paymentsController.webhookHandler);
 router.put('/user/extendTrialPhase/:id', userController.extendTrialPhase);
 // router.get('/subscriptions', paymentsController.makePayment);

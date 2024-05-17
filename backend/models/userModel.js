@@ -154,9 +154,14 @@ const userAppSchema = new Schema({
   deletedAt: {
     type: Date,
   },
+  trialDays: {
+    type: Number,
+  },
   trialEnd: {
     type: Date,
+    required: true,
   },
+  trialPeriodActive: { type: Boolean },
   referralBonusCycles: { type: Number },
 });
 

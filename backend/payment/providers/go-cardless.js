@@ -1,13 +1,5 @@
-const {
-  MollieApiError,
-  PaymentMethod,
-  SequenceType,
-} = require('@mollie/api-client');
 const { GoCardlessClient } = require('gocardless-nodejs/client');
-const {
-  SubscriptionIntervalUnit,
-  MandateStatus,
-} = require('gocardless-nodejs/types/Types');
+const { SubscriptionIntervalUnit } = require('gocardless-nodejs/types/Types');
 const webhooks = require('gocardless-nodejs/webhooks');
 const constants = require('gocardless-nodejs/constants');
 const PaymentProvider = require('./base').default;
@@ -15,6 +7,26 @@ const { ProviderCallbackError } = require('./base');
 const { SubscriptionSchema } = require('../../models/subscriptionModel');
 const { UserSchema } = require('../../models/userModel');
 const dayjs = require('dayjs');
+const {
+  SubscriptionStatusTracking,
+  SubscriptionPlans,
+} = require('../../utils/constants');
+const { globalExtendedPricing } = require('../../config');
+const { InvoiceSchema } = require('../../models/invoiceModel');
+
+/**
+ *
+ * @param {Number} cycles
+ */
+function getSubscriptionTrackingStatus(cycles, rewardingAllowed = false) {
+  if (cycles > 12) {
+    return SubscriptionStatusTracking.COMMITTED;
+  } else if (cycles >= 3 && rewardingAllowed) {
+    return SubscriptionStatusTracking.REWARDED;
+  } else if (cycles < 12) {
+    return SubscriptionStatusTracking.SUBSCRIBED;
+  }
+}
 
 /**
  *
@@ -78,13 +90,7 @@ class GoCardlessProvider extends PaymentProvider {
    * @param {SequenceType} sequenceType
    * @returns
    */
-  async createPayment(
-    amount,
-    cardToken,
-    currency,
-    method = PaymentMethod.creditcard,
-    sequenceType = SequenceType.oneoff
-  ) {
+  async createPayment(amount, cardToken, currency) {
     // Mollie payment processing logic
     try {
       const payment = await this.client.payments.create({
@@ -97,8 +103,6 @@ class GoCardlessProvider extends PaymentProvider {
         redirectUrl: 'https://c9c8-102-215-57-138.ngrok-free.app/orders/123456',
         webhookUrl:
           'https://c9c8-102-215-57-138.ngrok-free.app/api/webhooks/checkout',
-        method,
-        sequenceType,
       });
 
       return {
@@ -146,9 +150,6 @@ class GoCardlessProvider extends PaymentProvider {
         scheme: 'sepa_core',
       },
     });
-    // this.client.customerBankAccounts.create({
-    //   links: { customer: '', customer_bank_account_token: '' },
-    // }); v
 
     const billingRequestFlow = await this.client.billingRequestFlows.create({
       redirect_uri: '',
@@ -156,40 +157,6 @@ class GoCardlessProvider extends PaymentProvider {
       links: { billing_request: billingRequest.id },
     });
 
-    // Needed only for custom payments
-    // const customer = await this.client.billingRequests.collectCustomerDetails(
-    //   billingRequest.id,
-    //   {
-    //     customer: {
-    //       email: 'email@mail.com',
-    //       given_name: 'Bob',
-    //       family_name: 'Smith',
-    //     },
-    //     customer_billing_detail: {
-    //       address_line1: '25 Some Address',
-    //       city: 'London',
-    //       postal_code: 'E5 503',
-    //       country_code: 'GB',
-    //     },
-    //   }
-    // );
-    // const bankAccount = await this.client.billingRequests.collectBankAccount(
-    //   billingRequest.id,
-    //   {
-    //     account_number: '12334Needed', //Kontonummer
-    //     bank_code: 'Needed', //Bankleitzahl
-    //     country_code: 'DE',
-
-    //     account_holder_name: 'Bob Smith',
-    //   }
-    // );
-    // const payerDetails = await this.client.billingRequests.confirmPayerDetails(
-    //   billingRequest.id
-    // );
-
-    // const mandate = await this.client.billingRequests.fulfil(billingRequest.id);
-
-    // return mandate;
     return {
       provider: 'GoCardless',
       paymentUrl: billingRequestFlow.authorisation_url(),
@@ -202,7 +169,7 @@ class GoCardlessProvider extends PaymentProvider {
    * @param {SubscriptionData} subscriptionData
    * @returns
    */
-  async createSubscription(amount, subscriptionData) {
+  async createSubscription(amount, subscriptionData, description) {
     const billingRequest = await this.client.billingRequests.create({
       mandate_request: {
         scheme: 'sepa_core',
@@ -241,13 +208,13 @@ class GoCardlessProvider extends PaymentProvider {
         //Note that we charge the amount in the lowest denomination for the currency (e.g. pence in GBP, cents in EUR).
         amount: amount * 100, // 1500 == £15, so multiply value by 100
         currency: this.baseCurrency,
-        interval: '1',
-        day_of_month: '1',
-        interval_unit: SubscriptionIntervalUnit.Monthly,
-        name: 'Premium Monthly payment',
+        interval: '4',
+        interval_unit: SubscriptionIntervalUnit.Weekly,
+        name: description,
         links: { mandate: mandate.links.mandate_request_mandate },
-      },
-      '0uuid-for-idempotency-key-seems-optional?-prolly-not'
+        retry_if_possible: true,
+      }
+      // '0uuid-for-idempotency-key-seems-optional?-prolly-not'
     );
     console.log('Subscript', subscription);
     return subscription;
@@ -280,13 +247,21 @@ class GoCardlessProvider extends PaymentProvider {
     return subscription;
   }
 
+  /**
+   *
+   * @param {string} id
+   * @returns
+   */
   async getSubscription(id) {
-    return this.client.subscriptions.find(id);
+    const subscription = await this.client.subscriptions.find(id);
+    return {
+      ...subscription,
+      nextChargeDate: subscription.upcoming_payments?.[0]?.charge_date,
+    };
   }
 
   async extendSubscription(id, newStartDate) {
     try {
-      // id the referrer referred?
       // Cancel existing subscription
       const oldSubscriptionParams = await this.client.subscriptions.cancel(id);
 
@@ -297,14 +272,8 @@ class GoCardlessProvider extends PaymentProvider {
         start_date: newStartDate.toISOString(),
       });
 
-      // Update subscription details in your database
-      // await SubscriptionSchema.findByIdAndUpdate(referrerSubscription._id, {
-      //   goCardlessSubscriptionId: newSubscription.id,
-      //   startDate: newEndDate,
-      //   endDate: newEndDate,
-      // });
-
       console.log('Subscription extended successfully');
+      return newSubscription;
     } catch (error) {
       console.error('Error extending subscription:', error);
       // Handle error
@@ -327,18 +296,23 @@ class GoCardlessProvider extends PaymentProvider {
    * @param {string} subscriptionId
    */
   async rewardReferrer(referrerId, referrerSubscriptionId) {
-    // the existing user (referrer) gets 45 days (1.5 cycles) for free
+    const subscriptionOld = await SubscriptionSchema.findById(
+      referrerSubscriptionId
+    );
+
+    const cyclesNew = subscriptionOld.paidCyclesCount + 1;
+    // the existing user (referrer) gets 1 cycle(s) for free
     const user = await UserSchema.findByIdAndUpdate(
       referrerId,
       {
-        $inc: { referralBonusCycles: 1.5 },
+        $inc: { referralBonusCycles: 1 },
       },
       { new: true }
     );
 
     // cancel current subscription, set renewal date to 45 days ahead, (also set trial end date to 45 days ahead)
     const oldSubscriptionParams = await this.client.subscriptions.cancel(
-      referrerSubscriptionId
+      subscriptionOld.subscriptionId
     );
 
     // new date is: current end date + {referralBonusCycles} days
@@ -351,8 +325,8 @@ class GoCardlessProvider extends PaymentProvider {
       {
         ...oldSubscriptionParams,
         start_date: newStartDate,
-      },
-      '0uuid-for-idempotency-key-seems-optional?-prolly-not'
+      }
+      // '0uuid-for-idempotency-key-seems-optional?-prolly-not'
     );
 
     await SubscriptionSchema.findOneAndUpdate(
@@ -361,6 +335,7 @@ class GoCardlessProvider extends PaymentProvider {
         subscriptionId: newSubscriptionParams.id,
         startDate: newSubscriptionParams.start_date,
         endDate: newSubscriptionParams.end_date,
+        statusTracking: getSubscriptionTrackingStatus(cyclesNew),
       }
     );
   }
@@ -415,13 +390,51 @@ class GoCardlessProvider extends PaymentProvider {
 
     switch (event.action) {
       case 'payment_created': {
+        // TODO: Move non gocardless logic out of here for ..reusability?
+        const subscriptionOld = await SubscriptionSchema.findOne({
+          subscriptionId: event.links.subscription,
+        });
+
+        const cyclesNew = subscriptionOld.paidCyclesCount + 1;
+
         const subscription = await SubscriptionSchema.findOneAndUpdate(
           {
             subscriptionId: event.links.subscription,
           },
-          { $inc: { paidCyclesCount: 1 } },
+          {
+            $inc: { paidCyclesCount: 1 },
+            lastPaymentDate: new Date(),
+            statusTracking: getSubscriptionTrackingStatus(cyclesNew, true),
+          },
           { new: true }
         );
+
+        if (!subscription) {
+          // weird
+          return;
+        }
+
+        // FIXME: ASSUMING THIS PAYMENT IS SUCCESSFUL
+        const invoice = new InvoiceSchema({
+          userId: subscription.userId,
+          referenceId: event.links.payment,
+          plan: subscription.plan,
+        });
+        await invoice.save();
+        // FIXME: STOP ASSUMPTION
+
+        // if user has paid >= 12, move to extended plan
+        if (
+          subscription.paidCyclesCount >= 12 &&
+          subscription.plan === SubscriptionPlans.GLOBAL
+        ) {
+          await this.client.subscriptions.update(subscription.subscriptionId, {
+            amount: (globalExtendedPricing * 100).toString(),
+          });
+          await SubscriptionSchema.findByIdAndUpdate(subscription.id, {
+            plan: SubscriptionPlans.GLOBAL_EXTENDED,
+          });
+        }
 
         // THE WAY BONUS REWARDING WORKS RN IS BY CANCELLING CURRENT SUBSCRIPTION - WHICH STILL COLLECTS PAYMENT FOR THIS CYCLE.
         // AFTER THAT, WE CREATE NEW SUBSCRIPTION WITH DATE IN THE FUTURE.
@@ -452,10 +465,6 @@ class GoCardlessProvider extends PaymentProvider {
         // IF REFERRER IS ADMIN, NO BONUS
         if (referrer.isAdmin) return;
 
-        const referrerSubscription = await SubscriptionSchema.findOne({
-          userId: referrer._id,
-        });
-
         if (!user) {
           // TODO: weird...
           return;
@@ -466,6 +475,10 @@ class GoCardlessProvider extends PaymentProvider {
           return;
         }
 
+        const referrerSubscription = await SubscriptionSchema.findOne({
+          userId: referrer._id,
+        });
+
         if (!referrerSubscription) {
           // TODO: weird...
           return;
@@ -473,7 +486,7 @@ class GoCardlessProvider extends PaymentProvider {
         // is the referrer referred? if so check if has successfully paid 3 cycles
         if (
           referrer.invitedUserId &&
-          !referrerSubscription.paidCyclesCount < 3
+          referrerSubscription.paidCyclesCount < 3
         ) {
           // TODO: NOT SURE ON THIS... just prevent any sort of referral bonus for now
           // check if referrer has paid up to 3 cycles(90 days)
@@ -484,6 +497,9 @@ class GoCardlessProvider extends PaymentProvider {
 
         return `Subscription ${event.links.subscription} has new payment ${event.links.payment} created.\n`;
       }
+      case 'payment_confirmed':
+        // TODO: Move logic from "payment_created" here after confirmation this exists
+        break;
       default:
         return `Do not know how to process an event with action ${event.action}`;
     }
@@ -538,9 +554,9 @@ class GoCardlessProvider extends PaymentProvider {
   };
 
   /**
-   * @type  {import('express').Handler} request
+   * @param  {import('express').Request} request
    */
-  async handleCallback(request, response) {
+  async handleCallback(request) {
     const body = request.body;
 
     const webhookEndpointSecret = process.env.WEBHOOK_ENDPOINT_SECRET;
@@ -581,14 +597,12 @@ class GoCardlessProvider extends PaymentProvider {
       }
     } catch (error) {
       console.log('Error occurred handling webhook event', error);
-      return response
-        .status(500)
-        .json({ message: 'Error occurred handling webhook event' });
+      throw new ProviderCallbackError(
+        'Error occurred handling webhook event',
+        500
+      );
     }
-
-    response
-      .status(200)
-      .json({ message: 'Webhook event handled successfully' });
+    return true;
   }
 }
 

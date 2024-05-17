@@ -1,4 +1,9 @@
 const mongoose = require('mongoose');
+const {
+  SubscriptionPlans,
+  SubscriptionStatusTracking,
+  PaymentMethods,
+} = require('../utils/constants');
 const Schema = mongoose.Schema;
 
 const subscriptionAppSchema = new Schema({
@@ -7,23 +12,35 @@ const subscriptionAppSchema = new Schema({
     ref: 'users',
     required: true,
   },
+  statusTracking: {
+    type: String,
+    enum: Object.values(SubscriptionStatusTracking),
+    required: true,
+  },
   subscriptionId: { type: String, required: true },
   plan: {
     type: String,
-    enum: ['GLOBAL', 'GLOBAL_EXTENDED'],
-    required: true,
+    enum: Object.values(SubscriptionPlans),
+    default: SubscriptionPlans.GLOBAL,
   },
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },
+  lastPaymentDate: { type: Date },
   status: {
     type: String,
     enum: ['ACTIVE', 'CANCELED', 'PAUSED'],
+    default: 'ACTIVE',
     required: true,
   },
-
+  paymentMethod: {
+    type: String,
+    enum: Object.values(PaymentMethods),
+    required: true,
+  },
+  discount: Number,
   paidCyclesCount: {
     type: Number,
-    default: 0,
+    default: 1,
   },
 });
 

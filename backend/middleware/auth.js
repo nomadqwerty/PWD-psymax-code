@@ -10,7 +10,6 @@ const verifyToken = (req, res, next) => {
     '/api/register',
     '/api/login',
     '/api/webhooks/checkout',
-    '/api/subscriptions',
   ];
 
   if (excludeRoutes.includes(req.path)) {

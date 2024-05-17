@@ -24,6 +24,14 @@ class PaymentProvider {
   async createSubscription(...args) {}
 
   /**
+   * Get Subscription
+   * @abstract
+   * @param {...any} args
+   * @returns {Promise<any>}
+   */
+  async getSubscription(...args) {}
+
+  /**
    * @abstract
    * @param {...any} args Get status of a payment
    * @returns {any}
@@ -32,7 +40,7 @@ class PaymentProvider {
 
   /**
    * @abstract
-   * @param {...any} args Get status of a payment
+   * @param {...any} args Cancels an existing subscription
    * @returns {any}
    */
   async cancelSubscription(...args) {}

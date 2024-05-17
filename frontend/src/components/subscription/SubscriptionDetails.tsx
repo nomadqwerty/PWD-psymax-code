@@ -15,19 +15,28 @@ import axiosInstance from '@/utils/axios';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { SOMETHING_WRONG } from '@/utils/constants';
+import { getPlanInfo } from '@/utils/payment';
 import { handleApiError } from '@/utils/apiHelpers';
 import kontoContext from '@/context/konto.context';
-import { addDays, differenceInDays, format, isAfter, isEqual } from 'date-fns';
+import {
+  addDays,
+  differenceInDays,
+  format,
+  isAfter,
+  isBefore,
+  isEqual,
+} from 'date-fns';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import useSWR from 'swr';
 import ModelDialogue from '../../components/Dialog/ModelDialogue';
 
-export default function SubscriptionDetails() {
+function SubscriptionDetails() {
   const context = useContext(kontoContext);
   const { kontoData, setKontoData } = context.menuState;
 
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
   const [isCancelDialogModalOpen, setIsCancelDialogModalOpen] = useState(false);
   const [isOpenPaymentMethodModal, setIsOpenPaymentMethodModal] =
     useState(false);
@@ -53,7 +62,7 @@ export default function SubscriptionDetails() {
     // error: invoicesError,
     isLoading: isInvoicesLoading,
   } = useSWR(
-    kontoData._id ? `/subscription/${kontoData._id}/invoices/` : null,
+    kontoData._id ? `/subscriptions/${kontoData._id}/invoices/` : null,
     fetchData
   );
 
@@ -67,51 +76,60 @@ export default function SubscriptionDetails() {
   }, [search, invoicesData]);
 
   function cyclesToDays(cycles: number) {
-    return cycles * 30;
+    return cycles * 28;
   }
   console.log('data', kontoData, subscriptionData);
 
   const exportInvoices = async () => {
-    const invoiceIds = selectedRows.map((index) => filteredInvoices[index]._id);
-    try {
-      if (invoiceIds.length === 0) return;
-      // setIsExporting(() => true);
+    const exportAndZip = async () => {
+      const invoiceIds = selectedRows;
+      try {
+        if (invoiceIds.length === 0) return;
+        setIsExporting(() => true);
 
-      const res = await axiosInstance.post('/invoice/download-summary', {
-        invoiceIds,
-      });
-
-      const responseData = res?.data?.data;
-      if (responseData) {
-        // create a new JSZip instance
-        let zip = new JSZip();
-
-        // loop through the pdf data array
-        for (let i = 0; i < responseData.length; i++) {
-          // get the base64 encoded pdf and the file name
-          let base64Pdf = responseData[i].base64Pdf;
-          let fileName = responseData[i].fileName;
-
-          // add the pdf file to the zip
-          zip.file(fileName, base64Pdf, { base64: true });
-        }
-
-        // generate the zip file as a blob
-        zip.generateAsync({ type: 'blob' }).then(function (content) {
-          // save the zip file using FileSaver.js
-          saveAs(content, 'psymax-invoice.zip');
+        const res = await axiosInstance.post('/invoices/download-summary', {
+          invoiceIds,
         });
 
-        // reset the selection model
-        // setSelectionModel(() => []);
-        toast.success('Anlagen erfolgreich exportiert');
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error(SOMETHING_WRONG);
-    }
+        const responseData = res?.data?.data;
+        if (responseData) {
+          // create a new JSZip instance
+          let zip = new JSZip();
 
-    // setIsExporting(() => false);
+          // loop through the pdf data array
+          for (let i = 0; i < responseData.length; i++) {
+            // get the base64 encoded pdf and the file name
+            let base64Pdf = responseData[i].base64Pdf;
+            let fileName = responseData[i].fileName;
+
+            // add the pdf file to the zip
+            zip.file(fileName, base64Pdf, { base64: true });
+          }
+
+          // generate the zip file as a blob
+          zip.generateAsync({ type: 'blob' }).then(function (content) {
+            // save the zip file using FileSaver.js
+            saveAs(content, 'psymax-invoice-summary.zip');
+          });
+
+          // reset the selection model
+          setSelectedRows([]);
+
+          // toast.success('Anlagen erfolgreich exportiert');
+        }
+      } catch (error) {
+        console.log(error);
+        toast.error(SOMETHING_WRONG);
+        throw error;
+      }
+      setIsExporting(() => false);
+    };
+
+    toast.promise(exportAndZip(), {
+      error: 'Failed to export invoice',
+      loading: 'Exporting invoice',
+      success: 'Anlagen erfolgreich exportiert',
+    });
   };
 
   const trialInfo = useMemo(() => {
@@ -119,11 +137,20 @@ export default function SubscriptionDetails() {
 
     return {
       trialEnd: kontoData?.trialEnd
-        ? format(kontoData.trialEnd, 'E..EEE LLLL yyyy, kk:mm:ss')
+        ? format(new Date(kontoData.trialEnd), 'E LLLL yyyy, kk:mm:ss')
         : 'N/A',
       trialDays: kontoData?.trialDays,
     };
   }, [kontoData]);
+
+  const subscriptionPlan = useMemo(() => {
+    const planInfo = getPlanInfo(subscriptionData?.data.plan);
+    if (!planInfo) return {};
+    return {
+      amount: planInfo?.pricing_noVat,
+      vatAmount: planInfo?.pricing_noVat * planInfo?.vatPercentage,
+    };
+  }, [subscriptionData?.data]);
 
   const referralCycles = useMemo(() => {
     return {
@@ -214,16 +241,20 @@ export default function SubscriptionDetails() {
           </div>
           <div>
             <p className="font-bold text-3xl">
-              69€
+              {subscriptionPlan?.amount ?? '--'}€
               <span className="text-base text-[#707070] font-normal">
                 {' '}
-                / 30 Tage zzgl. MwSt. von 13,11€
+                / 28 Tage zzgl. MwSt. von{' '}
+                {subscriptionPlan?.vatAmount
+                  ? subscriptionPlan.vatAmount.toLocaleString()
+                  : '--'}
+                €
               </span>
             </p>
             <p className="my-2 text-[#707070]">
               Ihr Abonnement wird in{' '}
               {differenceInDays(
-                subscriptionData?.data?.nextChargeDate || new Date(),
+                new Date(subscriptionData?.data?.nextChargeDate ?? Date.now()),
                 new Date()
               )}{' '}
               {/* TODO: No need for optional operator */}
@@ -236,18 +267,35 @@ export default function SubscriptionDetails() {
             </div>
           </div>
         </div>
-        <div className="mt-16">
-          <div className="flex justify-between items-center">
-            <h2 className="font-bold text-3xl">Zahlungsmethode</h2>
-            <button
-              className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6"
-              onClick={() => setIsOpenPaymentMethodModal(true)}
-            >
-              Zahlungsmethode ändern
-            </button>
+        {/* TODO: IF is subscribed */}
+        {/* If subscription is in the past(over) */}
+        {!kontoData?.trialPeriodActive ? (
+          <div className="mt-16">
+            <div className="flex justify-between items-center">
+              <h2 className="font-bold text-3xl">Zahlungsmethode</h2>
+              <button
+                className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6"
+                onClick={() => setIsOpenPaymentMethodModal(true)}
+              >
+                Zahlungsmethode ändern
+              </button>
+            </div>
+            <p className="text-[#707070]">Lastschrift</p>
           </div>
-          <p className="text-[#707070]">Lastschrift</p>
-        </div>
+        ) : (
+          <div className="mt-16">
+            <div className="flex justify-between items-center">
+              <h2 className="font-bold text-3xl">Zahlungsmethode</h2>
+              <Link
+                className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6"
+                href="/subscription"
+              >
+                Subscribe
+              </Link>
+            </div>
+            <p className="text-[#707070]">Free Trial</p>
+          </div>
+        )}
         <div className="mt-16">
           <div className="flex justify-between items-center">
             <h2 className="font-bold text-3xl">Rechnungsangaben</h2>
@@ -282,15 +330,15 @@ export default function SubscriptionDetails() {
                 Mon February 2024, 12:00:00
               </span>
             </p> */}
-            <p>
-              You are currently on a free trial of {trialInfo.trialDays} days,
-              your trial ends at
-              <span className="text-[#707070]"> {trialInfo.trialEnd}</span>
-            </p>
-            ***
-            {/* If startDate is still in the future */}
-            {isAfter(subscriptionData?.data?.startDate, new Date()) ||
-            isEqual(subscriptionData?.data?.startDate, new Date()) ? (
+            {kontoData?.trialPeriodActive ? (
+              <p>
+                Sie nutzen derzeit eine kostenlose Testversion von{' '}
+                {trialInfo.trialDays} Tagen, Ihre Testversion endet um
+                <span className="text-[#707070]"> {trialInfo.trialEnd}</span>
+              </p>
+            ) : // {/* If startDate is still in the future */}
+            isAfter(subscriptionData?.data?.startDate, new Date()) ||
+              isEqual(subscriptionData?.data?.startDate, new Date()) ? (
               <p>
                 Sie befinden sich derzeit in Ihren {referralCycles.totalDays}{' '}
                 kostenlosen Testtagen, diese würden um ablaufen
@@ -327,7 +375,8 @@ export default function SubscriptionDetails() {
           </div>
 
           <button
-            className="flex gap-3 text-[#2B86FC] mt-8 mb-12 items-center font-medium"
+            className="flex gap-3 text-[#2B86FC] mt-8 mb-12 items-center font-medium disabled:opacity-35"
+            disabled={isExporting || !selectedRows.length}
             onClick={exportInvoices}
           >
             <svg
@@ -366,6 +415,7 @@ export default function SubscriptionDetails() {
           <BillingTable
             selectedRows={selectedRows}
             setSelectedRows={setSelectedRows}
+            setIsExporting={setIsExporting}
             rows={filteredInvoices ?? []}
             isLoading={isInvoicesLoading}
           />
@@ -396,47 +446,58 @@ export default function SubscriptionDetails() {
 function BillingTable({
   selectedRows: selected,
   setSelectedRows: setSelected,
+  setIsExporting,
   isLoading,
   rows,
 }) {
   const isSelected = (id: number) => selected.indexOf(id) !== -1;
 
-  const downloadInvoice = async (id) => {
-    try {
-      // setIsExporting(() => true);
+  const downloadInvoice = async (id: string) => {
+    const downloadAndZip = async () => {
+      try {
+        setIsExporting(() => true);
 
-      const res = await axiosInstance.post(`/invoice/${id}/download-receipt`);
+        const res = await axiosInstance.post(
+          `/invoices/${id}/download-receipt`
+        );
 
-      const responseData = res?.data?.data;
-      if (responseData) {
-        // create a new JSZip instance
-        let zip = new JSZip();
+        const responseData = res?.data?.data;
+        if (responseData) {
+          // create a new JSZip instance
+          let zip = new JSZip();
 
-        // loop through the pdf data array
-        for (let i = 0; i < responseData.length; i++) {
-          // get the base64 encoded pdf and the file name
-          let base64Pdf = responseData[i].base64Pdf;
-          let fileName = responseData[i].fileName;
+          // loop through the pdf data array
+          for (let i = 0; i < responseData.length; i++) {
+            // get the base64 encoded pdf and the file name
+            let base64Pdf = responseData[i].base64Pdf;
+            let fileName = responseData[i].fileName;
 
-          // add the pdf file to the zip
-          zip.file(fileName, base64Pdf, { base64: true });
+            // add the pdf file to the zip
+            zip.file(fileName, base64Pdf, { base64: true });
+          }
+
+          // generate the zip file as a blob
+          zip.generateAsync({ type: 'blob' }).then(function (content) {
+            // save the zip file using FileSaver.js
+            saveAs(content, 'psymax-invoice.zip');
+          });
+
+          // reset the selection model
+          setSelected(() => []);
+          // toast.success('Anlagen erfolgreich exportiert');
         }
-
-        // generate the zip file as a blob
-        zip.generateAsync({ type: 'blob' }).then(function (content) {
-          // save the zip file using FileSaver.js
-          saveAs(content, 'psymax-invoice.zip');
-        });
-
-        // reset the selection model
-        // setSelectionModel(() => []);
-        toast.success('Anlagen erfolgreich exportiert');
+      } catch (error) {
+        console.log(error);
+        toast.error(SOMETHING_WRONG);
+        throw error;
       }
-    } catch (error) {
-      console.log(error);
-      toast.error(SOMETHING_WRONG);
-    }
+    };
 
+    toast.promise(downloadAndZip(), {
+      error: 'Failed to export invoice',
+      loading: 'Exporting invoice',
+      success: 'Anlagen erfolgreich exportiert',
+    });
     // setIsExporting(() => false);
   };
 
@@ -540,6 +601,8 @@ function BillingTable({
 }
 
 import Box from '@mui/material/Box';
+import Link from 'next/link';
+import PrivateRoute from '../PrivateRoute';
 // import Typography from '@mui/material/Typography';
 
 const style = {
@@ -566,7 +629,7 @@ function PaymentModal({ open, setOpen, userId, initialMethod, mutate }) {
 
     try {
       const response = await axiosInstance.put(
-        `/subscription/${userId}/method`,
+        `/subscriptions/${userId}/method`,
         {
           method: currentMethod,
         }
@@ -633,3 +696,5 @@ function PaymentModal({ open, setOpen, userId, initialMethod, mutate }) {
     </div>
   );
 }
+
+export default PrivateRoute(SubscriptionDetails);

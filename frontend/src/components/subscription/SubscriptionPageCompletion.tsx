@@ -5,24 +5,46 @@ import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined
 import CssTextField from '../CssTextField';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import axiosInstance from '@/utils/axios';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import kontoContext from '@/context/konto.context';
 import { useContext, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { SOMETHING_WRONG } from '@/utils/constants';
 import { handleApiError } from '@/utils/apiHelpers';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { isValidIBAN } from 'ibantools';
 
 export default function SubscriptionPageCompletion() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm();
+    formState: { errors, isSubmitting },
+    setError,
+    reset,
+    control,
+  } = useForm({
+    defaultValues: {
+      payment_method: 'DIRECT_DEBIT',
+      given_name: '',
+      iban: '',
+      family_name: '',
+      account_holder_name: '',
+      address_line1: '',
+      postal_code: '',
+      country_code: '',
+    },
+  });
 
   const context = useContext(kontoContext);
   const { kontoData, setKontoData } = context.menuState;
   const router = useRouter();
+
+  const parseJOIErrorToReactHookForm = (error) => {
+    error?.details.forEach((e) => {
+      setError(e.path[0], e.message);
+    });
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -31,7 +53,6 @@ export default function SubscriptionPageCompletion() {
         const responseData = response?.data?.data;
         if (response?.status === 200) {
           setKontoData(responseData);
-          router.push('/dashboard');
         } else {
           toast.error(SOMETHING_WRONG);
         }
@@ -46,9 +67,28 @@ export default function SubscriptionPageCompletion() {
   const onSubmit = async (data) => {
     console.log(data, kontoData, context);
 
-    await axiosInstance.post(`/subscriptions`, {
-      ...data,
-      email: kontoData?.email || '',
+    const submitPromise = async () => {
+      try {
+        await axiosInstance.post(`/subscriptions`, {
+          ...data,
+          email: kontoData?.email || '',
+        });
+
+        reset();
+        router.push('/dashboard/subscription');
+      } catch (error) {
+        console.log(error.response.data);
+        if (error.response.status === 400) {
+          parseJOIErrorToReactHookForm(error.response.data.data);
+        }
+        handleApiError(error, router);
+        throw error;
+      }
+    };
+    toast.promise(submitPromise(), {
+      error: 'Subscription Error',
+      loading: 'Subscribing..',
+      success: 'Subscription successful',
     });
   };
   return (
@@ -69,9 +109,12 @@ export default function SubscriptionPageCompletion() {
                   <p className="text-[#707070]">1 Nutzer</p>
                 </div>
               </div>
-              <button className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium w-full mt-6">
+              <Link
+                href="/login"
+                className="inline-block text-center px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium w-full mt-6"
+              >
                 Unverbindlich testen
-              </button>
+              </Link>
             </div>
             <div className="p-4 text-[#6F7680] border-l border-[#D6D8DC] flex-1">
               <p>
@@ -127,7 +170,10 @@ export default function SubscriptionPageCompletion() {
                     <p className="text-[#707070]">1 Nutzer</p>
                   </div>
                 </div>
-                <button className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium w-full mt-6">
+                <button
+                  className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium w-full mt-6"
+                  disabled={isSubmitting}
+                >
                   Verbindlich bestellen
                 </button>
               </div>
@@ -169,25 +215,44 @@ export default function SubscriptionPageCompletion() {
               </p>
 
               <div className="mt-6 grid gap-6">
+                {/* DE89370400440532013000 */}
                 <div>
-                  <CssTextField
-                    fullWidth
+                  <Controller
                     name="iban"
-                    type="text"
-                    id="iban"
-                    label="IBAN"
-                    variant="outlined"
-                    {...register('iban', {
-                      required: true,
-                    })}
-                    error={!!errors.iban}
-                    inputProps={{
-                      className: 'interFonts',
+                    control={control}
+                    render={({ field }) => (
+                      <CssTextField
+                        fullWidth
+                        type="text"
+                        id="iban"
+                        label="IBAN"
+                        variant="outlined"
+                        value={field.value}
+                        onChange={field.onChange}
+                        inputRef={field.ref}
+                        error={!!errors.iban}
+                        inputProps={{
+                          className: 'interFonts',
+                        }}
+                      />
+                    )}
+                    rules={{
+                      validate: {
+                        required: (value) => {
+                          const isIbanValid = isValidIBAN(value);
+                          if (!value) return 'Dieses Feld ist ein Pflichtfeld';
+                          if (!isIbanValid) return 'IBAN is not valid';
+                        },
+                      },
+                      maxLength: 22,
                     }}
+                    defaultValue=""
                   />
+
                   {errors?.iban && (
                     <p className="validationErr">
-                      Dieses Feld ist ein Pflichtfeld
+                      {errors?.iban.message.toString() ||
+                        'Dieses Feld ist ein Pflichtfeld'}
                     </p>
                   )}
                 </div>
@@ -398,7 +463,7 @@ export default function SubscriptionPageCompletion() {
 
               <div className="mt-6 grid gap-6">
                 <div className="grid grid-cols-2 gap-7 grid-rows-[3.75rem]">
-                  <RadioGroup />
+                  <RadioGroup register={register} errors={errors} />
                 </div>
               </div>
             </div>
@@ -409,7 +474,7 @@ export default function SubscriptionPageCompletion() {
   );
 }
 
-function RadioGroup() {
+function RadioGroup({ register, errors }) {
   return (
     <>
       <div className="flex items-center justify-between text-[#707070] cursor-pointer relative">
@@ -418,7 +483,8 @@ function RadioGroup() {
           name="payment_method"
           id="payment_method_1"
           className="appearance-none sr-only peer"
-          defaultChecked
+          value="DIRECT_DEBIT"
+          {...register('payment_method', { required: true })}
         />
         <label
           className="p-3 cursor-pointer h-full w-full leading-loose border border-[#D6D8DC] peer-checked:border-[#2B86FC] rounded absolute inset-0"
@@ -428,7 +494,7 @@ function RadioGroup() {
         </label>
         <CheckRoundedIcon
           htmlColor="#2B86FC"
-          className="peer-checked:block hidden absolute right-3 z-10"
+          className="peer-checked:!block !hidden absolute right-3 z-10"
         />
       </div>
       <div className="flex items-center justify-between text-[#707070] cursor-pointer relative">
@@ -437,6 +503,9 @@ function RadioGroup() {
           name="payment_method"
           id="payment_method_two"
           className="appearance-none sr-only peer"
+          defaultChecked={false}
+          value="WIRE_TRANSFER"
+          {...register('payment_method', { required: true })}
         />
         <label
           className="p-3 cursor-pointer h-full w-full leading-loose border border-[#D6D8DC] peer-checked:border-[#2B86FC] rounded absolute inset-0"
@@ -446,9 +515,13 @@ function RadioGroup() {
         </label>
         <CheckRoundedIcon
           htmlColor="#2B86FC"
-          className="peer-checked:block hidden absolute right-3 z-10"
+          className="peer-checked:!block !hidden absolute right-3 z-10"
         />
       </div>
+
+      {errors?.payment_method && (
+        <p className="validationErr">Dieses Feld ist ein Pflichtfeld</p>
+      )}
     </>
   );
 }

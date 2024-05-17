@@ -5,6 +5,7 @@ const Joi = require('joi');
 const {
   TimeForTokenExpire,
   GLOBAL_POINT_VALUE,
+  SubscriptionStatusTracking,
 } = require('../utils/constants');
 const { randomCodeStr } = require('../utils/common');
 const fs = require('fs');
@@ -152,9 +153,11 @@ const login = async (req, res, next) => {
       // TODO: ON LOGIN IF THE TRIAL PHASE IS OVER, SET TRIAL TO EXPIRED
       const subscription = await SubscriptionSchema.findOne({
         userId: user._id,
+        statusTracking: { $nin: [SubscriptionStatusTracking.INACTIVE] },
       });
       let subscription_status;
-      if (dayjs().isAfter(user.trialEnd && !subscription)) {
+      // FIXME: Rethink on this
+      if (dayjs().isAfter(user.trialEnd) && !subscription) {
         subscription_status = 'pending_subscription';
       }
 

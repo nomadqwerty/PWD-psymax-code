@@ -92,6 +92,7 @@ async function makeSubscription(req, res, next) {
     }
 
     let subscription = await paymentService.createSubscription(
+      payment_method,
       globalPricing,
       subscriptionData,
       'Global Payment'
@@ -157,6 +158,7 @@ async function getSubscriptionByUser(req, res) {
       return res.status(404).json({ message: 'Subscription not found' });
     }
     const providerInfo = await paymentService.getSubscription(
+      subscription.paymentMethod,
       subscription.subscriptionId
     );
 
@@ -234,7 +236,10 @@ async function cancelSubscription(req, res) {
         statusTracking: SubscriptionStatusTracking.INACTIVE,
       }
     );
-    await paymentService.cancelSubscription(subscription.subscriptionId);
+    await paymentService.cancelSubscription(
+      subscription.paymentMethod,
+      subscription.subscriptionId
+    );
   } catch (error) {
     console.error(error);
 

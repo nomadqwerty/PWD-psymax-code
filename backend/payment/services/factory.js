@@ -1,3 +1,6 @@
+const { PaymentMethods } = require('../../utils/constants');
+const { WireTransferProvider } = require('../queues/wire-transfer');
+
 const PaymentProvider = require('../providers/base').default;
 
 /**
@@ -8,9 +11,11 @@ const PaymentProvider = require('../providers/base').default;
 class PaymentProviderFactory {
   /**
    * @param {T} paymentProvider
+   * @param {WireTransferProvider} wireTransferProvider
    */
-  constructor(paymentProvider) {
+  constructor(paymentProvider, wireTransferProvider) {
     this.paymentProvider = paymentProvider;
+    this.wireTransferProvider = wireTransferProvider;
   }
 
   /**
@@ -28,16 +33,46 @@ class PaymentProviderFactory {
   }
 
   /**
+   * @param {keyof PaymentMethods} method
    * @param {Parameters<T['processPayment']>} args
    * @returns
    */
-  async createSubscription(...args) {
+  async createSubscription(method, ...args) {
     try {
-      const transactionId = await this.paymentProvider.createSubscription(
-        ...args
-      );
-      console.log('TXN IS', transactionId);
-      return transactionId;
+      let subscription;
+      if (method === PaymentMethods.WIRE_TRANSFER) {
+        console.log('Wire is: ', args);
+        subscription = await this.wireTransferProvider.createSubscription(
+          ...args
+        );
+      } else {
+        subscription = await this.paymentProvider.createSubscription(...args);
+      }
+      console.log('TXN IS', subscription);
+      return subscription;
+    } catch (error) {
+      console.log(error);
+      throw new Error(`Payment processing failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * @param {keyof PaymentMethods} method
+   * @param {Parameters<T['getSubscription']>} args
+   * @returns
+   */
+  async getSubscription(method, ...args) {
+    try {
+      let subscription;
+      if (method === PaymentMethods.WIRE_TRANSFER) {
+        subscription = await this.wireTransferProvider.getUserSubscription(
+          args[0]
+        );
+      } else {
+        subscription = await this.paymentProvider.getSubscription(...args);
+      }
+      console.log('TXN IS', subscription);
+      return subscription;
     } catch (error) {
       console.log(error);
       throw new Error(`Payment processing failed: ${error.message}`);
@@ -60,14 +95,21 @@ class PaymentProviderFactory {
 
   /**
    *
+   * @param {keyof PaymentMethods} method
    * @param {string} id
    * @returns
    */
-  async cancelSubscription(id) {
+  async cancelSubscription(method, id) {
     try {
-      const payment = await this.paymentProvider.cancelSubscription(id);
-      return payment;
+      let subscription;
+      if (method === PaymentMethods.WIRE_TRANSFER) {
+        subscription = await this.wireTransferProvider.cancelSubscription(id);
+      } else {
+        subscription = await this.paymentProvider.cancelSubscription(id);
+      }
+      return subscription;
     } catch (error) {
+      console.log(error);
       throw new Error(`Subscription cancellation failed: ${error.message}`);
     }
   }

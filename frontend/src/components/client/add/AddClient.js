@@ -188,8 +188,8 @@ const ClientAddEdit = React.memo(() => {
       let userData = localStorage.getItem('psymax-user-data');
       if (serverVaultLength > 0 && userData) {
         userData = JSON.parse(userData);
-        console.log(isEdit);
-        console.log(params);
+        // console.log(isEdit);
+        // console.log(params);
         let pass;
         if (params?.id !== 'add') {
           if (clientVault?.data?.length >= 0) {
@@ -204,10 +204,10 @@ const ClientAddEdit = React.memo(() => {
         } else {
           pass = passwordGenerator();
         }
-        console.log(pass);
+        // console.log(pass);
         const clientWorker = new Worker();
         const psymaxToken = localStorage.getItem('psymax-token');
-        console.log(data);
+        // console.log(data);
         clientWorker.postMessage({
           type: 'encryptClient',
           data: JSON.stringify({

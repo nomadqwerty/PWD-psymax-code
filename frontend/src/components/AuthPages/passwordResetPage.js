@@ -24,16 +24,16 @@ const PasswordResetPage = ({ id }) => {
   } = useForm();
 
   useEffect(() => {
-    console.log(fileEncVault, clientEncVault, newRecoveryKey);
+    // console.log(fileEncVault, clientEncVault, newRecoveryKey);
     if (fileEncVault && clientEncVault && newRecoveryKey) {
-      console.log(fileEncVault, clientEncVault, newRecoveryKey);
+      // console.log(fileEncVault, clientEncVault, newRecoveryKey);
       (async () => {
         const resVault = await axiosInstance.post(`/vault/user/update`, {
           fileVault: fileEncVault,
           clientVault: clientEncVault,
           recoveryKey: newRecoveryKey,
         });
-        console.log(resVault);
+        // console.log(resVault);
         if (resVault.status === 200) {
           router.push(`/login`);
         }

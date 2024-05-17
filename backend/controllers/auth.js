@@ -484,22 +484,25 @@ const saveLogo = async (req, res, next) => {
 
 const TwoFaAuth = async (req, res, next) => {
   try {
-    const code = req.body.code;
-    const userId = req.body.userId;
-    const userEmail = req.body.email;
+    const code = req.body?.code;
+    const userId = req.body?.userId;
+    const userEmail = req.body?.email;
     
   
-  let user ;
-  if(userId){
+  let user;
+console.log(userId);
+
+  if(userId !== undefined){
     user = await UserSchema.findOne({_id: userId})
   } 
+
   if(userEmail){
     user = await UserSchema.findOne({email: userEmail})
   }
-
-    if(user && userId){
+    if(user){
+      console.log(user.email);
       let contactObject = {
-        email:'davexmike72@gmail.com',
+        email:user.email,
         name: 'psymax',
       };
   
@@ -512,24 +515,24 @@ const TwoFaAuth = async (req, res, next) => {
         console.log('sent');
         return res.status(200).json({
           status: 'success',
-          message: 'sent'
+          message: 'sent',
+          data: {
+            userId: user._id,
+          }
         });
       }else{
         throw new Error('failed')
       }
-    }else if(user && userEmail){
-      return res.status(200).json({
-        status: 'success',
-        data: {email:user.email, userId:user._id}
-      });
-
     }
     else{
       throw new Error('no user found.')
     }
     
   } catch (error) {
-    next(error);
+    return res.status(400).json({
+      status: 'failed',
+      message: error.message
+    });
   }
 }
 

@@ -77,23 +77,23 @@ const BriefPage = React.memo(() => {
       const response = await axiosInstance.get(`klient/getById/${params?.id}`);
       const responseData = response?.data?.data;
       if (responseData?._id) {
-        console.log(responseData);
+        // console.log(responseData);
         const operations = window.crypto.subtle || window.crypto.webkitSubtle;
         let serverVaultLength = Object.keys(serverVault).length;
         let userData = localStorage.getItem('psymax-user-data');
         if (serverVaultLength > 0 && userData) {
           userData = JSON.parse(userData);
-          console.log(userData);
+          // console.log(userData);
           let ePass = userData.emergencyPassword;
           let pass;
           let dualKeySalt = serverVault.dualKeySalt;
           let masterKeySalt = serverVault.masterKeySalt;
-          console.log(updateClientVault);
-          console.log(clientVault);
+          // console.log(updateClientVault);
+          // console.log(clientVault);
           if (params?.id) {
             if (clientVault?.data?.length > 0) {
               clientVault.data.forEach((vault) => {
-                console.log('main vault');
+                // console.log('main vault');
                 let clientId = vault.clientId;
                 let clientKey = vault.clientKey;
                 if (params.id === clientId) {
@@ -103,7 +103,7 @@ const BriefPage = React.memo(() => {
             }
             if (updateClientVault?.data?.length > 0 && !pass) {
               updateClientVault.data.forEach((vault) => {
-                console.log('update vault');
+                // console.log('update vault');
                 let clientId = vault.clientId;
                 let clientKey = vault.clientKey;
                 if (params.id === clientId) {
@@ -112,7 +112,7 @@ const BriefPage = React.memo(() => {
               });
             }
           }
-          console.log(pass);
+          // console.log(pass);
           const briefWorker = new Worker();
           const psymaxToken = localStorage.getItem('psymax-token');
 
@@ -184,7 +184,7 @@ const BriefPage = React.memo(() => {
   };
 
   const handleBriefvorlageChange = (value) => {
-    console.log(value);
+    // console.log(value);
     if (value !== 'none') {
       if (briefData?.Empfaenger) {
         handleChange('Briefvorlage', value);
@@ -299,7 +299,7 @@ const BriefPage = React.memo(() => {
       };
       const response = await axiosInstance.post(`brief/save`, data);
       const responseData = response?.data?.data;
-      console.log(responseData);
+      // console.log(responseData);
       if (responseData) {
         let userData = localStorage.getItem('psymax-user-data');
 
@@ -330,7 +330,7 @@ const BriefPage = React.memo(() => {
           let elem = window.document.createElement('a');
           elem.href = window.URL.createObjectURL(downloadFile);
           elem.download = encryptedData.fileName;
-          console.log('here');
+          // console.log('here');
 
           elem.click();
         };
@@ -353,7 +353,7 @@ const BriefPage = React.memo(() => {
   };
 
   const onSubmit = (data) => {
-    console.log(data);
+    // console.log(data);
     setOpen(true);
   };
 

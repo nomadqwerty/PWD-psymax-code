@@ -24,15 +24,15 @@ const TwoFactorEmailAuth = ({ id }) => {
   } = useForm();
 
   const onSubmit = (data) => {
-    console.log(data);
+    // console.log(data);
     (async () => {
       const twoFaRes = await axiosInstance.post(`/user/twofactor`, {
         code: twoFaCode,
         email: data.email,
       });
-      console.log(twoFaRes);
+      // console.log(twoFaRes);
       if (twoFaRes.status === 200) {
-        console.log(twoFaRes.data.data.userId);
+        // console.log(twoFaRes.data.data.userId);
         router.push(
           `/twofactorauthentication/${twoFaRes.data.data.userId}-recovery`
         );
@@ -50,7 +50,7 @@ const TwoFactorEmailAuth = ({ id }) => {
           onSubmit={async (e) => {
             e.preventDefault();
             await onSubmit(getValues());
-            console.log('here');
+            // console.log('here');
           }}
         >
           <div className="main-content" style={{ height: '40vh' }}>

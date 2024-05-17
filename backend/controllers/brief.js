@@ -233,7 +233,8 @@ const save = async (req, res, next) => {
     };
     return res.status(400).send(response);
   } catch (error) {
-    next(error);
+    // next(error);
+    return res.status(400).send(error.message);
   }
 };
 

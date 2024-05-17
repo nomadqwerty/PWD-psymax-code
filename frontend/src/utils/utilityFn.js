@@ -27,7 +27,7 @@ const psyMaxKDF = async (password, salt) => {
     const hashStr = hashObj.hashHex;
     return hashStr;
   } catch (e) {
-    console.log(e.message);
+    // console.log(e.message);
   }
 };
 
@@ -52,7 +52,7 @@ const encryptData = async (
 
     return encrypted;
   } catch (error) {
-    console.log(error.message, ':- encryption error');
+    // console.log(error.message, ':- encryption error');
   }
 };
 let downloadFile = (file, fileName) => {
@@ -60,7 +60,7 @@ let downloadFile = (file, fileName) => {
   let elem = window.document.createElement('a');
   elem.href = window.URL.createObjectURL(file);
   elem.download = `${fileName}`;
-  console.log('here');
+  // console.log('here');
 
   elem.click();
 };
@@ -97,7 +97,7 @@ const encryptFile = async (
     );
     return encrypted;
   } catch (error) {
-    console.log(error.message, ':- encryption error');
+    // console.log(error.message, ':- encryption error');
   }
 };
 const decryptData = async (

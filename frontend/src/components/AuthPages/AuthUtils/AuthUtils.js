@@ -21,7 +21,7 @@ let encryptOnLoginA = async (
   setUpdateFileVault = {},
   setUpdateClientVault = {}
 ) => {
-  console.log('A');
+  // console.log('A');
   let vault = response.data.data;
   let pass = userData.password;
   let ePass = userData.emergencyPassword;
@@ -127,7 +127,7 @@ let encryptOnLoginA = async (
       let clientVaultArray = [];
 
       fileVault.map((e) => {
-        console.log(e);
+        // console.log(e);
         if (e.type === 'update') {
           e.passwords = Array.from(passUpdateUintArr);
         }
@@ -142,7 +142,7 @@ let encryptOnLoginA = async (
       });
 
       clientVault.map((e) => {
-        console.log(e);
+        // console.log(e);
         if (e.type === 'update') {
           e.clients = Array.from(clientsUpdateUintArr);
         }
@@ -155,6 +155,8 @@ let encryptOnLoginA = async (
         e.isEncrypted = true;
         clientVaultArray.push(e);
       });
+
+      // TODO: create recovery key.
       let recKeyEnc = Array.from(recoveryKeyEnc);
       recKeyEnc = { recovery: recKeyEnc };
 
@@ -168,7 +170,7 @@ let encryptOnLoginA = async (
       let masterKeyEncUint = new Uint8Array(masterKeyEnc);
 
       // TODO: import axiosInstance
-      console.log(fileVaultArray, clientVaultArray);
+      // console.log(fileVaultArray, clientVaultArray);
       const resVault = await axiosInstance.post(`/vault/user/update`, {
         fileVault: fileVaultArray,
         clientVault: clientVaultArray,
@@ -226,7 +228,7 @@ let encryptOnLoginB = async (
   setUpdateFileVault = {},
   setUpdateClientVault = {}
 ) => {
-  console.log('B');
+  // console.log('B');
   let vault = response.data.data;
   let pass = userData.password;
   let ePass = userData.emergencyPassword;
@@ -301,27 +303,27 @@ let encryptOnLoginB = async (
 
       let encryptedVaults = [fileUintArr, clientUintArr];
 
-      let recoveryKeyArr = userData.recoveryKey.data;
+      // TODO: RecoveryKey source code.
+      // let recoveryKeyArr = userData.recoveryKey.data;
 
-      recoveryKeyArr = new Uint8Array(recoveryKeyArr);
+      // recoveryKeyArr = new Uint8Array(recoveryKeyArr);
 
-      // TODO: Import decrypt FN
-      let recoveryKeyDec = await decryptData(
-        operations,
-        dualMasterKey,
-        backUpIv,
-        recoveryKeyArr
-      );
+      // let recoveryKeyDec = await decryptData(
+      //   operations,
+      //   dualMasterKey,
+      //   backUpIv,
+      //   recoveryKeyArr
+      // );
 
-      let backUpMaster = self.crypto.subtle.importKey(
-        'raw',
-        new Uint8Array(recoveryKeyDec.recovery),
-        'AES-GCM',
-        true,
-        ['encrypt', 'decrypt']
-      );
+      // let backUpMaster = self.crypto.subtle.importKey(
+      //   'raw',
+      //   new Uint8Array(recoveryKeyDec.recovery),
+      //   'AES-GCM',
+      //   true,
+      //   ['encrypt', 'decrypt']
+      // );
 
-      backUpMaster = await backUpMaster;
+      // backUpMaster = await backUpMaster;
       // file
       let decryptedFiles = [];
       let decryptedArchive = [];
@@ -560,7 +562,7 @@ const fetchData_encryptOnLogout = async (
   psymaxToken
 ) => {
   try {
-    console.log('logout encrypt');
+    // console.log('logout encrypt');
     let fileVaultLength = Object.keys(fileVault).length;
     let clientVaultLength = Object.keys(clientVault).length;
     let serverVaultLength = Object.keys(serverVault).length;
@@ -608,7 +610,7 @@ const fetchData_encryptOnLogout = async (
             updateFileVault.data
           );
           let fileUpdateUint = new Uint8Array(fileUpdateEnc);
-          console.log(fileUpdateUint);
+          // console.log(fileUpdateUint);
           await axiosInstance.post(`/vault/user/update/main`, {
             userId: userData._id,
             type: 'update',
@@ -616,13 +618,13 @@ const fetchData_encryptOnLogout = async (
             vault: 'file',
           });
           storeFile.forEach(async (data, i) => {
-            console.log(storeFile);
+            // console.log(storeFile);
             const response = await axiosInstance.post(`/file/store`, {
               userId: userData._id,
               file: data.file,
               name: data.name,
             });
-            console.log(response);
+            // console.log(response);
           });
         }
         if (updateClientVault.data) {
@@ -633,7 +635,7 @@ const fetchData_encryptOnLogout = async (
             updateClientVault.data
           );
           let clientUpdateUint = new Uint8Array(clientUpdateEnc);
-          console.log(clientUpdateUint);
+          // console.log(clientUpdateUint);
           await axiosInstance.post(`/vault/user/update/main`, {
             userId: userData._id,
             type: 'update',
@@ -642,7 +644,7 @@ const fetchData_encryptOnLogout = async (
           });
         }
         if (clientVault.data) {
-          console.log(clientVault.data);
+          // console.log(clientVault.data);
           const clientEnc = await encryptData(
             operations,
             masterKey,
@@ -650,7 +652,7 @@ const fetchData_encryptOnLogout = async (
             clientVault.data
           );
           let clientUint = new Uint8Array(clientEnc);
-          console.log(clientUint);
+          // console.log(clientUint);
           await axiosInstance.post(`/vault/user/update/main`, {
             userId: userData._id,
             type: 'main',
@@ -809,8 +811,8 @@ const restoreEncryption = async (
             let encryptedFiles = [];
             let decryptedClients = [];
             let encryptedClients = [];
-            console.log(oldPasswordHash);
-            console.log(encryptedVaults);
+            // console.log(oldPasswordHash);
+            // console.log(encryptedVaults);
 
             encryptedVaults[0].forEach(async (e) => {
               // console.log(e.type);
@@ -820,11 +822,11 @@ const restoreEncryption = async (
                 oldIv,
                 e.data
               );
-              console.log(dataDec);
+              // console.log(dataDec);
               if (dataDec) {
                 dataDec.type = e.type;
                 decryptedFiles.push(dataDec);
-                console.log(dataDec.data);
+                // console.log(dataDec.data);
                 const encrypted = await encryptData(
                   operations,
                   newMaster,
@@ -840,7 +842,7 @@ const restoreEncryption = async (
                 if (encryptedFiles.length === 3) {
                   // return object
                   setFileEncVault = [...encryptedFiles];
-                  console.log(encryptedFiles);
+                  // console.log(encryptedFiles);
                   restoredFiles = true;
                 }
               }
@@ -852,11 +854,11 @@ const restoreEncryption = async (
                 oldIv,
                 e.data
               );
-              console.log(dataDec);
+              // console.log(dataDec);
               if (dataDec) {
                 dataDec.type = e.type;
                 decryptedClients.push(dataDec);
-                console.log(dataDec.data);
+                // console.log(dataDec.data);
                 const encrypted = await encryptData(
                   operations,
                   newMaster,
@@ -871,7 +873,7 @@ const restoreEncryption = async (
                 });
 
                 if (encryptedClients.length === 3) {
-                  console.log(encryptedClients);
+                  // console.log(encryptedClients);
 
                   // return Object
                   setClientEncVault = [...encryptedClients];
@@ -881,7 +883,7 @@ const restoreEncryption = async (
             });
           }
         } else {
-          console.log(clientEncrypted, fileEncrypted);
+          // console.log(clientEncrypted, fileEncrypted);
         }
 
         const checker = setInterval(() => {

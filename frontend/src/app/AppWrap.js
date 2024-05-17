@@ -12,7 +12,7 @@ import { ProviderKonto } from '@/context/konto.context';
 import { VaultProvider } from '@/context/vault.context';
 import { registerSW } from '@/utils/pwaUtils';
 import VaultSession from './VaultSession';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 import ConnectionChecker from './ConnectionCheck';
 
@@ -44,6 +44,7 @@ const theme = createTheme({
 
 function MyAppWrap({ Component, pageProps, children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [registeredServiceWorker, setRegisteredServiceWorker] = useState(false);
   useEffect(() => {
     if (navigator) {
@@ -59,15 +60,18 @@ function MyAppWrap({ Component, pageProps, children }) {
 
   useEffect(() => {
     const beforeUnloadHandler = (event) => {
-      event.preventDefault();
-      return true;
+      if (!pathname.includes('login') || !pathname.includes('logout')) {
+        console.log('page reload');
+        event.preventDefault();
+        return true;
+      }
+      // show warning popup on page reload.
     };
-    // show warning popup on page reload.
-    // window.addEventListener('beforeunload', beforeUnloadHandler);
+    window.addEventListener('beforeunload', beforeUnloadHandler);
 
-    // return () => {
-    //   window.removeEventListener('beforeunload', beforeUnloadHandler);
-    // };
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnloadHandler);
+    };
   });
 
   return (

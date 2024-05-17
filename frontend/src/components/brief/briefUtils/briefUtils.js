@@ -22,7 +22,7 @@ const decryptClient = async (
       masterKeySalt,
       self
     );
-    console.log(allKeys);
+    // console.log(allKeys);
     const operations = self.crypto.subtle || self.crypto.webkitSubtle;
 
     let keysLength = Object.keys(allKeys).length;
@@ -65,7 +65,7 @@ const decryptClient = async (
           responseData[fieldsToDec[i]] = decField;
         }
       }
-      console.log('dec client fields');
+      // console.log('dec client fields');
       if (responseData?._id !== undefined) {
         setEmpfaenger = responseData;
         self.postMessage(
@@ -136,7 +136,7 @@ const encryptBriefFile = async (
             ],
             type: 'update',
           };
-          console.log(newFileVault);
+          // console.log(newFileVault);
           setUpdateFileVault = newFileVault;
           setFileVault = newFileVault;
           self.postMessage(

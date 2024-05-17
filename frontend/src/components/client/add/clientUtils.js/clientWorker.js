@@ -13,7 +13,7 @@ onmessage = async (message) => {
       isEdit,
     } = JSON.parse(message.data.data);
 
-    console.log(data);
+    // console.log(data);
 
     let setUpdateClientVault;
     let setClientVault;

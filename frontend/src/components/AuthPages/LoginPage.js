@@ -84,7 +84,7 @@ const LoginPage = () => {
               });
               authWorker.onmessage = (message) => {
                 const decryptedData = JSON.parse(message.data);
-                console.log(decryptedData);
+                // console.log(decryptedData);
                 setClientVault(decryptedData.setClientVault);
                 setFileVault(decryptedData.setFileVault);
                 setServerVault(decryptedData.setServerVault);
@@ -150,13 +150,13 @@ const LoginPage = () => {
     let serverVaultLength = Object.keys(serverVault).length;
     let updateFileVaultLength = Object.keys(updateFileVault).length;
     let updateClientVaultLength = Object.keys(updateClientVault).length;
-    console.log(
-      fileVault,
-      clientVault,
-      serverVault,
-      updateClientVault,
-      updateFileVault
-    );
+    // console.log(
+    //   fileVault,
+    //   clientVault,
+    //   serverVault,
+    //   updateClientVault,
+    //   updateFileVault
+    // );
     if (
       fileVaultLength > 0 &&
       clientVaultLength > 0 &&
@@ -166,7 +166,7 @@ const LoginPage = () => {
     ) {
       const vaultStateJson = JSON.stringify(vaultState);
       sessionStorage.setItem('vaultState', vaultStateJson);
-      console.log(vaultState);
+      // console.log(vaultState);
       if (userData?.isAdmin === 1) {
         router.push('/admin');
       } else if (userData?.isAdmin === 0) {

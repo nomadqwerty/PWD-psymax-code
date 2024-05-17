@@ -11,7 +11,7 @@ const registerSW = async (navigator) => {
         // await caches.delete(dynamicV);
         // console.log('Cleared old cache');
         if (unregisteredWorker) {
-          console.log('removed older service worker.');
+          // console.log('removed older service worker.');
           const swReg = await navigator.serviceWorker.register(
             '/serviceWorker.js',
             {
@@ -20,16 +20,16 @@ const registerSW = async (navigator) => {
           );
 
           if (swReg.active) {
-            console.log('registered service worker');
+            // console.log('registered service worker');
           }
         } else {
-          console.log('could not remove older service worker.');
+          // console.log('could not remove older service worker.');
           break;
         }
       }
       return;
     } else {
-      console.log('no service worker found');
+      // console.log('no service worker found');
 
       const swReg = await navigator.serviceWorker.register(
         '/serviceWorker.js',
@@ -39,7 +39,7 @@ const registerSW = async (navigator) => {
       );
 
       if (swReg.active) {
-        console.log('registered service worker');
+        // console.log('registered service worker');
       }
       return;
     }
@@ -78,7 +78,7 @@ let getFromIdb = async (idb, storName) => {
 
     return data;
   } catch (error) {
-    console.log(error.message, ': fetch data failed');
+    // console.log(error.message, ': fetch data failed');
     return;
   }
 };

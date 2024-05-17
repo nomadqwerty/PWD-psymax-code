@@ -83,12 +83,12 @@ const encryptNewClient = async (
         data.isEncrypted = true;
         delete data?.Chiffre;
         delete data?.userChiffre;
-        console.log('here for editing');
-        console.log(data);
+        // console.log('here for editing');
+        // console.log(data);
         response = await axiosInstance.put('/klient/update', data);
       } else {
         data.isEncrypted = true;
-        console.log(data);
+        // console.log(data);
         response = await axiosInstance.post('/klient/save', data);
         // TODO: Add client key and id to client vault
 
@@ -122,9 +122,9 @@ const encryptNewClient = async (
           clientKeys.iv,
           updateVault.data
         );
-        console.log(vaultEnc);
+        // console.log(vaultEnc);
         let clientUpdateUint = new Uint8Array(vaultEnc);
-        console.log(clientUpdateUint);
+        // console.log(clientUpdateUint);
         let clientVaultRes = await axiosInstance.post(
           `/vault/user/update/main`,
           {
@@ -189,7 +189,7 @@ const decryptClient = async (
     clientVault.data.forEach(async (vault) => {
       let clientId = vault.clientId;
       let clientKey = vault.clientKey;
-      console.log(params.id === clientId);
+      // console.log(params.id === clientId);
 
       if (params.id === clientId) {
         let serverVaultLength = Object.keys(serverVault).length;
@@ -217,7 +217,7 @@ const decryptClient = async (
             );
 
             let dataObj = { ...responseData, ...modifiedArzt };
-            console.log(responseData, modifiedArzt);
+            // console.log(responseData, modifiedArzt);
             for (let i = 0; i < fieldsToDec.length; i++) {
               const dataField = new Uint8Array(dataObj[fieldsToDec[i]].data);
 
@@ -243,7 +243,7 @@ const decryptClient = async (
                   setEditData,
                 })
               );
-              console.log(dataObj);
+              // console.log(dataObj);
             }
           }
         }

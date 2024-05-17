@@ -192,7 +192,7 @@ const AccountSettingsPage = React.memo(() => {
         IBAN: finalData?.IBAN,
         // password: finalData?.password,
       };
-      console.log(finalDatas);
+      // console.log(finalDatas);
       const response = await axiosInstance.post('/user/save', finalDatas);
 
       if (response?.status === 200) {

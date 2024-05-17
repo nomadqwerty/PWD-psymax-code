@@ -58,7 +58,7 @@ const VaultSession = ({ children }) => {
             setServerVault(serverVault);
             setUpdateFileVault(updateFileVault);
             setUpdateClientVault(updateClientVault);
-            console.log('loaded state from session storage');
+            // console.log('loaded state from session storage');
           }
         }
       }
@@ -74,7 +74,7 @@ const VaultSession = ({ children }) => {
 
   useEffect(() => {
     let vaultChecker = setInterval(() => {
-      console.log('vault check');
+      // console.log('vault check');
       let fileVaultLength = Object.keys(fileVault).length;
       let clientVaultLength = Object.keys(clientVault).length;
       let serverVaultLength = Object.keys(serverVault).length;
@@ -93,10 +93,10 @@ const VaultSession = ({ children }) => {
       ) {
         if (vaultStatus === true) {
           setVaultStatus(false);
-          console.log('vault is empty');
+          // console.log('vault is empty');
         }
       }
-    }, 10000);
+    }, 1000);
 
     return () => {
       if (vaultChecker) {

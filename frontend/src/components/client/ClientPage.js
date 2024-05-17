@@ -105,34 +105,34 @@ const ClientPage = () => {
             fetchArchivedKlient(archivedPage?.pagenum);
           }
           if (clientVault?.data) {
-            console.log(clientVault);
+            // console.log(clientVault);
             let clientIdx;
             clientVault.data.forEach((e, i) => {
               if (e.clientId === deleteData?.id) {
-                console.log(e.clientId);
-                console.log(deleteData?.id);
+                // console.log(e.clientId);
+                // console.log(deleteData?.id);
                 clientIdx = i;
               }
             });
             const clientVaultClone = { ...clientVault };
             clientVaultClone.data.splice(clientIdx, 1);
-            console.log(clientVaultClone);
+            // console.log(clientVaultClone);
             setClientVault(clientVaultClone);
             // setUpdateClientVault(clientVaultClone);
           }
           if (updateClientVault?.data) {
-            console.log(updateClientVault);
+            // console.log(updateClientVault);
             let clientIdx;
             updateClientVault.data.forEach((e, i) => {
               if (e.clientId === deleteData?.id) {
-                console.log(e.clientId);
-                console.log(deleteData?.id);
+                // console.log(e.clientId);
+                // console.log(deleteData?.id);
                 clientIdx = i;
               }
             });
             const clientVaultClone = { ...updateClientVault };
             clientVaultClone.data.splice(clientIdx, 1);
-            console.log(clientVaultClone);
+            // console.log(clientVaultClone);
             // setClientVault(clientVaultClone);
             setUpdateClientVault(clientVaultClone);
           }

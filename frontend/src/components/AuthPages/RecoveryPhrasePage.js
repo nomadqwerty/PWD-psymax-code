@@ -26,12 +26,12 @@ const RecoveryPhrasePage = ({ id }) => {
   const onSubmit = (data) => {
     // TODO: verify phrase.
     (async () => {
-      console.log(data);
+      // console.log(data);
       const recoveryRes = await axiosInstance.post(`/user/recoveryphrase`, {
         userId: id,
         phrase: data.phrase,
       });
-      console.log(recoveryRes);
+      // console.log(recoveryRes);
       if (recoveryRes.status === 200) {
         router.push(`/passwordreset/${recoveryRes.data.data.userId}`);
       } else {
@@ -48,7 +48,7 @@ const RecoveryPhrasePage = ({ id }) => {
           onSubmit={async (e) => {
             e.preventDefault();
             await onSubmit(getValues());
-            console.log('here');
+            // console.log('here');
           }}
         >
           <div className="main-content" style={{ height: '40vh' }}>

@@ -33,7 +33,7 @@ const ConnectionChecker = ({
     if (registeredServiceWorker === true) {
       statusChecker = setInterval(async () => {
         let networkStatus;
-        console.log('check');
+        // console.log('check');
         if (navigator.onLine === true) {
           networkStatus = true;
           if (isOffline === true) {
@@ -109,7 +109,7 @@ const ConnectionChecker = ({
               window
             );
             let keysLength = Object.keys(allKeys).length;
-            console.log(allKeys);
+            // console.log(allKeys);
             if (keysLength > 0) {
               const {
                 masterKey,
@@ -162,7 +162,7 @@ const ConnectionChecker = ({
                       );
 
                       readySw.sync.register('updateVaultRequest');
-                      console.log('set bg task');
+                      // console.log('set bg task');
                     }
                   }
                 }

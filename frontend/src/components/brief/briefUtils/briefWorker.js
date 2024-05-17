@@ -7,7 +7,7 @@ onmessage = async (message) => {
     );
 
     let setEmpfaenger;
-    console.log(responseData, pass, ePass, dualKeySalt, masterKeySalt);
+    // console.log(responseData, pass, ePass, dualKeySalt, masterKeySalt);
 
     await decryptClient(
       responseData,
@@ -27,7 +27,7 @@ onmessage = async (message) => {
     let setUpdateFileVault;
     let setFileVault;
 
-    console.log(responseData, serverVault, userData, fileVault, storeFile);
+    // console.log(responseData, serverVault, userData, fileVault, storeFile);
     await encryptBriefFile(
       responseData,
       serverVault,

@@ -7,10 +7,13 @@ import { useEffect, useState } from 'react';
 import { passwordGenerator } from '@/utils/utilityFn';
 import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
+
 let twoFaCode;
+
+// generate TwoFaCode
 (async () => {
   twoFaCode = passwordGenerator();
-  console.log(twoFaCode);
+  // console.log(twoFaCode);
 })();
 
 const TwoFactorAuthPage = ({ id, type }) => {
@@ -28,11 +31,11 @@ const TwoFactorAuthPage = ({ id, type }) => {
   } = useForm();
 
   const onSubmit = (data) => {
-    console.log(data);
+    // console.log(data);
     if (sent && code) {
       const inputVal = data.code;
-      console.log(inputVal, code);
-      console.log('submit');
+      // console.log(inputVal, code);
+      // console.log('submit');
       if (inputVal == code) {
         if (timeSent > Date.now()) {
           if (type === 'login') {
@@ -42,30 +45,33 @@ const TwoFactorAuthPage = ({ id, type }) => {
             // TODO: navigate to recovery question page
             router.push(`/recoveryphrase/${id}`);
           }
-          console.log('on time');
+          // console.log('on time');
         } else {
           router.push('/login');
         }
+      } else {
+        sessionStorage.removeItem('vaultState');
+        router.push('/login');
       }
     }
   };
 
   useEffect(() => {
-    if (twoFaCode) {
-      (async () => {
-        const twoFaRes = await axiosInstance.post(`/user/twofactor`, {
-          code: twoFaCode,
-          userId: id,
-        });
-        if (twoFaRes.status === 200) {
-          setCode(twoFaCode);
-          console.log(twoFaCode);
-
-          setSent(true);
-          setTimeSent(Date.now() + 900000);
+    (async () => {
+      setTimeout(async () => {
+        if (twoFaCode) {
+          const twoFaRes = await axiosInstance.post(`/user/twofactor`, {
+            code: twoFaCode,
+            userId: id,
+          });
+          if (twoFaRes.status === 200) {
+            setCode(twoFaCode);
+            setSent(true);
+            setTimeSent(Date.now() + 900000);
+          }
         }
-      })();
-    }
+      }, 5000);
+    })();
   }, []);
 
   return (
@@ -76,7 +82,7 @@ const TwoFactorAuthPage = ({ id, type }) => {
           onSubmit={async (e) => {
             e.preventDefault();
             await onSubmit(getValues());
-            console.log('here');
+            // console.log('here');
           }}
         >
           <div className="main-content" style={{ height: '40vh' }}>

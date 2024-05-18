@@ -1,17 +1,14 @@
 const { PaymentMethods } = require('../../utils/constants');
-const { WireTransferProvider } = require('../queues/wire-transfer');
-
-const PaymentProvider = require('../providers/base').default;
 
 /**
  * Creates a new provider, providers must be PCI compliant and use 3-D Secure Auth
  *
- * @template {PaymentProvider} T
+ * @template {import('../providers/base').default} T
  */
 class PaymentProviderFactory {
   /**
    * @param {T} paymentProvider
-   * @param {WireTransferProvider} wireTransferProvider
+   * @param {import('../queues/wire-transfer').WireTransferProvider} wireTransferProvider
    */
   constructor(paymentProvider, wireTransferProvider) {
     this.paymentProvider = paymentProvider;
@@ -19,47 +16,44 @@ class PaymentProviderFactory {
   }
 
   /**
-   * @param {Parameters<T['processPayment']>} args
+   * @param {Parameters<T['createPayment']>} args
    * @returns
    */
-  async processPayment(...args) {
+  async createPayment(...args) {
     try {
-      const transactionId = await this.paymentProvider.processPayment(...args);
-      console.log('TXN IS', transactionId);
-      return transactionId;
+      const payment = await this.paymentProvider.createPayment(...args);
+      return payment;
     } catch (error) {
-      throw new Error(`Payment processing failed: ${error.message}`);
+      throw new Error(`Payment creation failed: ${error.message}`);
     }
   }
 
   /**
    * @param {keyof PaymentMethods} method
-   * @param {Parameters<T['processPayment']>} args
-   * @returns
+   * @param {Parameters<T['createSubscription']>} args
+   * @returns {ReturnType<T['createSubscription']>}
    */
   async createSubscription(method, ...args) {
     try {
       let subscription;
       if (method === PaymentMethods.WIRE_TRANSFER) {
-        console.log('Wire is: ', args);
         subscription = await this.wireTransferProvider.createSubscription(
           ...args
         );
       } else {
         subscription = await this.paymentProvider.createSubscription(...args);
       }
-      console.log('TXN IS', subscription);
       return subscription;
     } catch (error) {
       console.log(error);
-      throw new Error(`Payment processing failed: ${error.message}`);
+      throw new Error(`Subscription creation failed: ${error.message}`);
     }
   }
 
   /**
    * @param {keyof PaymentMethods} method
    * @param {Parameters<T['getSubscription']>} args
-   * @returns
+   * @returns {ReturnType<T['getSubscription']>}
    */
   async getSubscription(method, ...args) {
     try {
@@ -71,11 +65,10 @@ class PaymentProviderFactory {
       } else {
         subscription = await this.paymentProvider.getSubscription(...args);
       }
-      console.log('TXN IS', subscription);
       return subscription;
     } catch (error) {
       console.log(error);
-      throw new Error(`Payment processing failed: ${error.message}`);
+      throw new Error(`Fetching subscription failed: ${error.message}`);
     }
   }
 
@@ -97,7 +90,7 @@ class PaymentProviderFactory {
    *
    * @param {keyof PaymentMethods} method
    * @param {string} id
-   * @returns
+   * @returns {ReturnType<T['cancelSubscription']>}
    */
   async cancelSubscription(method, id) {
     try {
@@ -117,11 +110,11 @@ class PaymentProviderFactory {
   /**
    *
    * @param  {Parameters<T['handleCallback']>} args
-   * @returns
+   * @returns {ReturnType<T['handleCallback']>}
    */
   async handleCallback(...args) {
-    let t = await this.paymentProvider.handleCallback(...args);
-    return t;
+    let result = await this.paymentProvider.handleCallback(...args);
+    return result;
   }
 }
 

@@ -2,7 +2,6 @@ const path = require('path');
 const fs = require('fs');
 
 const { ProviderCallbackError } = require('../payment/providers/base');
-const { PaymentMethod } = require('@mollie/api-client');
 const createPaymentService = require('../payment/services/payment');
 const Joi = require('joi');
 const { SubscriptionSchema } = require('../models/subscriptionModel');
@@ -14,45 +13,20 @@ const { UserSchema } = require('../models/userModel');
 const {
   SubscriptionStatusTracking,
   PaymentMethods,
+  SubscriptionPlans,
 } = require('../utils/constants');
 
 const paymentService = createPaymentService();
-/**
- * @type {import('express').Handler}
- */
-async function makePayment(req, res, next) {
-  const { cardToken } = req.body;
-  let url = null;
-
-  try {
-    // let t = await paymentService.processPayment(
-    let t = await paymentService.processPayment(
-      90,
-      cardToken,
-      'EUR',
-      PaymentMethod.creditcard
-    );
-    url = t.paymentUrl;
-    console.log('URL is', url);
-  } catch (e) {
-    next(e);
-    // return { message: e };
-  }
-
-  console.log('red is', url);
-  if (url) res.redirect(url);
-}
 
 /**
  * @type {import('express').Handler}
  */
-async function makeSubscription(req, res, next) {
+async function makeSubscription(req, res) {
   const subscriptionData = req.body;
   const userId = req.user.user_id;
   const { payment_method } = req.body;
 
-  // TODO: Validation on card fields
-
+  // Validation on card fields
   const subscriptionSchema = Joi.object({
     iban: Joi.string().required(),
     given_name: Joi.string().required(),
@@ -95,7 +69,7 @@ async function makeSubscription(req, res, next) {
       payment_method,
       globalPricing,
       subscriptionData,
-      'Global Payment'
+      `${getPlanInfo(SubscriptionPlans.GLOBAL).name} Payment`
     );
 
     const user = await UserSchema.findById(userId);
@@ -133,17 +107,9 @@ async function makeSubscription(req, res, next) {
       redirectUrl: subscription.paymentUrl,
     });
   } catch (e) {
-    // next(e);
-    console.error('THEY SAID ERROR', e);
+    console.error('Error creating subscription', e);
     res.status(500).json({ message: 'Server Error' });
   }
-
-  // console.log('red is', url);
-  // if (url) res.redirect(url);
-}
-
-async function getPaymentStatus(id) {
-  return await paymentService.getPaymentStatus(id);
 }
 
 /**
@@ -161,8 +127,6 @@ async function getSubscriptionByUser(req, res) {
       subscription.paymentMethod,
       subscription.subscriptionId
     );
-
-    console.log('INFO', providerInfo);
 
     res.json({
       data: {
@@ -251,7 +215,7 @@ async function cancelSubscription(req, res) {
 /**
  * @type {import('express').Handler}
  */
-async function webhookHandler(req, res, next) {
+async function webhookHandler(req, res) {
   try {
     await paymentService.handleCallback(req, res);
   } catch (error) {
@@ -292,7 +256,6 @@ async function downloadReceiptPDF(req, res) {
     }
 
     const pdfName = `psymax-order-${invoice.referenceId}.pdf`;
-    // const pdfName = `psymax-order-${subscription?._id}`;
     const pdfFilePath = pdfsFolderPath + pdfName;
 
     const userId = req.user.user_id;
@@ -357,7 +320,7 @@ async function downloadReceiptPDF(req, res) {
       pdfData.push({ base64Pdf, fileName: pdfName });
     }
   } catch (error) {
-    //
+    console.log(error);
   }
 
   // check if the pdf data array is not empty
@@ -372,7 +335,7 @@ async function downloadReceiptPDF(req, res) {
   } else {
     // handle the case when no pdf files were generated
     return res.status(500).json({
-      message: 'Conversion failed!',
+      message: 'Conversion failed!', // translate!
     });
   }
 }
@@ -386,7 +349,7 @@ async function downloadSummaryReceiptPDFs(req, res) {
   if (!invoiceIds) {
     return res.status(400).json({
       status: 'fail',
-      message: 'Bad request',
+      message: 'Bad request', // translate!
     });
   }
 
@@ -397,7 +360,6 @@ async function downloadSummaryReceiptPDFs(req, res) {
   }
 
   const pdfName = `psymax-order-summary-${Date.now()}.pdf`;
-  // const pdfName = `psymax-order-${subscription?._id}`;
   const pdfFilePath = pdfsFolderPath + pdfName;
 
   // create an array to store the pdf data
@@ -475,7 +437,7 @@ async function downloadSummaryReceiptPDFs(req, res) {
       pdfData.push({ base64Pdf, fileName: pdfName });
     }
   } catch (error) {
-    //
+    console.log(error);
   }
 
   // check if the pdf data array is not empty
@@ -490,7 +452,7 @@ async function downloadSummaryReceiptPDFs(req, res) {
   } else {
     // handle the case when no pdf files were generated
     return res.status(500).json({
-      message: 'Conversion failed!',
+      message: 'Conversion failed!', // translate!
     });
   }
 }
@@ -505,14 +467,12 @@ async function getInvoicesByUser(req, res) {
     res.json({ invoices });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Couldn't fetch invoices" });
+    res.status(500).json({ message: "Couldn't fetch invoices" }); // translate!
   }
 }
 
 module.exports = {
-  makePayment,
   makeSubscription,
-  getPaymentStatus,
   webhookHandler,
   getSubscriptionByUser,
   getInvoicesByUser,

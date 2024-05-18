@@ -78,7 +78,6 @@ function SubscriptionDetails() {
   function cyclesToDays(cycles: number) {
     return cycles * 28;
   }
-  console.log('data', kontoData, subscriptionData);
 
   const exportInvoices = async () => {
     const exportAndZip = async () => {
@@ -133,8 +132,6 @@ function SubscriptionDetails() {
   };
 
   const trialInfo = useMemo(() => {
-    console.log('JOnto is ', kontoData);
-
     return {
       trialEnd: kontoData?.trialEnd
         ? format(new Date(kontoData.trialEnd), 'E LLLL yyyy, kk:mm:ss')
@@ -431,6 +428,7 @@ function SubscriptionDetails() {
       />
 
       <ModelDialogue
+        className=""
         actionTitle={'Confirm Cancellation'}
         options={''}
         open={isCancelDialogModalOpen}
@@ -504,7 +502,6 @@ function BillingTable({
   function handleSelectAll(event: React.ChangeEvent<HTMLInputElement>) {
     if (event.target.checked) {
       const newSelected = rows.map((n) => n._id);
-      console.log(newSelected);
 
       setSelected(newSelected);
       return;

@@ -33,6 +33,7 @@ export default function SubscriptionPageCompletion() {
       address_line1: '',
       postal_code: '',
       country_code: '',
+      city: '',
     },
   });
 
@@ -65,8 +66,6 @@ export default function SubscriptionPageCompletion() {
   }, []);
 
   const onSubmit = async (data) => {
-    console.log(data, kontoData, context);
-
     const submitPromise = async () => {
       try {
         await axiosInstance.post(`/subscriptions`, {
@@ -77,7 +76,6 @@ export default function SubscriptionPageCompletion() {
         reset();
         router.push('/dashboard/subscription');
       } catch (error) {
-        console.log(error.response.data);
         if (error.response.status === 400) {
           parseJOIErrorToReactHookForm(error.response.data.data);
         }

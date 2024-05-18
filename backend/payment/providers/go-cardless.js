@@ -91,82 +91,14 @@ class GoCardlessProvider extends PaymentProvider {
    * @returns
    */
   async createPayment(amount, cardToken, currency) {
-    // Mollie payment processing logic
-    try {
-      const payment = await this.client.payments.create({
-        cardToken,
-        amount: {
-          currency,
-          value: amount.toFixed(2), // Mollie expects amount in cents, so convert to fixed 2 decimal places
-        },
-        description: 'Payment description',
-        redirectUrl: 'https://c9c8-102-215-57-138.ngrok-free.app/orders/123456',
-        webhookUrl:
-          'https://c9c8-102-215-57-138.ngrok-free.app/api/webhooks/checkout',
-      });
-
-      return {
-        provider: 'Mollie',
-        paymentUrl: payment.getCheckoutUrl(),
-      };
-    } catch (E) {
-      /**
-       * @type {MollieApiError}
-       */
-      const error = E;
-      throw new Error('Mollie payment processing error: ' + error.message);
-    }
-  }
-
-  /**
-   *
-   * @param {string} email
-   * @param {string} name
-   * @returns
-   */
-  async createCustomer(email, name) {
-    const customer = await this.client.customers.create({
-      name,
-      email,
-    });
-    console.log(customer.id); // save to db.
-
-    return customer;
-  }
-
-  /**
-   *
-   * @param {string} customerId
-   * @returns
-   */
-  getCustomerMandates(customerId) {
-    const mandates = this.client.mandates.list({ customer: customerId });
-    return mandates;
-  }
-
-  async createMandate() {
-    const billingRequest = await this.client.billingRequests.create({
-      mandate_request: {
-        scheme: 'sepa_core',
-      },
-    });
-
-    const billingRequestFlow = await this.client.billingRequestFlows.create({
-      redirect_uri: '',
-      exit_uri: 'site.com/checkout-page',
-      links: { billing_request: billingRequest.id },
-    });
-
-    return {
-      provider: 'GoCardless',
-      paymentUrl: billingRequestFlow.authorisation_url(),
-    };
+    throw new Error('createPayment method has not been implemented');
   }
 
   /**
    *
    * @param {string} amount
    * @param {SubscriptionData} subscriptionData
+   * @param {string} description
    * @returns
    */
   async createSubscription(amount, subscriptionData, description) {

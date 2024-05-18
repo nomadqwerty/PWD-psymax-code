@@ -159,6 +159,5 @@ router.put(
 );
 router.post('/webhooks/checkout', paymentsController.webhookHandler);
 router.put('/user/extendTrialPhase/:id', userController.extendTrialPhase);
-// router.get('/subscriptions', paymentsController.makePayment);
 
 module.exports = router;

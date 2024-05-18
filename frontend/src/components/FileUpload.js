@@ -11,7 +11,7 @@ const FileUpload = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: acceptExtensions,
-    maxSize: 50 * 1024 * 1024,
+    maxSize: process.env.NEXT_PUBLIC_MAX_FILE_SIZE,
     onDrop: (acceptedFiles) => {
       const isValidFile =
         acceptedFiles.length > 0 &&

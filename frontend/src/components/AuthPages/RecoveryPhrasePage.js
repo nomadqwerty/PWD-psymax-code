@@ -8,6 +8,7 @@ import { passwordGenerator } from '@/utils/utilityFn';
 import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
 let twoFaCode;
+import toast from 'react-hot-toast';
 
 const RecoveryPhrasePage = ({ id }) => {
   const [sent, setSent] = useState(false);
@@ -27,14 +28,17 @@ const RecoveryPhrasePage = ({ id }) => {
     // TODO: verify phrase.
     (async () => {
       // console.log(data);
+      toast('verifying Recovery phrase');
       const recoveryRes = await axiosInstance.post(`/user/recoveryphrase`, {
         userId: id,
         phrase: data.phrase,
       });
       // console.log(recoveryRes);
       if (recoveryRes.status === 200) {
+        toast.success('verified Recovery phrase');
         router.push(`/passwordreset/${recoveryRes.data.data.userId}`);
       } else {
+        toast.error('Unverified Recovery phrase');
         router.push(`/login`);
       }
     })();

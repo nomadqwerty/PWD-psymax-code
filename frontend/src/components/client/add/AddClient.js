@@ -183,7 +183,6 @@ const ClientAddEdit = React.memo(() => {
       // perform checks if data exists.
       // encrypt client using client password+client salt.
       // store client password in vault.
-      const operations = window.crypto.subtle || window.crypto.webkitSubtle;
       let serverVaultLength = Object.keys(serverVault).length;
       let userData = localStorage.getItem('psymax-user-data');
       if (serverVaultLength > 0 && userData) {
@@ -208,6 +207,7 @@ const ClientAddEdit = React.memo(() => {
         const clientWorker = new Worker();
         const psymaxToken = localStorage.getItem('psymax-token');
         // console.log(data);
+        toast('Encrypting Patient Data');
         clientWorker.postMessage({
           type: 'encryptClient',
           data: JSON.stringify({
@@ -226,6 +226,7 @@ const ClientAddEdit = React.memo(() => {
           const encryptedData = JSON.parse(message.data);
 
           if (encryptedData.response?.status === 200) {
+            toast.success('Patient data has been Encrypted');
             setUpdateClientVault(encryptedData.setUpdateClientVault);
             setClientVault(encryptedData.setClientVault);
 
@@ -281,7 +282,7 @@ const ClientAddEdit = React.memo(() => {
           }
           let userData = localStorage.getItem('psymax-user-data');
           const clientWorker = new Worker();
-
+          toast('Decrypting Patient Data');
           clientWorker.postMessage({
             type: 'decryptClient',
             data: JSON.stringify({
@@ -298,6 +299,7 @@ const ClientAddEdit = React.memo(() => {
             const decryptedData = JSON.parse(message.data);
             setDefaultValues(decryptedData.setDefaultValues);
             setEditData(decryptedData.setEditData);
+            toast.success('Patient data has been decrypted');
           };
         } catch (error) {
           handleApiError(error, router);

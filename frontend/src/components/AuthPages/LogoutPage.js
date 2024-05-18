@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useContext } from 'react';
 import PrivateRoute from '../../components/PrivateRoute';
 import vaultContext from '@/context/vault.context';
+import toast from 'react-hot-toast';
 
 const LogoutPage = () => {
   const router = useRouter();
@@ -23,7 +24,7 @@ const LogoutPage = () => {
     userData = JSON.parse(userData);
     const psymaxToken = localStorage.getItem('psymax-token');
     const authWorker = new Worker();
-
+    toast('updating account directories');
     authWorker.postMessage({
       type: 'encryptOnLogout',
       data: JSON.stringify({
@@ -39,6 +40,7 @@ const LogoutPage = () => {
     });
     authWorker.onmessage = (message) => {
       if (message.data === 'clearData') {
+        toast.success('Account directories have been updated');
         localStorage.removeItem('psymax-token');
         localStorage.removeItem('psymax-user-data');
         localStorage.removeItem('psymax-is-admin');

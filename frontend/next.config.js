@@ -11,6 +11,7 @@ module.exports = {
     NEXT_PUBLIC_LOGOUT_TIMER: '10',
     NEXT_PUBLIC_DUAL_KEY_ONE: '',
     NEXT_PUBLIC_DUAL_KEY_TWO: '',
+    NEXT_PUBLIC_MAX_FILE_SIZE: '52428800',
   },
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     config.module.rules.push({

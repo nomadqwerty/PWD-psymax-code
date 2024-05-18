@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { passwordGenerator } from '@/utils/utilityFn';
 import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 let twoFaCode;
 
 const TwoFactorEmailAuth = ({ id }) => {
@@ -32,11 +33,13 @@ const TwoFactorEmailAuth = ({ id }) => {
       });
       // console.log(twoFaRes);
       if (twoFaRes.status === 200) {
+        toast.success('Email verification complete');
         // console.log(twoFaRes.data.data.userId);
         router.push(
           `/twofactorauthentication/${twoFaRes.data.data.userId}-recovery`
         );
       } else {
+        toast.error('Failed to verification Email');
         router.push(`/login`);
       }
     })();

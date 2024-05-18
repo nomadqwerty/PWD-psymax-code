@@ -148,6 +148,7 @@ const deriveAllKeys = async (
 
   let encoder = new TextEncoder();
   let masterKeyOneEnc = encoder.encode(masterKeyOne?.slice(0, 16));
+  let masterKeyTwoEnc = encoder.encode(masterKeyTwo?.slice(0, 16));
 
   let masterKeyMain = window.crypto.subtle.importKey(
     'raw',
@@ -158,7 +159,7 @@ const deriveAllKeys = async (
   );
   let recoveryMasterKey = window.crypto.subtle.importKey(
     'raw',
-    masterKeyOneEnc,
+    masterKeyTwoEnc,
     'AES-GCM',
     true,
     ['encrypt', 'decrypt']

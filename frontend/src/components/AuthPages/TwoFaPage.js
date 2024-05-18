@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { passwordGenerator } from '@/utils/utilityFn';
 import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 let twoFaCode;
 
@@ -38,6 +39,7 @@ const TwoFactorAuthPage = ({ id, type }) => {
       // console.log('submit');
       if (inputVal == code) {
         if (timeSent > Date.now()) {
+          toast.success('access key is valid');
           if (type === 'login') {
             router.push('/dashboard');
           }
@@ -47,9 +49,11 @@ const TwoFactorAuthPage = ({ id, type }) => {
           }
           // console.log('on time');
         } else {
+          toast.error('access key is invalid');
           router.push('/login');
         }
       } else {
+        toast.error('access key is invalid');
         sessionStorage.removeItem('vaultState');
         router.push('/login');
       }
@@ -68,6 +72,7 @@ const TwoFactorAuthPage = ({ id, type }) => {
             setCode(twoFaCode);
             setSent(true);
             setTimeSent(Date.now() + 900000);
+            toast('access key has been sent to your Email');
           }
         }
       }, 5000);

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import CssTextField from '../../components/CssTextField';
 import { useEffect, useState } from 'react';
 import Worker from 'worker-loader!./AuthUtils/authWorker';
+import toast from 'react-hot-toast';
 
 import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
@@ -35,6 +36,7 @@ const PasswordResetPage = ({ id }) => {
         });
         // console.log(resVault);
         if (resVault.status === 200) {
+          toast.success('Account Reset is Successful');
           router.push(`/login`);
         }
       })();
@@ -45,6 +47,7 @@ const PasswordResetPage = ({ id }) => {
     // TODO: rest password.
     const psymaxToken = localStorage.getItem('psymax-token');
     const authWorker = new Worker();
+    toast('Account reset in progress');
 
     authWorker.postMessage({
       type: 'restoreAccountEncryption',
@@ -55,6 +58,7 @@ const PasswordResetPage = ({ id }) => {
       }),
     });
     authWorker.onmessage = (message) => {
+      toast.success('Account directories have been encrypted');
       const restoredData = JSON.parse(message.data);
       setNewRecoveryKey(restoredData.setNewRecoveryKey);
       setFileEncVault(restoredData.setFileEncVault);

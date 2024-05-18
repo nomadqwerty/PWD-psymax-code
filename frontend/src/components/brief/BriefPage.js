@@ -15,14 +15,7 @@ import PrivateRoute from '../../components/PrivateRoute';
 import { BriefHeader, Options } from '../../components/brief/HeadersAndInfo';
 import vaultContext from '@/context/vault.context';
 import Worker from 'worker-loader!./briefUtils/briefWorker';
-
-import {
-  deriveAllKeys,
-  encryptFile,
-  passwordGenerator,
-  decryptData,
-  encryptData,
-} from '@/utils/utilityFn';
+import toast from 'react-hot-toast';
 
 import {
   Cancel,
@@ -115,7 +108,7 @@ const BriefPage = React.memo(() => {
           // console.log(pass);
           const briefWorker = new Worker();
           const psymaxToken = localStorage.getItem('psymax-token');
-
+          toast('Decrypting Patient Data');
           briefWorker.postMessage({
             type: 'decryptClient',
             data: JSON.stringify({
@@ -131,6 +124,7 @@ const BriefPage = React.memo(() => {
             const decryptedData = JSON.parse(message.data);
 
             setEmpfaenger(decryptedData.setEmpfaenger);
+            toast.success('Decrypted Patient Data successfully');
           };
         }
       }
@@ -305,7 +299,7 @@ const BriefPage = React.memo(() => {
 
         const briefWorker = new Worker();
         const psymaxToken = localStorage.getItem('psymax-token');
-
+        toast('Encrypting PDF, preparing to download.');
         briefWorker.postMessage({
           type: 'encryptClientBrief',
           data: JSON.stringify({
@@ -327,6 +321,7 @@ const BriefPage = React.memo(() => {
           setFileVault(encryptedData.setFileVault);
           //  Trigger file download.
           // on return.
+          toast.success('Encrypted PDF file successfully, downloading now');
           let elem = window.document.createElement('a');
           elem.href = window.URL.createObjectURL(downloadFile);
           elem.download = encryptedData.fileName;

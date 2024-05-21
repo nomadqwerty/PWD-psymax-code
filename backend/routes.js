@@ -1,12 +1,14 @@
 const express = require('express');
 const authController = require('./controllers/auth');
 const begruendungstexteController = require('./controllers/begruendungstexte');
+const userController = require('./controllers/user');
 const klientController = require('./controllers/klient');
 const arztController = require('./controllers/arzt');
 const templatesController = require('./controllers/templates');
 const briefController = require('./controllers/brief');
 const leistungenController = require('./controllers/leistungen');
 const questionnaireController = require('./controllers/questionnaire');
+const paymentsController = require('./controllers/payment');
 
 const router = express.Router();
 
@@ -131,5 +133,32 @@ router.post(
   '/questionnaire-responses/download',
   questionnaireController.downloadResponsePDFs
 );
+
+/* Payments */
+router.post('/subscriptions', paymentsController.makeSubscription);
+router.get('/subscriptions/:userId', paymentsController.getSubscriptionByUser);
+router.post(
+  '/subscriptions/:userId/cancel',
+  paymentsController.cancelSubscription
+);
+router.post(
+  '/invoices/:id/download-receipt',
+  paymentsController.downloadReceiptPDF
+);
+router.post(
+  '/invoices/download-summary',
+  paymentsController.downloadSummaryReceiptPDFs
+);
+router.get(
+  '/subscriptions/:userId/invoices/',
+  paymentsController.getInvoicesByUser
+);
+router.put(
+  '/subscriptions/:userId/method/',
+  paymentsController.changePaymentMethod
+);
+router.post('/webhooks/checkout', paymentsController.webhookHandler);
+router.put('/user/extendTrialPhase/:id', userController.extendTrialPhase);
+// router.get('/subscriptions', paymentsController.makePayment);
 
 module.exports = router;

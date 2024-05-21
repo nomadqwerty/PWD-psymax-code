@@ -5,11 +5,14 @@ const Joi = require('joi');
 const {
   TimeForTokenExpire,
   GLOBAL_POINT_VALUE,
+  SubscriptionStatusTracking,
 } = require('../utils/constants');
 const { randomCodeStr } = require('../utils/common');
 const fs = require('fs');
 const zxcvbn = require('zxcvbn');
 const { GlobalPointsSchema } = require('../models/globalPointsModel');
+const dayjs = require('dayjs');
+const { SubscriptionSchema } = require('../models/subscriptionModel');
 
 const register = async (req, res, next) => {
   try {
@@ -55,9 +58,19 @@ const register = async (req, res, next) => {
 
     const encryptedPassword = await bcrypt.hash(password, 10);
 
-    const getInvitedUser = UserSchema.findOne({ inviteCode: inviteCode });
+    const getInvitedUser = await UserSchema.findOne({ inviteCode: inviteCode });
 
     const randomCode = randomCodeStr(4);
+
+    // 7 days trial if no referral, 84 days(3 CYCLES) if referred by admin, else 28 days(1 cycle)
+    const numberOfTrialDays = getInvitedUser
+      ? getInvitedUser.isAdmin
+        ? 84
+        : 28
+      : 7;
+
+    // NOTE: This considers DST, which might not be expected behavior
+    const trialEnd = dayjs().add(numberOfTrialDays, 'day').toDate();
 
     const user = new UserSchema({
       email: email.toLowerCase(),
@@ -66,8 +79,12 @@ const register = async (req, res, next) => {
       inviteCode: randomCode,
       invitedUserId: getInvitedUser?._id ? getInvitedUser?._id : null,
       isAdmin: 0,
+      trialEnd,
+      trialPeriodActive: true,
+      trialDays: numberOfTrialDays,
     });
     await user.save();
+
     if (user) {
       const globalPointsSchema = new GlobalPointsSchema({
         userId: user?._id,
@@ -133,6 +150,17 @@ const login = async (req, res, next) => {
     }
 
     if (user && (await bcrypt.compare(password, user.password))) {
+      // TODO: ON LOGIN IF THE TRIAL PHASE IS OVER, SET TRIAL TO EXPIRED
+      const subscription = await SubscriptionSchema.findOne({
+        userId: user._id,
+        statusTracking: { $nin: [SubscriptionStatusTracking.INACTIVE] },
+      });
+      let subscription_status;
+      // FIXME: Rethink on this
+      if (dayjs().isAfter(user.trialEnd) && !subscription) {
+        subscription_status = 'pending_subscription';
+      }
+
       // Create token
       const payload = {
         user_id: user._id,
@@ -151,6 +179,7 @@ const login = async (req, res, next) => {
         status_code: 200,
         message: 'Anmeldung erfolgreich',
         data: user,
+        subscription_status,
       };
       return res.status(200).send(response);
     }
@@ -181,9 +210,20 @@ const refreshToken = async (req, res, next) => {
       const user = await UserSchema.findOne({ _id: decodedOldToken?.user_id });
       user.token = newToken;
       await user.save();
+
+      // TODO: ON LOGIN IF THE TRIAL PHASE IS OVER, SET TRIAL TO EXPIRED
+      const subscription = await SubscriptionSchema.findOne({
+        userId: user._id,
+      });
+      let subscription_status;
+      if (dayjs().isAfter(user.trialEnd && !subscription)) {
+        subscription_status = 'pending_subscription';
+      }
+
       let response = {
         status_code: 200,
         data: user,
+        subscription_status,
       };
       return res.status(200).send(response);
     } else {

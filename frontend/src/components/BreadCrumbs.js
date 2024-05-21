@@ -71,6 +71,8 @@ const CustomBreadcrumbs = () => {
         val = 'Zuweisung';
       } else if (item === '[questionnaireId]') {
         val = 'Detail';
+      } else if (item === 'subscription') {
+        val = 'Subscription';
       }
       breadCrumbs.push(
         <Typography

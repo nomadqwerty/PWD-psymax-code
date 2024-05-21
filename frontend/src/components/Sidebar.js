@@ -529,11 +529,11 @@ const Sidebar = () => {
 
         <div
           className={`${
-            pathname.startsWith('/dashboard/kontoeinstellungen')
+            pathname.startsWith('/dashboard/subscription')
               ? 'isActive'
               : 'sidebar-svg'
           } sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]`}
-          onClick={() => router.push('/dashboard/kontoeinstellungen')}
+          onClick={() => router.push('/dashboard/subscription')}
         >
           <svg
             width="24"
@@ -559,10 +559,17 @@ const Sidebar = () => {
           </svg>
 
           <span className="interFonts text-base font-medium leading-4 pl-1.5">
-            Kontoeinstellungen
+            Zahlungsdaten & Abonnement
           </span>
         </div>
-        <div className="sidebar-svg flex items-center pt-2.5 pb-2.5 pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]">
+        <div
+          className={`${
+            pathname.startsWith('/dashboard/kontoeinstellungen')
+              ? 'isActive'
+              : 'sidebar-svg'
+          } sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]`}
+          onClick={() => router.push('/dashboard/kontoeinstellungen')}
+        >
           <svg
             width="24"
             height="24"

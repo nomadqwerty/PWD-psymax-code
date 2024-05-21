@@ -15,6 +15,11 @@ const {
   requestLogger,
   errorMiddleware,
 } = require('./utils/logger');
+// const {
+//   dailyQueue,
+//   processBonusCycleReset,
+//   processNonCommittedUserDelete,
+// } = require('./payment/queues/subscription');
 
 dotenv.config({
   path: path.join(__dirname, './config.env'),
@@ -26,6 +31,10 @@ const swaggerSpec = require('./swagger/swagger');
 const { PORT, DB_URL } = process.env;
 
 const app = express();
+
+// Process the daily task
+// dailyQueue.process(processBonusCycleReset);
+// dailyQueue.process(processNonCommittedUserDelete);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

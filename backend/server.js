@@ -11,7 +11,6 @@ const { Server } = require("socket.io");
 const sqlite3 = require("sqlite3");
 const { open } = require("sqlite");
 const cors = require("cors"); // Import the cors middleware
-
 const PORT = 3050;
 
 // async function main() {
@@ -77,7 +76,7 @@ const PORT = 3050;
           roomAccessKey = roomToJoin;
           socket.join(roomToJoin);
           // console.log("joined room",roomToJoin)
-          socket.broadcast.to(roomAccessKey).emit("newUserJoined", { userSocketID: socket.id , room:roomAccessKey, remoteName:clientName});
+          socket.broadcast.to(roomToJoin).emit("newUserJoined", { userSocketID: socket.id , room:roomToJoin, remoteName:clientName});
         }
         catch (e){
           console.log("could not join roomAccessKey", e)
@@ -125,7 +124,7 @@ const PORT = 3050;
       
         socket.on("chat message", (data) => {
           const {msg, clientOffset,roomAccessKey, clientName } = data;
-          console.log('message: ' + msg, clientOffset);
+          console.log('message from: ', msg, clientOffset, "room", roomAccessKey);
 
           io.to(roomAccessKey).emit("chat message",
           { msg:msg, serverOffset:clientOffset, clientName:clientName})

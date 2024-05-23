@@ -191,7 +191,7 @@ display: none;
   margin: none;
 }
 
-#messages_container{
+#messages_container, #settings-container{
   display: none;
   z-index: 999;
   /* border: 1px solid red; */
@@ -235,6 +235,9 @@ display: none;
 
 .msgItem .msg{
   color: #707070;
+  background-color: rgba(238, 238, 238, 0.517);
+  padding: 0.3rem;
+  border-radius: 0.5rem;
 }
 
 #form{

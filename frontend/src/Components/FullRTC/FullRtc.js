@@ -27,6 +27,13 @@ const FullRtc = () => {
 
   const [screenStream, setScreenStream] = useState(null); // State to store screen stream
   const [isScreenSharing, setIsScreenSharing] = useState(false); // State to track screen sharing status
+  const [screenSharingId, setScreenSharingId] = useState(""); // State to track screen sharing status
+
+  const [isSettingsVisible, setIsSettingsVisible] = useState(false); // State to track settings page status
+
+
+  
+
 
   const [isChatVisible, setIsChatVisible] = useState(false); // State to track chat view status
 
@@ -97,7 +104,7 @@ const FullRtc = () => {
     const { room, userSocketID, remoteName } = data;
     if (socketRef.current && !offerCreated && room === roomAccessKey) {
       socketRef.current.emit("localClientName", localClientName); //emit current local client name when a new socket joins
-
+      setSocketID(socketRef.current.id)
       console.log(
         "user",
         remoteName,
@@ -190,8 +197,14 @@ const FullRtc = () => {
       time: getTime(),
     };
 
+    try{
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+    }
+
+    catch (e){
+      console.log("messages not sent", e);
+    }
     // Update messages state with the new message
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
 
     window.scrollTo(0, document.body.scrollHeight);
     // socketRef.current.auth.serverOffset = serverOffset;
@@ -410,6 +423,15 @@ const FullRtc = () => {
     }
   };
 
+  let returnVideo = () =>{
+    return(<video
+      className="videoPlayer p-0"
+      id="user2"
+      ref={remoteVideoRef}
+      autoPlay
+      playsInline
+    ></video>)
+  }
   // user camera toggler
   let toggleCamera = async () => {
     let videoTrack = stream.getTracks().find((track) => track.kind === "video");
@@ -442,70 +464,24 @@ const FullRtc = () => {
     const minutes = now.getMinutes().toString().padStart(2, "0");
     return `${hours}:${minutes}`;
   };
-  // somebody clicked on "Stop sharing"
 
-  // Function to start screen sharing
-  let toggleScreenSharing = async () => {
-    if (!isScreenSharing) {
-      setIsScreenSharing(true);
-      try {
-        const stream = await navigator.mediaDevices.getDisplayMedia(
-          screenRecordConstraints
-        );
-
-        if (!stream) {
-          setIsScreenSharing(false);
-        }
-
-        setScreenStream(stream);
-        // setRemoteStream(stream);
-        // screenShareEl = document.getElementById("screenShare");
-
-        if (screenShareRef.current && stream) {
-          screenShareRef.current.style.display = "block";
-          screenShareRef.current.srcObject = stream;
-        }
-
-        // Send screen stream to remote peer
-        if (peerConnection && stream) {
-          // localStream.getTracks().forEach((track) => {
-          //   peerConnection.addTrack(track, localStream);
-          // });
-
-          stream.getTracks().forEach((track) => {
-            peerConnection.addTrack(track, stream);
-          });
-        }
-        console.log("screenStream added to elememt ");
-      } catch (error) {
-        console.error("Error starting screen sharing:", error);
-      }
-    } else {
-      try {
-        screenShareRef.current.style.display = "none";
-
-        screenStream.getTracks().forEach((track) => track.stop());
-        setScreenStream(null);
-        setIsScreenSharing(false);
-      } catch (error) {
-        console.error("Error ending screen sharing:", error);
-      }
-    }
-  };
-  //listen for end of stream from outside screen toggle button
-  screenStream
-    ? (screenStream.getVideoTracks()[0].onended = function () {
-        setIsScreenSharing(false);
-        // doWhatYouNeedToDo();
-      })
-    : null;
+  const setMembersContainer = ()=>{
+    
+  }
 
   let toggleChat = async () => {
+    if(!isChatVisible && isSettingsVisible){
+      setIsSettingsVisible(false);
+      settingsEl.style.width = "0%";
+      settingsEl.style.display = "none";
+      membersVideoContainer.style.width = "100%";
+    }
+
     const messagesContainer = document.getElementById("messages_container");
     const membersVideoContainer = document.getElementById("members_container");
     const input = document.getElementById("msgInput");
 
-    if (!isChatVisible) {
+    if (!isChatVisible && !isSettingsVisible) {
       try {
         membersVideoContainer.style.width = "75%";
 
@@ -535,6 +511,19 @@ const FullRtc = () => {
       }
     }
   };
+  const Message = ({ message, localClientName }) => {
+  return (
+    <li key={message.id} className={`msgItem mb-1 ${message.clientName === localClientName ? "right" : "left"}`}>
+      <p className={`m-0 mb-1 clientNameDate ${message.clientName === localClientName ? "right" : "left"}`}>
+        <span className="clientName"> {message.clientName} </span>
+        <span className="chatTimeStamp">{message.time} </span>
+      </p>
+      <p className={`msg m-0 ${message.clientName === localClientName ? "right" : "left"}`}>
+        {message.message}
+      </p>
+    </li>
+  );
+};
   //chat listener
   if (typeof Window !== "undefined") {
     let counter = 0;
@@ -560,7 +549,164 @@ const FullRtc = () => {
     });
   }
 
+  // let toggleSettings = async () =>{
+  //   const messagesContainer = document.getElementById("messages_container");
+  //   const membersVideoContainer = document.getElementById("members_container");
+  //   if (isChatVisible && !isSettingsVisible){
+  //       setIsChatVisible(false);
+  //       messagesContainer.style.width = "0%";
+  //       messagesContainer.style.display = "none";
+  //       membersVideoContainer.style.width = "100%";
+  //   }
+
+  //   // const settingsEl = document.getElementById("settings_container");
+  //   // const membersVideoContainer = document.getElementById("members_container");
+  //   membersVideoContainer.style.width = "75%";
+
+  //   // isChatVisible?setIsChatVisible(false):null;
+
+  //   if(!isSettingsVisible && !isChatVisible){
+  //     // settingsEl.style.display = 'block';
+  //     try {
+  //       membersVideoContainer.style.width = "75%";
+
+  //       // Add event listener for transitionend event
+  //       membersVideoContainer.addEventListener(
+  //         "transitionend",
+  //         () => {
+  //           // Render the chat component contents after width adjustment is completed
+  //           settingsEl.style.width = "25%";
+  //           settingsEl.style.display = "block";
+  //           setIsSettingsVisible(true);
+  //         },
+  //         { once: true }
+  //       ); // Ensure the event listener is removed after firing once
+  //     } catch {
+  //       console.log("could not set setings visible");
+  //     }
+  //   } else {
+  //     try {
+  //       setIsSettingsVisible(false);
+  //       settingsEl.style.width = "0%";
+  //       settingsEl.style.display = "none";
+  //       membersVideoContainer.style.width = "100%";
+  //     } catch {
+  //       console.log("could not set settings not-visible");
+  //     }
+  //   }
+  // }
+
+  //switch cureent stream 
+//  const switchStream =  (mediaStream) =>{
+//       setStream(mediaStream);
+//       setScreenSharingId(socketRef?.current.id || "")
+//     };
+
+  // Function to start screen sharing
+  let toggleScreenSharing = async () => {
+    if (!isScreenSharing && !screenSharingId) {
+      // Check for screensharing true and existing screenshareID
+      // If no IDs exist, get new stream for the screen stream
+      setIsScreenSharing(true);
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia(screenRecordConstraints);
+        
+        setStream(stream);
+        setScreenStream(stream);
+        localVideoRef.current.srcObject = stream;
+        setScreenSharingId(socketID);
+        console.log("current share screen user", localClientName, socketID);
+        setIsScreenSharing(true);
+      } catch (e) {
+        console.error("Could not switch stream to screenshare", e);
+      }
+    } else {
+      // Check for screensharing true and existing screenshareID
+      // If IDs exist, get new stream for video and audio camera
+      setIsScreenSharing(false);
+  
+      if (screenStream) {
+        screenStream.getTracks().forEach((track) => track.stop());
+        setScreenStream(null);
+      }
+      setScreenSharingId("");
+  
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints); // Get video and audio devices from user
+        setStream(stream); // Switch stream to obtained media stream
+        localVideoRef.current.srcObject = stream;
+      } catch (e) {
+        console.error("Could not turn on user screen & switch stream", e);
+      }
+    }
+  
+    if (socketID?.peerConnection) {
+      Object.values(socketID.peerConnection).forEach((peer) => {
+        const videoTrack = stream?.getTracks().find(track => track.kind === 'video');
+        if (videoTrack) {
+          peer.getSenders()[1].replaceTrack(videoTrack).catch((e) => {
+            console.error(e);
+          });
+        }
+      });
+    }
+  };
+  
+    //listen for end of stream from outside screen toggle button
+
+    screenStream ? (screenStream.getVideoTracks()[0].onended = function () {
+      setIsScreenSharing(false);
+      toggleScreenSharing();
+     // doWhatYouNeedToDo();
+   })
+ : null;
   // let displayFrame = document.getElementById
+
+  // const reInitializeStream = (video, audio, type='userMedia') => {
+  //   const media = type === 'userMedia' 
+  //     ? getVideoAudioStream(video, audio) 
+  //     : navigator.mediaDevices.getDisplayMedia({ video: true });
+
+  //   return new Promise((resolve, reject) => {
+  //     media.then((stream) => {
+  //       if (type === 'displayMedia') {
+  //         toggleVideoTrack({ audio, video });
+  //       }
+  //       createVideo({ id: myID, stream });
+  //       replaceStream(stream);
+  //       resolve(true);
+  //     }).catch((error) => {
+  //       console.error("Error in reInitializeStream: ", error);
+  //       reject(error);
+  //     });
+  //   });
+  // };
+
+  // const toggleVideoTrack = (status) => {
+  //   const myVideo = getMyVideo();
+  //   if (myVideo && !status.video) {
+  //     myVideo.srcObject?.getVideoTracks().forEach((track) => {
+  //       if (track.kind === 'video') {
+  //         track.stop();
+  //       }
+  //     });
+  //   } else if (myVideo) {
+  //     reInitializeStream(status.video, status.audio);
+  //   }
+  // };
+
+  // const replaceStream = (mediaStream) => {
+  //   Object.values(peers).forEach((peer) => {
+  //     peer.peerConnection?.getSenders().forEach((sender) => {
+  //       if (sender.track.kind === "audio" && mediaStream.getAudioTracks().length > 0) {
+  //         sender.replaceTrack(mediaStream.getAudioTracks()[0]);
+  //       }
+  //       if (sender.track.kind === "video" && mediaStream.getVideoTracks().length > 0) {
+  //         sender.replaceTrack(mediaStream.getVideoTracks()[0]);
+  //       }
+  //     });
+  //   });
+  // };
 
   return (
     <main className="containerr m-0 p-0">
@@ -576,12 +722,13 @@ const FullRtc = () => {
                   ref={localVideoRef}
                   autoPlay
                   playsInline
+                  muted="muted"
                 ></video>
               </Col>
             )}
 
             {typeof window !== "undefined" && (
-              // <Col  className="p-0" id="user2_div">
+
               <video
                 className="videoPlayer p-0"
                 id="user2"
@@ -589,7 +736,7 @@ const FullRtc = () => {
                 autoPlay
                 playsInline
               ></video>
-              // </Col>
+
             )}
           </Row>
         </Col>
@@ -597,7 +744,7 @@ const FullRtc = () => {
         <Col xs={12} id="stream-container p-0 m-0">
           <div id="stream_box"></div>
 
-          {isScreenSharing && (
+          {/* {isScreenSharing && (
             // <div id="screenShareContainer smallerFrame">
             <video
               id="screenShare"
@@ -608,7 +755,7 @@ const FullRtc = () => {
               // srcobject={screenStream}
             ></video>
             // </div>
-          )}
+          )} */}
         </Col>
 
         <Col xs={12} className="footer-container">
@@ -659,6 +806,7 @@ const FullRtc = () => {
                   className="icon"
                   src="/icons/settings.svg"
                   alt="settings button"
+                  // onClick={toggleSettings}
                 />
               </div>
 
@@ -688,26 +836,9 @@ const FullRtc = () => {
           <div className="">
             <h2 className="p-3 chat-title mb-0">Chat</h2>
             <ul id="messages" className="p-3">
-              {messages.map((message) => (
-                <li key={message.id} className="msgItem mb-1">
-                  <p
-                    className={`m-0 mb-1 clientNameDate ${
-                      message.clientName === localClientName ? "right" : "left"
-                    }`}
-                  >
-                    <span className="clientName"> {message.clientName} </span>
-                    <span className="chatTimeStamp">{message.time} </span>
-                  </p>
-
-                  <p
-                    className={`msg m-0 ${
-                      message.clientName === localClientName ? "right" : "left"
-                    }`}
-                  >
-                    {message.message}
-                  </p>
-                </li>
-              ))}
+             {messages.map((message) => (
+    <Message key={message.id} message={message} localClientName={localClientName} />
+  ))}
             </ul>
 
             <form id="form" action="" className="">
@@ -734,6 +865,10 @@ const FullRtc = () => {
               </Row>
             </form>
           </div>
+        </Col>
+
+        <Col id="settings_container">
+         <p>hello settings oage</p>
         </Col>
       </Row>
     </main>

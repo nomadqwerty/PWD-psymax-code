@@ -152,6 +152,8 @@ const PORT = 3050;
 
     })
 
+    // io.compress(true);
+
   server.listen(PORT, () =>
     console.log(`My server is actively running on port ${PORT}`)
   );

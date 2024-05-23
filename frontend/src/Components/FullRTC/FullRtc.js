@@ -302,6 +302,27 @@ const FullRtc = () => {
     }
   }, [stream]);
 
+  // useEffect(() => {
+  //   if (socketRef.current){
+  //     socketRef.current.on("chat message", handleChatMsg);
+  //   }
+
+  //   let leaveChannel = async () => {
+  //     if (socketRef.current) {
+  //       socketRef.current.off("chat message", handleChatMsg);
+
+  //       socketRef.current = null;
+  //     }
+  //   };
+  //   window.addEventListener("beforeunload", leaveChannel);
+
+  //   return () => {
+  //     leaveChannel();
+  //   };
+
+  // }, [messages]);
+
+
   let createPeerConnection = async (userID) => {
     peerConnection = new RTCPeerConnection(servers); //passed ice servers into connection
     const remoteStream = new MediaStream();
@@ -423,15 +444,15 @@ const FullRtc = () => {
     }
   };
 
-  let returnVideo = () =>{
-    return(<video
-      className="videoPlayer p-0"
-      id="user2"
-      ref={remoteVideoRef}
-      autoPlay
-      playsInline
-    ></video>)
-  }
+  // let returnVideo = () =>{
+  //   return(<video
+  //     className="videoPlayer p-0"
+  //     id="user2"
+  //     ref={remoteVideoRef}
+  //     autoPlay
+  //     playsInline
+  //   ></video>)
+  // }
   // user camera toggler
   let toggleCamera = async () => {
     let videoTrack = stream.getTracks().find((track) => track.kind === "video");
@@ -470,18 +491,18 @@ const FullRtc = () => {
   }
 
   let toggleChat = async () => {
-    if(!isChatVisible && isSettingsVisible){
-      setIsSettingsVisible(false);
-      settingsEl.style.width = "0%";
-      settingsEl.style.display = "none";
-      membersVideoContainer.style.width = "100%";
-    }
+    // if(!isChatVisible){
+    //   setIsSettingsVisible(false);
+    //   settingsEl.style.width = "0%";
+    //   settingsEl.style.display = "none";
+    //   membersVideoContainer.style.width = "100%";
+    // }
 
     const messagesContainer = document.getElementById("messages_container");
     const membersVideoContainer = document.getElementById("members_container");
     const input = document.getElementById("msgInput");
 
-    if (!isChatVisible && !isSettingsVisible) {
+    if (!isChatVisible) {
       try {
         membersVideoContainer.style.width = "75%";
 
@@ -497,8 +518,8 @@ const FullRtc = () => {
           },
           { once: true }
         ); // Ensure the event listener is removed after firing once
-      } catch {
-        console.log("could not set chat visible");
+      } catch (e){
+        console.log("could not set chat visible", e);
       }
     } else {
       try {
@@ -525,29 +546,34 @@ const FullRtc = () => {
   );
 };
   //chat listener
-  if (typeof Window !== "undefined") {
+
+  useEffect(()=>{
+// if (typeof Window !== "undefined") {
     let counter = 0;
     const form = document.getElementById("form");
     const input = document.getElementById("msgInput");
     // const messages = document.getElementById("messages");
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      if (input.value) {
-        // compute a unique offset
-        if (socketRef.current) {
-          const clientOffset = `${socketRef.current.id}-${counter++}`;
-          socketRef.current.emit("chat message", {
-            msg: input.value,
-            clientOffset: clientOffset,
-            roomAccessKey: roomAccessKey,
-            clientName: localClientName,
-          });
-          input.value = "";
+    if (form){
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (input.value) {
+          // compute a unique offset
+          if (socketRef.current) {
+            const clientOffset = `${socketRef.current.id}-${counter++}`;
+            socketRef.current.emit("chat message", {
+              msg: input.value,
+              clientOffset: clientOffset,
+              roomAccessKey: accessKey,
+              clientName: localClientName,
+            });
+            input.value = "";
+          }
         }
-      }
-    });
-  }
+      });
+    }
+  // }
+  },[])
 
   // let toggleSettings = async () =>{
   //   const messagesContainer = document.getElementById("messages_container");
@@ -765,16 +791,20 @@ const FullRtc = () => {
             </Col>
 
             <Col id="controls" className="">
-              <div className="control-container" title="Toggle Microphone" id="mic-btn">
+              <div
+               className="control-container"
+                title="Mikrofon umschalten" 
+                id="mic-btn"
+                >
                 <img
                   className="icon"
                   src={isMicOn ? "/icons/mic-on.svg" : "/icons/mic-off.svg"}
-                  alt="mic button"
+                  alt="Mikrofontaste"
                   onClick={toggleMic}
                 />
               </div>
 
-              <div className="control-container" id="camera-btn">
+              <div className="control-container" id="camera-btn" title="Kamera umschalten">
                 <img
                   id="cameraBtn"
                   className="icon"
@@ -783,12 +813,15 @@ const FullRtc = () => {
                       ? "/icons/camera-on.svg"
                       : "/icons/camera-off.svg"
                   }
-                  alt="camera button"
+                  alt="Kamerataste"
                   onClick={toggleCamera}
                 />
               </div>
 
-              <div className="control-container" id="pres-btn">
+              <div 
+              className="control-container" 
+              id="pres-btn" 
+              title="Bildschirm teilen">
                 <img
                   className="icon"
                   src={
@@ -796,12 +829,16 @@ const FullRtc = () => {
                       ? "/icons/pres-on.svg"
                       : "/icons/pres-off.svg"
                   }
-                  alt="presentation button"
+                  alt="Bildschirm teilen"
                   onClick={toggleScreenSharing}
                 />
               </div>
 
-              <div className="control-container" id="settings-btn">
+              <div 
+              className="control-container" 
+              id="settings-btn"
+              title="Einstellungen"
+              >
                 <img
                   className="icon"
                   src="/icons/settings.svg"
@@ -810,7 +847,10 @@ const FullRtc = () => {
                 />
               </div>
 
-              <a href="/lobby">
+              <a 
+              href="/lobby"
+              title="Anruf beenden"
+              >
                 <div className="control-container" id="leave-call-btn">
                   <img
                     className="icon"
@@ -821,11 +861,15 @@ const FullRtc = () => {
               </a>
             </Col>
 
-            <Col className="chat_div control-container" id="chat-btn">
+            <Col
+             className="chat_div control-container" 
+             id="chat-btn"
+             title="Plaudern"
+             >
               <img
                 className="icon"
                 src="/icons/chat.svg"
-                alt="chat button"
+                alt="Plaudern"
                 onClick={toggleChat}
               />
             </Col>
@@ -865,6 +909,8 @@ const FullRtc = () => {
               </Row>
             </form>
           </div>
+         {/* <p>hello settings oage</p> */}
+
         </Col>
 
         <Col id="settings_container">

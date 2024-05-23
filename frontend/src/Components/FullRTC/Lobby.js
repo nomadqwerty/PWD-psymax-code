@@ -8,17 +8,17 @@ import { Row, Col } from "react-bootstrap";
 const Lobby = () => {
   useEffect(() => {
     // const router = useRouter();
-    const form = document.getElementById("join-form"); // get form 
+    const form = document.getElementById("join-form"); // get form
     const clientNameInput = document.getElementById("client_name"); // get client_name input field
-  
-    clientNameInput.focus()
+
+    clientNameInput.focus();
     if (form)
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         let inviteCode = e.target.invite_link.value;
         let clientName = e.target.client_name.value;
         // router.push(`rtc?accessKey=${inviteCode}`);
-  
+
         window.location = `/rtc?accessKey=${inviteCode}&clientName=${clientName}`;
       });
   }, []);
@@ -41,6 +41,7 @@ const Lobby = () => {
 
           <form id="join-form">
             <input
+              title="Name"
               id="client_name"
               type="text"
               className="form-input mt-3 m-0 p-3 "
@@ -50,6 +51,7 @@ const Lobby = () => {
             ></input>
             <br></br>
             <input
+            title="Zugangsschlüssel"
               id="invite_link"
               type="text"
               className="form-input m-0 mt-3 p-3"
@@ -59,6 +61,7 @@ const Lobby = () => {
             ></input>
             <br></br>
             <input
+              title="Raum betreten"
               className="btn submitBtn m-0 mt-3"
               type="submit"
               value="Beitreten "

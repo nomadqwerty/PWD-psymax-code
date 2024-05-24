@@ -1,16 +1,16 @@
 'use client';
 
-import Layout from '@/components/Layout';
+import Layout from '../../components/Layout';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import CssTextField from '../CssTextField';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
-import axiosInstance from '@/utils/axios';
+import axiosInstance from '../../utils/axios';
 import { Controller, useForm } from 'react-hook-form';
-import kontoContext from '@/context/konto.context';
+import kontoContext from '../../context/konto.context';
 import { useContext, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { SOMETHING_WRONG } from '@/utils/constants';
-import { handleApiError } from '@/utils/apiHelpers';
+import { SOMETHING_WRONG } from '../../utils/constants';
+import { handleApiError } from '../../utils/apiHelpers';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { isValidIBAN } from 'ibantools';

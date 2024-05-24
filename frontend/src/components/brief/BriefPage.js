@@ -1,18 +1,22 @@
-"use client";
-import React, { useContext, useEffect, useRef, useState } from "react";
-import AppLayout from "../../components/AppLayout";
-import { Controller, useForm } from "react-hook-form";
-import { Grid, useMediaQuery } from "@mui/material";
-import { handleApiError } from "../../utils/apiHelpers";
-import { useRouter } from "next/navigation";
-import axiosInstance from "../../utils/axios";
-import dynamic from "next/dynamic";
-import ModelDialogue from "../../components/Dialog/ModelDialogue";
-import { AuthContext } from "../../context/auth.context";
-import { useParams } from "next/navigation";
-import { KlientContext } from "../../context/klient.context";
-import PrivateRoute from "../../components/PrivateRoute";
-import { BriefHeader, options } from "../../components/brief/HeadersAndInfo";
+'use client';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import AppLayout from '../../components/AppLayout';
+import { Controller, useForm } from 'react-hook-form';
+import { Grid, useMediaQuery } from '@mui/material';
+import { handleApiError } from '../../utils/apiHelpers';
+import { useRouter } from 'next/navigation';
+import axiosInstance from '../../utils/axios';
+import dynamic from 'next/dynamic';
+import ModelDialogue from '../../components/Dialog/ModelDialogue';
+import { AuthContext } from '../../context/auth.context';
+import { useParams } from 'next/navigation';
+import { KlientContext } from '../../context/klient.context';
+import PrivateRoute from '../../components/PrivateRoute';
+import { BriefHeader, Options } from '../../components/brief/HeadersAndInfo';
+import vaultContext from '../../context/vault.context';
+import Worker from 'worker-loader!./briefUtils/briefWorker';
+import toast from 'react-hot-toast';
+
 import {
   Cancel,
   Confirm,
@@ -22,7 +26,7 @@ import {
   Reference,
   SignatureFieldA,
   SignatureFieldB,
-} from "../../components/brief/InputsAndButtons";
+} from '../../components/brief/InputsAndButtons';
 
 const BriefPage = React.memo(() => {
   const params = useParams();
@@ -38,22 +42,92 @@ const BriefPage = React.memo(() => {
   const { state } = useContext(AuthContext);
   const { state: klientState, dispatch: klientDispatch } =
     useContext(KlientContext);
+  const { vaultState } = useContext(vaultContext);
 
   const router = useRouter();
   const [empfaenger, setEmpfaenger] = useState({});
   const [templates, setTemplates] = useState([]);
   const [briefData, setBriefData] = useState({
-    Empfaenger: "klient",
-    Briefvorlage: "none",
+    Empfaenger: 'klient',
+    Briefvorlage: 'none',
   });
   const [open, setOpen] = useState(false);
   const editor = useRef(null);
+
+  const {
+    fileVault,
+    clientVault,
+    updateClientVault,
+    setFileVault,
+    serverVault,
+    setUpdateFileVault,
+    storeFile,
+    setStoreFile,
+  } = vaultState;
 
   const getKlientById = async () => {
     try {
       const response = await axiosInstance.get(`klient/getById/${params?.id}`);
       const responseData = response?.data?.data;
-      setEmpfaenger(responseData);
+      if (responseData?._id) {
+        // console.log(responseData);
+        const operations = window.crypto.subtle || window.crypto.webkitSubtle;
+        let serverVaultLength = Object.keys(serverVault).length;
+        let userData = localStorage.getItem('psymax-user-data');
+        if (serverVaultLength > 0 && userData) {
+          userData = JSON.parse(userData);
+          // console.log(userData);
+          let ePass = userData.emergencyPassword;
+          let pass;
+          let dualKeySalt = serverVault.dualKeySalt;
+          let masterKeySalt = serverVault.masterKeySalt;
+          // console.log(updateClientVault);
+          // console.log(clientVault);
+          if (params?.id) {
+            if (clientVault?.data?.length > 0) {
+              clientVault.data.forEach((vault) => {
+                // console.log('main vault');
+                let clientId = vault.clientId;
+                let clientKey = vault.clientKey;
+                if (params.id === clientId) {
+                  pass = clientKey;
+                }
+              });
+            }
+            if (updateClientVault?.data?.length > 0 && !pass) {
+              updateClientVault.data.forEach((vault) => {
+                // console.log('update vault');
+                let clientId = vault.clientId;
+                let clientKey = vault.clientKey;
+                if (params.id === clientId) {
+                  pass = clientKey;
+                }
+              });
+            }
+          }
+          // console.log(pass);
+          const briefWorker = new Worker();
+          const psymaxToken = localStorage.getItem('psymax-token');
+          toast('Decrypting Patient Data');
+          briefWorker.postMessage({
+            type: 'decryptClient',
+            data: JSON.stringify({
+              responseData,
+              pass,
+              ePass,
+              dualKeySalt,
+              masterKeySalt,
+            }),
+          });
+
+          briefWorker.onmessage = (message) => {
+            const decryptedData = JSON.parse(message.data);
+
+            setEmpfaenger(decryptedData.setEmpfaenger);
+            toast.success('Decrypted Patient Data successfully');
+          };
+        }
+      }
     } catch (error) {
       handleApiError(error, router);
     }
@@ -72,7 +146,7 @@ const BriefPage = React.memo(() => {
   useEffect(() => {
     if (params?.id) {
       getTemplates();
-      handleEmpfaenger("klient");
+      handleEmpfaenger('klient');
       getKlientById(params?.id);
       const index = klientState?.brief?.indexOf(params?.id);
 
@@ -80,13 +154,13 @@ const BriefPage = React.memo(() => {
         klientState?.brief.splice(index, 1);
       }
       klientDispatch({
-        type: "BRIEF",
+        type: 'BRIEF',
         payload: {
           brief: klientState?.brief,
         },
       });
     }
-  }, [params]);
+  }, [params, clientVault, serverVault]);
 
   const handleChange = (name, value) => {
     const update = { ...briefData };
@@ -104,46 +178,47 @@ const BriefPage = React.memo(() => {
   };
 
   const handleBriefvorlageChange = (value) => {
-    if (value !== "none") {
+    // console.log(value);
+    if (value !== 'none') {
       if (briefData?.Empfaenger) {
-        handleChange("Briefvorlage", value);
+        handleChange('Briefvorlage', value);
         setInhaltCommon(value, briefData?.Empfaenger);
       } else {
-        setValue("Empfaenger", "", {
+        setValue('Empfaenger', '', {
           shouldValidate: true,
         });
       }
     } else {
-      handleChange("Briefvorlage", value);
+      handleChange('Briefvorlage', value);
       setBriefData((prev) => {
         return {
           ...prev,
-          Betreff: "",
-          Inhalt: "",
+          Betreff: '',
+          Inhalt: '',
         };
       });
 
-      setValue("Betreff", "", {
+      setValue('Betreff', '', {
         shouldValidate: false,
       });
 
-      setValue("Inhalt", "", {
+      setValue('Inhalt', '', {
         shouldValidate: false,
       });
     }
   };
 
   const handleEmpfaenger = (value) => {
-    handleChange("Empfaenger", value);
+    handleChange('Empfaenger', value);
 
-    const Unterschriftsfeld1 = `${state?.userData?.Titel || ""} ${
-      state?.userData?.Vorname || ""
-    } ${state?.userData?.Nachname || ""}`;
-    const Unterschriftsfeld2 = `${state?.userData?.Berufsbezeichnung || ""}`;
-    setValue("Unterschriftsfeld1", Unterschriftsfeld1, {
+    const Unterschriftsfeld1 = `${state?.userData?.Titel || ''} ${
+      state?.userData?.Vorname || ''
+    } ${state?.userData?.Nachname || ''}`;
+    const Unterschriftsfeld2 = `${state?.userData?.Berufsbezeichnung || ''}`;
+    setValue('Unterschriftsfeld1', Unterschriftsfeld1, {
       shouldValidate: true,
     });
-    setValue("Unterschriftsfeld2", Unterschriftsfeld2, {
+    setValue('Unterschriftsfeld2', Unterschriftsfeld2, {
       shouldValidate: Unterschriftsfeld2 || false,
     });
 
@@ -155,7 +230,7 @@ const BriefPage = React.memo(() => {
       };
     });
 
-    if (briefData?.Briefvorlage !== "none") {
+    if (briefData?.Briefvorlage !== 'none') {
       setInhaltCommon(briefData?.Briefvorlage, value);
     }
   };
@@ -164,14 +239,14 @@ const BriefPage = React.memo(() => {
     const selectedTemp = templates.find((obj) => obj.templateId === value);
 
     const empfaengerData =
-      Empfaenger === "arzt" ? empfaenger?.ArztId : empfaenger;
+      Empfaenger === 'arzt' ? empfaenger?.ArztId : empfaenger;
     const dateObject = new Date(empfaenger?.Geburtsdatum);
     const Geburtsdatum = `${dateObject
       .getUTCDate()
       .toString()
-      .padStart(2, "0")}.${(dateObject.getUTCMonth() + 1)
+      .padStart(2, '0')}.${(dateObject.getUTCMonth() + 1)
       .toString()
-      .padStart(2, "0")}.${dateObject.getUTCFullYear().toString().slice(-2)}`;
+      .padStart(2, '0')}.${dateObject.getUTCFullYear().toString().slice(-2)}`;
 
     const variables = {
       KlientVorname: empfaengerData?.Vorname,
@@ -192,11 +267,11 @@ const BriefPage = React.memo(() => {
       };
     });
 
-    setValue("Betreff", selectedTemp?.subject, {
+    setValue('Betreff', selectedTemp?.subject, {
       shouldValidate: true,
     });
 
-    setValue("Inhalt", inhalt, {
+    setValue('Inhalt', inhalt, {
       shouldValidate: true,
     });
   };
@@ -204,7 +279,7 @@ const BriefPage = React.memo(() => {
   const handleBriefAction = async (option) => {
     try {
       let finalId =
-        briefData?.Empfaenger === "klient"
+        briefData?.Empfaenger === 'klient'
           ? params?.id
           : empfaenger?.ArztId?._id;
       const data = {
@@ -218,37 +293,66 @@ const BriefPage = React.memo(() => {
       };
       const response = await axiosInstance.post(`brief/save`, data);
       const responseData = response?.data?.data;
+      // console.log(responseData);
       if (responseData) {
-        const link = document.createElement("a");
-        link.href = "data:application/pdf;base64," + responseData?.base64Pdf;
-        link.setAttribute("download", responseData?.fileName);
-        link.setAttribute("target", "_blank");
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode.removeChild(link);
+        let userData = localStorage.getItem('psymax-user-data');
+
+        const briefWorker = new Worker();
+        const psymaxToken = localStorage.getItem('psymax-token');
+        toast('Encrypting PDF, preparing to download.');
+        briefWorker.postMessage({
+          type: 'encryptClientBrief',
+          data: JSON.stringify({
+            responseData,
+            serverVault,
+            userData,
+            fileVault,
+            storeFile,
+          }),
+        });
+
+        briefWorker.onmessage = (message) => {
+          const encryptedData = JSON.parse(message.data);
+
+          let data = new Uint8Array(encryptedData.file).buffer;
+          let downloadFile = new Blob([data]);
+          setStoreFile(encryptedData.setStoreFile);
+          setUpdateFileVault(encryptedData.setUpdateFileVault);
+          setFileVault(encryptedData.setFileVault);
+          //  Trigger file download.
+          // on return.
+          toast.success('Encrypted PDF file successfully, downloading now');
+          let elem = window.document.createElement('a');
+          elem.href = window.URL.createObjectURL(downloadFile);
+          elem.download = encryptedData.fileName;
+          // console.log('here');
+
+          elem.click();
+        };
       }
 
-      if (klientState?.brief?.length > 0) {
-        router.push(`/dashboard/brief/${klientState?.brief?.[0]}`);
-      } else {
-        router.push("/dashboard/klientinnen");
-      }
-      setOpen(false);
-      setBriefData({
-        Empfaenger: "",
-        Briefvorlage: "none",
-      });
-      reset();
+      // if (klientState?.brief?.length > 0) {
+      //   router.push(`/dashboard/brief/${klientState?.brief?.[0]}`);
+      // } else {
+      //   router.push('/dashboard/klientinnen');
+      // }
+      // setOpen(false);
+      // setBriefData({
+      //   Empfaenger: '',
+      //   Briefvorlage: 'none',
+      // });
+      // reset();
     } catch (error) {
       handleApiError(error, router);
     }
   };
 
-  const onSubmit = () => {
+  const onSubmit = (data) => {
+    // console.log(data);
     setOpen(true);
   };
 
-  const DynamicJoditEditor = dynamic(() => import("jodit-react"), {
+  const DynamicJoditEditor = dynamic(() => import('jodit-react'), {
     ssr: false,
   });
 
@@ -256,7 +360,7 @@ const BriefPage = React.memo(() => {
     setOpen(false);
   };
 
-  const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
 
   // Define the spacing based on the screen size
   const spacing = isMobile ? 0 : 2;
@@ -342,16 +446,17 @@ const BriefPage = React.memo(() => {
       <ModelDialogue
         open={open}
         setOpen={setOpen}
-        actionTitle={"Brief"}
+        actionTitle={'Brief'}
         confirmationText={
-          "Möchten Sie die Anlage(n) als PDF exportieren oder an den Empfänger versenden?"
+          'Möchten Sie die Anlage(n) als PDF exportieren oder an den Empfänger versenden?'
         }
-        agreeModel={() => console.log("hidden")}
+        agreeModel={() => console.log('hidden')}
         closeModel={closeModel}
-        options={options()}
         cancelHide={false}
         submitHide={true}
-      />
+      >
+        <Options handleBriefAction={handleBriefAction}></Options>
+      </ModelDialogue>
     </AppLayout>
   );
 });

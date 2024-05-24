@@ -1,5 +1,5 @@
 'use client';
-import AppLayout from '@/components/AppLayout';
+import AppLayout from '../../components/AppLayout';
 import {
   Checkbox,
   FormControl,
@@ -11,13 +11,13 @@ import {
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import CssTextField from '../CssTextField';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
-import axiosInstance from '@/utils/axios';
+import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { SOMETHING_WRONG } from '@/utils/constants';
-import { getPlanInfo } from '@/utils/payment';
-import { handleApiError } from '@/utils/apiHelpers';
-import kontoContext from '@/context/konto.context';
+import { SOMETHING_WRONG } from '../../utils/constants';
+import { getPlanInfo } from '../../utils/payment';
+import { handleApiError } from '../../utils/apiHelpers';
+import kontoContext from '../../context/konto.context';
 import {
   addDays,
   differenceInDays,

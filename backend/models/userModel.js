@@ -154,15 +154,17 @@ const userAppSchema = new Schema({
   deletedAt: {
     type: Date,
   },
-  trialDays: {
-    type: Number,
+  emergencyPassword: {
+    type: String,
+    required: [true, 'emergency password required'],
   },
-  trialEnd: {
-    type: Date,
-    required: true,
+  recoveryKey: {
+    type: Buffer,
+    default: '',
   },
-  trialPeriodActive: { type: Boolean },
-  referralBonusCycles: { type: Number },
+  recoveryPhrase: {
+    type: String,
+  },
 });
 
 const UserSchema = mongoose.model('users', userAppSchema);

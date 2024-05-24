@@ -73,6 +73,8 @@ const CustomBreadcrumbs = () => {
         val = 'Detail';
       } else if (item === 'subscription') {
         val = 'Subscription';
+      } else if (item === 'videoconsultation') {
+        val = 'Videosprechstunde';
       }
       breadCrumbs.push(
         <Typography

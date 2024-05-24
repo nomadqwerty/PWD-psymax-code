@@ -1,14 +1,18 @@
 import { Grid } from '@mui/material';
 import { passwordGenerator } from '../../utils/utilityFn';
 import axiosInstance from '../../utils/axios';
+import { useEffect, useState } from 'react';
 
 const SubmitBtn = ({ isSubmitting, setValues, values }) => {
-  let userData = localStorage.getItem('psymax-user-data');
-  let userId;
-  if (userData) {
-    userData = JSON.parse(userData);
-    userId = userData._id;
-  }
+  const [userId, setUserId] = useState(null);
+  useEffect(() => {
+    let userData = localStorage?.getItem('psymax-user-data');
+
+    if (userData) {
+      userData = JSON.parse(userData);
+      setUserId(userData._id);
+    }
+  });
   return (
     <Grid container sx={{ mt: 4 }}>
       <Grid item xs={6} sm={6} md={6} xl={6} style={{ textAlign: 'right' }}>

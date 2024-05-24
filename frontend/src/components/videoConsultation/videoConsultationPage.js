@@ -3,10 +3,11 @@ import DatePicker from './DatePicker';
 import { Controller, useForm } from 'react-hook-form';
 import TitleInput from './Title';
 import SubmitBtn from './Submit';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AppLayout from '../AppLayout';
 import MeetingList from './meetingList';
 import { Typography, Grid } from '@mui/material';
+import axiosInstance from '../../utils/axios';
 
 const VideoConsultationPage = () => {
   const {
@@ -20,7 +21,29 @@ const VideoConsultationPage = () => {
     formState: { errors, isSubmitting },
   } = useForm();
   const [values, setValues] = useState();
+  const [meetings, setMeetings] = useState(null);
+  const [userName, setUserName] = useState(null);
   const onScheduleCall = () => {};
+  useEffect(() => {
+    (async () => {
+      let userData = localStorage?.getItem('psymax-user-data');
+
+      if (userData) {
+        userData = JSON.parse(userData);
+        const meetingListRes = await axiosInstance.get(
+          `/meetings/all/${userData._id}`
+        );
+        if (
+          meetingListRes.status === 200 &&
+          meetingListRes?.data?.data &&
+          meetings === null
+        ) {
+          setMeetings(meetingListRes.data.data.meetings);
+          setUserName(userData.Nachname);
+        }
+      }
+    })();
+  });
   return (
     <AppLayout>
       <div>
@@ -74,7 +97,7 @@ const VideoConsultationPage = () => {
             </Typography>
           </Grid>
         </div>
-        <MeetingList></MeetingList>
+        <MeetingList meetingsList={meetings} userName={userName}></MeetingList>
       </div>
     </AppLayout>
   );

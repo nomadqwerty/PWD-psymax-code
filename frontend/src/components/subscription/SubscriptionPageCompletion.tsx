@@ -1,16 +1,16 @@
 'use client';
 
-import Layout from '../../components/Layout';
+import Layout from '@/components/Layout';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import CssTextField from '../CssTextField';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
-import axiosInstance from '../../utils/axios';
+import axiosInstance from '@/utils/axios';
 import { Controller, useForm } from 'react-hook-form';
-import kontoContext from '../../context/konto.context';
+import kontoContext from '@/context/konto.context';
 import { useContext, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { SOMETHING_WRONG } from '../../utils/constants';
-import { handleApiError } from '../../utils/apiHelpers';
+import { SOMETHING_WRONG } from '@/utils/constants';
+import { handleApiError } from '@/utils/apiHelpers';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { isValidIBAN } from 'ibantools';
@@ -33,6 +33,7 @@ export default function SubscriptionPageCompletion() {
       address_line1: '',
       postal_code: '',
       country_code: '',
+      city: '',
     },
   });
 
@@ -65,8 +66,6 @@ export default function SubscriptionPageCompletion() {
   }, []);
 
   const onSubmit = async (data) => {
-    console.log(data, kontoData, context);
-
     const submitPromise = async () => {
       try {
         await axiosInstance.post(`/subscriptions`, {
@@ -77,7 +76,6 @@ export default function SubscriptionPageCompletion() {
         reset();
         router.push('/dashboard/subscription');
       } catch (error) {
-        console.log(error.response.data);
         if (error.response.status === 400) {
           parseJOIErrorToReactHookForm(error.response.data.data);
         }

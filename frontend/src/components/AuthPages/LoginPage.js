@@ -181,9 +181,9 @@ const LoginPage = () => {
       // console.log(vaultState);
 
       if (userSubcriptionStatus === false) {
-        router.push('/dashboard');
+        // router.push('/dashboard');
         // router.push('/subscription');
-        // router.push(`/twofactorauthentication/${userData._id}-login`);
+        router.push(`/twofactorauthentication/${userData._id}-login`);
       }
       if (userData?.isAdmin === 1) {
         router.push('/admin');

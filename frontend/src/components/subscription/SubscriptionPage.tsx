@@ -1,6 +1,6 @@
 'use client';
 
-import Layout from '../../components/Layout';
+import Layout from '@/components/Layout';
 import Image from 'next/image';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import AirplayOutlinedIcon from '@mui/icons-material/AirplayOutlined';

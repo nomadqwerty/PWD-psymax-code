@@ -1,11 +1,27 @@
 import Button from '../common/Button';
 import { Grid } from '@mui/material';
+import { useRouter } from 'next/navigation';
+const MeetingList = ({ meetingsList, userName }) => {
+  const router = useRouter();
+  if (!meetingsList) {
+    meetingsList = [];
+  }
+  console.log(userName);
+  const formatDate = (inputDateString) => {
+    const inputDate = new Date(inputDateString);
 
-const MeetingList = ({ meetingsList }) => {
-  meetingsList = [1, 2, 3];
+    const day = inputDate.getUTCDate();
+    const month = inputDate.getUTCMonth() + 1; // Month is zero-based, so add 1
+    const year = inputDate.getUTCFullYear();
+
+    const formattedDate = `${day}.${month}.${year}`;
+
+    return formattedDate;
+  };
+
   let meetings = meetingsList?.map((meeting, index) => {
     return (
-      <Grid item xs={12} sm={12} md={6} xl={6}>
+      <Grid key={index} item xs={12} sm={12} md={6} xl={6}>
         <div
           className="flex items-center w-full border-[1px] border-[#D6D8DC] radius4"
           key={`1${index}`}
@@ -37,13 +53,25 @@ const MeetingList = ({ meetingsList }) => {
           </div>
           <div className="text-[#2B86FC] font-normal text-base leading-[26px] xs:w-[60%] sm:w-[20%] md:w-[30%] lg:w-[25%] xl:w-[18%] cursor-pointer"></div>
           <div className="text-[#707070] font-normal leading-[26px] text-base xs:w-[50%] sm:w-[30%] md:w-[30%] lg:w-[25%] xl:w-[20%]">
-            {/* {formatDate(meeting?.scheduledDate)} */}
+            {formatDate(meeting?.scheduledDate)}
+          </div>
+          <div className="text-[#707070] font-normal leading-[26px] text-base xs:w-[50%] sm:w-[30%] md:w-[30%] lg:w-[25%] xl:w-[20%]">
+            {meeting?.title}
           </div>
           <div className="xs:w-[50%] sm:w-[50%] md:w-[30%] lg:w-[40%] xl:w-[50%] xs:text-left sm:text-left md:text-left lg:text-right">
             <Button
               size="xm"
               varient="primary"
               className="radius4 xs:mr-1 sm:mr-5 xs:my-2 md:mb-1 sm:mb-0"
+              onClick={() => {
+                const accessKey = meeting?.accessKey;
+                const user = userName;
+                if (accessKey && user) {
+                  router.push(
+                    `/dashboard/videosprechstunde/rtc?accessKey=${accessKey}&clientName=${user}`
+                  );
+                }
+              }}
             >
               einleiten
             </Button>

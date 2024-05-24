@@ -1,5 +1,5 @@
 'use client';
-import AppLayout from '../../components/AppLayout';
+import AppLayout from '@/components/AppLayout';
 import {
   Checkbox,
   FormControl,
@@ -11,13 +11,13 @@ import {
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import CssTextField from '../CssTextField';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
-import axiosInstance from '../../utils/axios';
+import axiosInstance from '@/utils/axios';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { SOMETHING_WRONG } from '../../utils/constants';
-import { getPlanInfo } from '../../utils/payment';
-import { handleApiError } from '../../utils/apiHelpers';
-import kontoContext from '../../context/konto.context';
+import { SOMETHING_WRONG } from '@/utils/constants';
+import { getPlanInfo } from '@/utils/payment';
+import { handleApiError } from '@/utils/apiHelpers';
+import kontoContext from '@/context/konto.context';
 import {
   addDays,
   differenceInDays,
@@ -78,7 +78,6 @@ function SubscriptionDetails() {
   function cyclesToDays(cycles: number) {
     return cycles * 28;
   }
-  console.log('data', kontoData, subscriptionData);
 
   const exportInvoices = async () => {
     const exportAndZip = async () => {
@@ -133,8 +132,6 @@ function SubscriptionDetails() {
   };
 
   const trialInfo = useMemo(() => {
-    console.log('JOnto is ', kontoData);
-
     return {
       trialEnd: kontoData?.trialEnd
         ? format(new Date(kontoData.trialEnd), 'E LLLL yyyy, kk:mm:ss')
@@ -430,7 +427,8 @@ function SubscriptionDetails() {
         mutate={mutateSubscriptionData}
       />
 
-      <ModelDialogue
+      {/* <ModelDialogue
+        className=""
         actionTitle={'Confirm Cancellation'}
         options={''}
         open={isCancelDialogModalOpen}
@@ -438,7 +436,7 @@ function SubscriptionDetails() {
         confirmationText="Bitte überprüfen Sie Ihre Aktion. Die von Ihnen beabsichtigte Aktion kann nicht rückgängig gemacht werden."
         agreeModel={cancelSubscription}
         closeModel={closeModal}
-      />
+      /> */}
     </AppLayout>
   );
 }
@@ -504,7 +502,6 @@ function BillingTable({
   function handleSelectAll(event: React.ChangeEvent<HTMLInputElement>) {
     if (event.target.checked) {
       const newSelected = rows.map((n) => n._id);
-      console.log(newSelected);
 
       setSelected(newSelected);
       return;

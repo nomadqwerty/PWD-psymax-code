@@ -6,7 +6,7 @@ const {
 } = require('./controllers/MeetingScheduleHandler');
 
 const meetingRouter = express.Router();
-meetingRouter.get('/meetings/all', getMeetingDetails);
+meetingRouter.get('/meetings/all/:id', getMeetingDetails);
 meetingRouter.post('/meetings/create', storeMeetingDetails);
 meetingRouter.delete('/meetings/delete', deleteMeetingDetails);
 

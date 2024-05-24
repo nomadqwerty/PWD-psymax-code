@@ -28,6 +28,12 @@ const LoginPage = () => {
       const responseData = response?.data?.data;
       if (response?.status === 200) {
         localStorage.setItem('psymax-loggedin', true);
+
+        // FIXME: Might be preferable to use next-js server side fetch to prevent page access
+        localStorage.setItem(
+          'psymax-account-restricted',
+          !!response.data?.subscription_status
+        );
         localStorage.setItem('psymax-token', responseData?.token);
         localStorage.setItem('psymax-user-data', JSON.stringify(responseData));
         localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
@@ -35,6 +41,9 @@ const LoginPage = () => {
           type: 'LOGIN',
           payload: { isLoggedin: true, userData: responseData },
         });
+        if (response.data?.subscription_status) {
+          return router.push('/subscription');
+        }
         if (responseData?.isAdmin === 1) {
           router.push('/admin');
         } else {

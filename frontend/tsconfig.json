@@ -16,7 +16,10 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
 
   "include": [
@@ -25,7 +28,9 @@
     "**/*.ts",
     "**/*.tsx",
     "components/questionnaire/filling/QuestionnaireTemplate.tsx",
-    "app/dashboard/questionnaire/edit/edit.tsx"
+    "app/dashboard/questionnaire/edit/edit.tsx",
+    "src/app/suspension/page.js",
+    "../backend/payment.ts"
   ],
   "exclude": ["node_modules"]
 }

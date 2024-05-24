@@ -1,5 +1,4 @@
 'use client';
-import 'tailwindcss/tailwind.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Toaster } from 'react-hot-toast';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -9,6 +8,7 @@ import { AuthProvider } from '../context/auth.context';
 import { KlientProvider } from '../context/klient.context';
 import { ProviderKonto } from '../context/konto.context';
 ('');
+import './globals.css';
 import '../../public/styles/globals.css';
 import '../../public/styles/custom.css';
 

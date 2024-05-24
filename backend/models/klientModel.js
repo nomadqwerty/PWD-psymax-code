@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const QuestionnaireResponseModel = require('./questionnaireResponseModel');
 const Schema = mongoose.Schema;
 
 const klientAppSchema = new Schema({

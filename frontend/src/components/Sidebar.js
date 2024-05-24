@@ -328,10 +328,7 @@ const Sidebar = () => {
           </span>
         </div>
 
-        <div
-          className="sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]"
-          onClick={() => router.push('/dashboard/videosprechstunde')}
-        >
+        <div className="sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]">
           <svg
             width="24"
             height="24"
@@ -532,11 +529,11 @@ const Sidebar = () => {
 
         <div
           className={`${
-            pathname.startsWith('/dashboard/subscription')
+            pathname.startsWith('/dashboard/kontoeinstellungen')
               ? 'isActive'
               : 'sidebar-svg'
           } sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]`}
-          onClick={() => router.push('/dashboard/subscription')}
+          onClick={() => router.push('/dashboard/kontoeinstellungen')}
         >
           <svg
             width="24"
@@ -562,17 +559,10 @@ const Sidebar = () => {
           </svg>
 
           <span className="interFonts text-base font-medium leading-4 pl-1.5">
-            Zahlungsdaten & Abonnement
+            Kontoeinstellungen
           </span>
         </div>
-        <div
-          className={`${
-            pathname.startsWith('/dashboard/kontoeinstellungen')
-              ? 'isActive'
-              : 'sidebar-svg'
-          } sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]`}
-          onClick={() => router.push('/dashboard/kontoeinstellungen')}
-        >
+        <div className="sidebar-svg flex items-center pt-2.5 pb-2.5 pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]">
           <svg
             width="24"
             height="24"

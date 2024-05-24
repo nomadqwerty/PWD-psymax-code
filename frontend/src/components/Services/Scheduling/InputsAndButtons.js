@@ -1,5 +1,5 @@
-import { FormControl, Grid, InputLabel, MenuItem, Select } from '@mui/material';
-import CssTextField from '../../CssTextField';
+import { FormControl, Grid, InputLabel, MenuItem, Select } from "@mui/material";
+import CssTextField from "../../CssTextField";
 
 const ServiceName = ({
   leistungEdit,
@@ -53,7 +53,7 @@ const ServiceName = ({
               type="text"
               id="Leistung"
               className="interFonts text-[#3C3C3C] font-bold text-4xl"
-              value={Leistung || ''}
+              value={Leistung || ""}
               onChange={(e) => {
                 if (leistungEdit) {
                   setLeistung(e?.target.value);
@@ -61,9 +61,9 @@ const ServiceName = ({
                 }
               }}
               onBlur={() => setLeistungEdit(false)}
-              style={{ outline: 'none' }}
+              style={{ outline: "none" }}
               ref={(e) => {
-                register('Leistung');
+                register("Leistung");
                 inputRef.current = e;
               }}
             />
@@ -99,18 +99,18 @@ const Duration = ({
         fullWidth
         label="Dauer"
         variant="outlined"
-        {...register('Dauer', {
-          required: 'Dieses Feld ist ein Pflichtfeld',
+        {...register("Dauer", {
+          required: "Dieses Feld ist ein Pflichtfeld",
         })}
         error={!!errors.Dauer}
         InputLabelProps={{
-          shrink: !!getValues('Dauer'),
+          shrink: !!getValues("Dauer"),
         }}
         inputProps={{
-          className: 'interFonts',
+          className: "interFonts",
         }}
         onChange={handleDauerChange}
-        value={dauer | ''}
+        value={dauer | ""}
       />
       {errors?.Dauer && (
         <span className="validationErr">{errors?.Dauer?.message}</span>
@@ -131,13 +131,13 @@ const Cost = ({ register, errors, getValues, handleChange }) => {
         fullWidth
         label="Kosten"
         variant="outlined"
-        {...register('Kosten', { required: true })}
+        {...register("Kosten", { required: true })}
         error={!!errors.Kosten}
         InputLabelProps={{
-          shrink: !!getValues('Kosten'),
+          shrink: !!getValues("Kosten"),
         }}
         inputProps={{
-          className: 'interFonts',
+          className: "interFonts",
         }}
         onChange={handleChange}
       />
@@ -163,13 +163,13 @@ const Description = ({ register, errors, getValues, handleChange }) => {
         fullWidth
         label="Beschreibung"
         variant="outlined"
-        {...register('Beschreibung', { required: true })}
+        {...register("Beschreibung", { required: true })}
         InputLabelProps={{
-          shrink: !!getValues('Beschreibung'),
+          shrink: !!getValues("Beschreibung"),
         }}
         error={!!errors.Beschreibung}
         inputProps={{
-          className: 'interFonts',
+          className: "interFonts",
         }}
         onChange={handleChange}
       />
@@ -195,7 +195,7 @@ const SalesTaxElection = ({
           id="Umsatzsteuerwahl"
           className="text-md"
           sx={{
-            fontStyle: 'normal',
+            fontStyle: "normal",
             fontWeight: 400,
           }}
         >
@@ -212,22 +212,22 @@ const SalesTaxElection = ({
               fullWidth
               {...field}
               error={!!errors.Umsatzsteuerwahl}
-              {...register('Umsatzsteuerwahl', { required: true })}
+              {...register("Umsatzsteuerwahl", { required: true })}
               onChange={(e) => {
-                setValue('Umsatzsteuerwahl', e?.target?.value, {
+                setValue("Umsatzsteuerwahl", e?.target?.value, {
                   shouldValidate: true,
                 });
                 handleChange(e);
               }}
-              value={field.value || ''}
+              value={field.value || ""}
             >
-              <MenuItem value={'1'}>
+              <MenuItem value={"1"}>
                 Die Leistung enthält gem. § 19 UStG keine Umsatzsteuer.
               </MenuItem>
-              <MenuItem value={'2'}>
-                Die Leistung enthält gem. § 4 Nr. 14a) UStG keine Umsatzsteuer.{' '}
+              <MenuItem value={"2"}>
+                Die Leistung enthält gem. § 4 Nr. 14a) UStG keine Umsatzsteuer.{" "}
               </MenuItem>
-              <MenuItem value={'3'}>
+              <MenuItem value={"3"}>
                 Die Leistung inkludiert eine Umsatzsteuer in Höhe von 19%.
               </MenuItem>
             </Select>
@@ -249,7 +249,7 @@ const Delete = ({ isEdit, setOpen }) => {
       sm={6}
       md={6}
       xl={6}
-      style={{ textAlign: 'left', cursor: 'pointer' }}
+      style={{ textAlign: "left", cursor: "pointer" }}
     >
       <button
         type="button"
@@ -266,13 +266,13 @@ const Delete = ({ isEdit, setOpen }) => {
 
 const Confirm = ({ isSubmitting }) => {
   return (
-    <Grid item xs={6} sm={6} md={6} xl={6} style={{ textAlign: 'right' }}>
+    <Grid item xs={6} sm={6} md={6} xl={6} style={{ textAlign: "right" }}>
       <button
         type="submit"
         disabled={isSubmitting}
         className="text-center text-sm font-medium interFonts rounded-[8px] justify-center items-center w-22 h-[42px] px-5 py-2 gap-2.5 inline-flex bg-[#EEE] text-[#0E0E0E] hover:bg-[#2B86FC] hover:text-[#FFFFFF]"
         onClick={() => {
-          console.log('click');
+          console.log("click");
         }}
       >
         Bestätigen

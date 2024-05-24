@@ -2,7 +2,6 @@ import { Grid, IconButton } from '@mui/material';
 import CssTextField from '../../components/CssTextField';
 
 import PreviewIcon from '@mui/icons-material/Preview';
-import { IMAGEURL } from '../../utils/constants';
 
 const Logo = ({
   kontoData,

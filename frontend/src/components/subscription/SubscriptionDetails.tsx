@@ -1,5 +1,9 @@
 'use client';
+<<<<<<< HEAD
 import AppLayout from '../../components/AppLayout';
+=======
+import AppLayout from '@/components/AppLayout';
+>>>>>>> origin/payment_subscription
 import {
   Checkbox,
   FormControl,
@@ -11,6 +15,7 @@ import {
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import CssTextField from '../CssTextField';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
+<<<<<<< HEAD
 import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -18,6 +23,15 @@ import { SOMETHING_WRONG } from '../../utils/constants';
 import { getPlanInfo } from '../../utils/payment';
 import { handleApiError } from '../../utils/apiHelpers';
 import kontoContext from '../../context/konto.context';
+=======
+import axiosInstance from '@/utils/axios';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { SOMETHING_WRONG } from '@/utils/constants';
+import { getPlanInfo } from '@/utils/payment';
+import { handleApiError } from '@/utils/apiHelpers';
+import kontoContext from '@/context/konto.context';
+>>>>>>> origin/payment_subscription
 import {
   addDays,
   differenceInDays,
@@ -78,7 +92,10 @@ function SubscriptionDetails() {
   function cyclesToDays(cycles: number) {
     return cycles * 28;
   }
+<<<<<<< HEAD
   console.log('data', kontoData, subscriptionData);
+=======
+>>>>>>> origin/payment_subscription
 
   const exportInvoices = async () => {
     const exportAndZip = async () => {
@@ -133,8 +150,11 @@ function SubscriptionDetails() {
   };
 
   const trialInfo = useMemo(() => {
+<<<<<<< HEAD
     console.log('JOnto is ', kontoData);
 
+=======
+>>>>>>> origin/payment_subscription
     return {
       trialEnd: kontoData?.trialEnd
         ? format(new Date(kontoData.trialEnd), 'E LLLL yyyy, kk:mm:ss')
@@ -431,6 +451,10 @@ function SubscriptionDetails() {
       />
 
       <ModelDialogue
+<<<<<<< HEAD
+=======
+        className=""
+>>>>>>> origin/payment_subscription
         actionTitle={'Confirm Cancellation'}
         options={''}
         open={isCancelDialogModalOpen}
@@ -504,7 +528,10 @@ function BillingTable({
   function handleSelectAll(event: React.ChangeEvent<HTMLInputElement>) {
     if (event.target.checked) {
       const newSelected = rows.map((n) => n._id);
+<<<<<<< HEAD
       console.log(newSelected);
+=======
+>>>>>>> origin/payment_subscription
 
       setSelected(newSelected);
       return;

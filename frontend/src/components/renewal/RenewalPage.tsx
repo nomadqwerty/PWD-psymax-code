@@ -1,6 +1,10 @@
 'use client';
 
+<<<<<<< HEAD
 import Layout from '../../components/Layout';
+=======
+import Layout from '@/components/Layout';
+>>>>>>> origin/payment_subscription
 import Image from 'next/image';
 
 export default function RenewalPage() {

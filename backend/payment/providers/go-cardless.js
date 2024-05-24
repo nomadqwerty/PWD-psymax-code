@@ -91,6 +91,7 @@ class GoCardlessProvider extends PaymentProvider {
    * @returns
    */
   async createPayment(amount, cardToken, currency) {
+<<<<<<< HEAD
     // Mollie payment processing logic
     try {
       const payment = await this.client.payments.create({
@@ -161,12 +162,19 @@ class GoCardlessProvider extends PaymentProvider {
       provider: 'GoCardless',
       paymentUrl: billingRequestFlow.authorisation_url(),
     };
+=======
+    throw new Error('createPayment method has not been implemented');
+>>>>>>> origin/payment_subscription
   }
 
   /**
    *
    * @param {string} amount
    * @param {SubscriptionData} subscriptionData
+<<<<<<< HEAD
+=======
+   * @param {string} description
+>>>>>>> origin/payment_subscription
    * @returns
    */
   async createSubscription(amount, subscriptionData, description) {

@@ -6,11 +6,7 @@ const config = process.env;
 const verifyToken = (req, res, next) => {
   const token = req.headers['x-access-token'];
 
-  const excludeRoutes = [
-    '/api/register',
-    '/api/login',
-    '/api/webhooks/checkout',
-  ];
+  const excludeRoutes = ['/api/register', '/api/login'];
 
   if (excludeRoutes.includes(req.path)) {
     // Skip authentication for these routes

@@ -5,9 +5,6 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authenticateJWT = require('./middleware/auth');
 const routes = require('./routes');
-const routesVault = require('./routesVault');
-const fileRoutes = require('./fileRoutes');
-const meetingScheduleRoutes = require('./meetingRoutes');
 const path = require('path');
 const { saveLogo } = require('./controllers/auth');
 const seedBriefData = require('./seeders/brief');
@@ -18,11 +15,6 @@ const {
   requestLogger,
   errorMiddleware,
 } = require('./utils/logger');
-// const {
-//   dailyQueue,
-//   processBonusCycleReset,
-//   processNonCommittedUserDelete,
-// } = require('./payment/queues/subscription');
 
 dotenv.config({
   path: path.join(__dirname, './config.env'),
@@ -34,10 +26,6 @@ const swaggerSpec = require('./swagger/swagger');
 const { PORT, DB_URL } = process.env;
 
 const app = express();
-
-// Process the daily task
-// dailyQueue.process(processBonusCycleReset);
-// dailyQueue.process(processNonCommittedUserDelete);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -104,7 +92,7 @@ app.use('*', (req, res, next) => {
 const publicUploadsDirectory = path.join(__dirname, 'public', 'uploads');
 app.use('/uploads', express.static(publicUploadsDirectory));
 
-// app.use(authenticateJWT);
+app.use(authenticateJWT);
 
 // Use the setupLogoStorage function to set up multer for logo uploads
 const upload = setupLogoStorage();
@@ -114,13 +102,10 @@ app.post('/api/saveLogo', upload.single('logo'), saveLogo);
 const emailUpload = setupEmailStorage();
 app.post('/api/email/send', emailUpload.array('attachments'), send);
 
-app.use(express.json({ limit: '5000kb' }));
+app.use(express.json());
 
 // Use the routes with the "/api" prefix
 app.use('/api', routes);
-app.use('/api', routesVault);
-app.use('/api', fileRoutes);
-app.use('/api', meetingScheduleRoutes);
 
 // Use the request error logger middleware globally
 app.use(errorMiddleware);

@@ -8,9 +8,7 @@ import axiosInstance from '../../utils/axios';
 import ModelDialogue from '../../components/Dialog/ModelDialogue';
 import { handleApiError } from '../../utils/apiHelpers';
 import { KlientContext } from '../../context/klient.context';
-import clientContext from '../../context/client.context';
 import PrivateRoute from '../../components/PrivateRoute';
-import vaultContext from '../../context/vault.context';
 import {
   AddNewClient,
   Cipher,
@@ -40,32 +38,12 @@ import {
   AbrechnungData,
   StatusData,
 } from '../../components/client/Data';
-import { update } from 'lodash';
 
 const ClientPage = () => {
-  // TODO: set client states to context.
-  const { clientState } = useContext(clientContext);
-  const { vaultState } = useContext(vaultContext);
-
-  const {
-    clientVault,
-    serverVault,
-    setClientVault,
-    setUpdateClientVault,
-    updateClientVault,
-  } = vaultState;
-
-  const {
-    activeKlients,
-    setActiveKlients,
-    archivedKlients,
-    setArchivedKlients,
-    newKlients,
-    setNewKlients,
-  } = clientState;
-
   const [search, setSearch] = useState(null);
-
+  const [activeKlients, setActiveKlients] = useState([]);
+  const [archivedKlients, setArchivedKlients] = useState([]);
+  const [newKlients, setNewKlients] = useState([]);
   const [open, setOpen] = useState(false);
   const [actionTitle, setActionTitle] = useState('');
   const [confirmTxt, setConfirmTxt] = useState('');
@@ -103,38 +81,6 @@ const ClientPage = () => {
           if (deleteData?.isActive === 0) {
             setDeleteData({});
             fetchArchivedKlient(archivedPage?.pagenum);
-          }
-          if (clientVault?.data) {
-            // console.log(clientVault);
-            let clientIdx;
-            clientVault.data.forEach((e, i) => {
-              if (e.clientId === deleteData?.id) {
-                // console.log(e.clientId);
-                // console.log(deleteData?.id);
-                clientIdx = i;
-              }
-            });
-            const clientVaultClone = { ...clientVault };
-            clientVaultClone.data.splice(clientIdx, 1);
-            // console.log(clientVaultClone);
-            setClientVault(clientVaultClone);
-            // setUpdateClientVault(clientVaultClone);
-          }
-          if (updateClientVault?.data) {
-            // console.log(updateClientVault);
-            let clientIdx;
-            updateClientVault.data.forEach((e, i) => {
-              if (e.clientId === deleteData?.id) {
-                // console.log(e.clientId);
-                // console.log(deleteData?.id);
-                clientIdx = i;
-              }
-            });
-            const clientVaultClone = { ...updateClientVault };
-            clientVaultClone.data.splice(clientIdx, 1);
-            // console.log(clientVaultClone);
-            // setClientVault(clientVaultClone);
-            setUpdateClientVault(clientVaultClone);
           }
           toast.success(response?.data?.message);
         }
@@ -330,9 +276,7 @@ const ClientPage = () => {
       const getActive = await axiosInstance.get(
         `/klient/getActive?page=${pagenum}&pageSize=${process.env.NEXT_PUBLIC_PAGINATION_LIMIT}`
       );
-      const clientList = getActive?.data?.data?.list;
-
-      setActiveKlients(clientList);
+      setActiveKlients(getActive?.data?.data?.list);
       setActivePage({
         ...activePage,
         pagenum: pagenum,
@@ -514,7 +458,6 @@ const ClientPage = () => {
           setDeleteData={setDeleteData}
           setActionTitle={setActionTitle}
           setConfirmTxt={setConfirmTxt}
-          confirmTxt={confirmTxt}
         />
         {/* active client List */}
 
@@ -548,7 +491,6 @@ const ClientPage = () => {
           setDeleteData={setDeleteData}
           setActionTitle={setActionTitle}
           setConfirmTxt={setConfirmTxt}
-          confirmTxt={confirmTxt}
         />
         {/* newList */}
 
@@ -577,7 +519,6 @@ const ClientPage = () => {
           setDeleteData={setDeleteData}
           setActionTitle={setActionTitle}
           setConfirmTxt={setConfirmTxt}
-          confirmTxt={confirmTxt}
         />
         {/* Achive list */}
 

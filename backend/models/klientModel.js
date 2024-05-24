@@ -1,15 +1,10 @@
 const mongoose = require('mongoose');
-const QuestionnaireResponseModel = require('./questionnaireResponseModel');
 const Schema = mongoose.Schema;
 
 const klientAppSchema = new Schema({
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'users',
-  },
-  isEncrypted: {
-    type: Boolean,
-    required: [true, 'indicate if vault is encrypted'],
   },
   userChiffre: {
     type: String,
@@ -24,40 +19,39 @@ const klientAppSchema = new Schema({
     type: String,
     required: true,
   },
-  // TODO: turn fields to buffers.
   Anrede: {
-    type: Buffer,
+    type: String,
     required: true,
   },
   Titel: {
-    type: Buffer,
+    type: String,
   },
   Firma: {
-    type: Buffer,
+    type: String,
     required: true,
   },
   Vorname: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   Nachname: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   Strasse_und_Hausnummer: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   PLZ: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   Ort: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   Land: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   Telefonnummer: {
@@ -65,11 +59,11 @@ const klientAppSchema = new Schema({
     trim: true,
   },
   Diagnose: {
-    type: Buffer,
+    type: Array,
     trim: true,
   },
   Geburtsdatum: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   ArztId: {

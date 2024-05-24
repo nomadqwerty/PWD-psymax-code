@@ -182,32 +182,31 @@ const getAll = async (req, res, next) => {
 const save = async (req, res, next) => {
   try {
     const requestBody = req.body;
-    console.log(requestBody);
+
     const klientSchema = Joi.object({
       email: Joi.string().email().required(),
-      Anrede: Joi.array().required(),
-      isEncrypted: Joi.boolean().required(),
-      Titel: Joi.array().allow(''),
-      Firma: Joi.array().required(),
+      Anrede: Joi.string().required(),
+      Titel: Joi.string().allow(''),
+      Firma: Joi.string().required(),
       Chiffre: Joi.string().required(),
-      Vorname: Joi.array().required(),
-      Nachname: Joi.array().required(),
-      Strasse_und_Hausnummer: Joi.array().required(),
-      PLZ: Joi.array().required(),
-      Ort: Joi.array().required(),
-      Land: Joi.array().required(),
+      Vorname: Joi.string().required(),
+      Nachname: Joi.string().required(),
+      Strasse_und_Hausnummer: Joi.string().required(),
+      PLZ: Joi.string().required(),
+      Ort: Joi.string().required(),
+      Land: Joi.string().required(),
       Telefonnummer: Joi.string().required(),
       Diagnose: Joi.array().required(),
-      Geburtsdatum: Joi.array().required(),
-      ArztAnrede: Joi.array().required(),
-      ArztTitel: Joi.array().allow(''),
+      Geburtsdatum: Joi.string().required(),
+      ArztAnrede: Joi.string().required(),
+      ArztTitel: Joi.string().allow(''),
       ArztEmail: Joi.string().email().required(),
-      ArztVorname: Joi.array().required(),
-      ArztNachname: Joi.array().required(),
-      ArztStrasse_und_Hausnummer: Joi.array().required(),
-      ArztPLZ: Joi.array().required(),
-      ArztOrt: Joi.array().required(),
-      ArztLand: Joi.array().required(),
+      ArztVorname: Joi.string().required(),
+      ArztNachname: Joi.string().required(),
+      ArztStrasse_und_Hausnummer: Joi.string().required(),
+      ArztPLZ: Joi.string().required(),
+      ArztOrt: Joi.string().required(),
+      ArztLand: Joi.string().required(),
       ArztTelefonnummer: Joi.string().required(),
     });
 
@@ -298,7 +297,6 @@ const save = async (req, res, next) => {
             Diagnose: requestBody?.Diagnose,
             Geburtsdatum: requestBody?.Geburtsdatum,
             ArztId: doctorData?._id,
-            isEncrypted: requestBody?.isEncrypted,
           });
           await newKlient.save();
 

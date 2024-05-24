@@ -5,23 +5,15 @@ const Joi = require('joi');
 const {
   TimeForTokenExpire,
   GLOBAL_POINT_VALUE,
-  SubscriptionStatusTracking,
 } = require('../utils/constants');
 const { randomCodeStr } = require('../utils/common');
 const fs = require('fs');
 const zxcvbn = require('zxcvbn');
 const { GlobalPointsSchema } = require('../models/globalPointsModel');
-const dayjs = require('dayjs');
-const { SubscriptionSchema } = require('../models/subscriptionModel');
-const Email = require('./contactUtil/contactUtil');
-const ServerVault = require('../models/ServerVault');
-const UserVault = require('../models/UserVault');
-const ClientVault = require('../models/ClientVault');
 
 const register = async (req, res, next) => {
   try {
-    const { email, password, inviteCode, emergencyPassword, recoveryPhrase } =
-      req.body;
+    const { email, password, inviteCode } = req.body;
     const passwordStrength = zxcvbn(password);
 
     if (passwordStrength?.score < 3) {
@@ -31,14 +23,12 @@ const register = async (req, res, next) => {
       };
       return res.status(400).send(response);
     }
-    console.log(recoveryPhrase);
+
     const registrationSchema = Joi.object({
       email: Joi.string().email().required(),
       password: Joi.string().required(),
       confirmPassword: Joi.string().required().valid(Joi.ref('password')),
       inviteCode: Joi.string().required(),
-      emergencyPassword: Joi.string(),
-      recoveryPhrase: Joi.string(),
     });
     const { error } = registrationSchema.validate(req.body);
 
@@ -64,22 +54,10 @@ const register = async (req, res, next) => {
     }
 
     const encryptedPassword = await bcrypt.hash(password, 10);
-    const encryptedEmergencyPassword = await bcrypt.hash(emergencyPassword, 10);
-    const encryptedRecoveryPhrase = await bcrypt.hash(recoveryPhrase, 10);
 
-    const getInvitedUser = await UserSchema.findOne({ inviteCode: inviteCode });
+    const getInvitedUser = UserSchema.findOne({ inviteCode: inviteCode });
 
     const randomCode = randomCodeStr(4);
-
-    // 7 days trial if no referral, 84 days(3 CYCLES) if referred by admin, else 28 days(1 cycle)
-    const numberOfTrialDays = getInvitedUser
-      ? getInvitedUser.isAdmin
-        ? 84
-        : 28
-      : 7;
-
-    // NOTE: This considers DST, which might not be expected behavior
-    const trialEnd = dayjs().add(numberOfTrialDays, 'day').toDate();
 
     const user = new UserSchema({
       email: email.toLowerCase(),
@@ -88,14 +66,8 @@ const register = async (req, res, next) => {
       inviteCode: randomCode,
       invitedUserId: getInvitedUser?._id ? getInvitedUser?._id : null,
       isAdmin: 0,
-      trialEnd,
-      trialPeriodActive: true,
-      trialDays: numberOfTrialDays,
-      emergencyPassword: encryptedEmergencyPassword,
-      recoveryPhrase: encryptedRecoveryPhrase,
     });
     await user.save();
-
     if (user) {
       const globalPointsSchema = new GlobalPointsSchema({
         userId: user?._id,
@@ -107,7 +79,6 @@ const register = async (req, res, next) => {
     let response = {
       status_code: 200,
       message: 'Registrierung erfolgreich.',
-      data: { userId: user?._id },
     };
     return res.status(200).send(response);
   } catch (error) {
@@ -162,17 +133,6 @@ const login = async (req, res, next) => {
     }
 
     if (user && (await bcrypt.compare(password, user.password))) {
-      // TODO: ON LOGIN IF THE TRIAL PHASE IS OVER, SET TRIAL TO EXPIRED
-      const subscription = await SubscriptionSchema.findOne({
-        userId: user._id,
-        statusTracking: { $nin: [SubscriptionStatusTracking.INACTIVE] },
-      });
-      let subscription_status;
-      // FIXME: Rethink on this
-      if (dayjs().isAfter(user.trialEnd) && !subscription) {
-        subscription_status = 'pending_subscription';
-      }
-
       // Create token
       const payload = {
         user_id: user._id,
@@ -191,7 +151,6 @@ const login = async (req, res, next) => {
         status_code: 200,
         message: 'Anmeldung erfolgreich',
         data: user,
-        subscription_status,
       };
       return res.status(200).send(response);
     }
@@ -222,20 +181,9 @@ const refreshToken = async (req, res, next) => {
       const user = await UserSchema.findOne({ _id: decodedOldToken?.user_id });
       user.token = newToken;
       await user.save();
-
-      // TODO: ON LOGIN IF THE TRIAL PHASE IS OVER, SET TRIAL TO EXPIRED
-      const subscription = await SubscriptionSchema.findOne({
-        userId: user._id,
-      });
-      let subscription_status;
-      if (dayjs().isAfter(user.trialEnd && !subscription)) {
-        subscription_status = 'pending_subscription';
-      }
-
       let response = {
         status_code: 200,
         data: user,
-        subscription_status,
       };
       return res.status(200).send(response);
     } else {
@@ -302,7 +250,6 @@ const get = async (req, res, next) => {
   }
 };
 
-// TODO:
 const save = async (req, res, next) => {
   try {
     const requestBody = req.body;
@@ -344,7 +291,7 @@ const save = async (req, res, next) => {
       invoiceEmail: Joi.string().email().allow(''),
       StandardSalesTax: Joi.string().allow(''),
       confirmPassword: Joi.string().allow(''),
-      // password: Joi.string().allow(''),
+      password: Joi.string().allow(''),
       Authentifizierungscode: Joi.string().allow(''),
     });
 
@@ -402,7 +349,7 @@ const save = async (req, res, next) => {
         }
         finalChiffre = chiffre + nextChar;
       }
-      // const encryptedPassword = await bcrypt.hash(requestBody?.password, 10);
+      const encryptedPassword = await bcrypt.hash(requestBody?.password, 10);
       user.Anrede = requestBody?.Anrede;
       user.Titel = requestBody?.Titel;
       user.Vorname = requestBody?.Vorname;
@@ -428,12 +375,10 @@ const save = async (req, res, next) => {
       user.invoiceEmail = requestBody?.invoiceEmail;
       user.StandardSalesTax = requestBody?.StandardSalesTax;
       user.confirmPassword = requestBody?.confirmPassword;
-      // user.password = encryptedPassword;
+      user.password = encryptedPassword;
       user.Authentifizierungscode = requestBody?.Authentifizierungscode;
       user.isAdmin = 0;
       // user.isFirst = 0;
-
-      // TODO: Create user Access Key Document.
       user.save();
 
       let response = {
@@ -520,134 +465,6 @@ const saveLogo = async (req, res, next) => {
   }
 };
 
-const TwoFaAuth = async (req, res, next) => {
-  try {
-    const code = req.body?.code;
-    const userId = req.body?.userId;
-    const userEmail = req.body?.email;
-
-    let user;
-    console.log(userId);
-
-    if (userId !== undefined) {
-      user = await UserSchema.findOne({ _id: userId });
-    }
-
-    if (userEmail) {
-      user = await UserSchema.findOne({ email: userEmail });
-    }
-    if (user) {
-      console.log(user.email);
-      let contactObject = {
-        email: user.email,
-        name: 'psymax',
-      };
-
-      const mailer = new Email(contactObject);
-      const sent = await mailer.send('two factor authentication', code);
-
-      // send target email
-      // console.log(sent);
-      if (sent?.status === 'success' || sent?.response.startsWith('250')) {
-        console.log('sent');
-        return res.status(200).json({
-          status: 'success',
-          message: 'sent',
-          data: {
-            userId: user._id,
-          },
-        });
-      } else {
-        throw new Error('failed');
-      }
-    } else {
-      throw new Error('no user found.');
-    }
-  } catch (error) {
-    return res.status(400).json({
-      status: 'failed',
-      message: error.message,
-    });
-  }
-};
-
-const validateRecoveryPhrase = async (req, res, next) => {
-  try {
-    const userId = req.body.userId;
-    const recoveryPhrase = req.body.phrase;
-    const user = await UserSchema.findOne({ _id: userId });
-    if (user) {
-      let phrase = user.recoveryPhrase;
-      const isMatch = await bcrypt.compare(recoveryPhrase, phrase);
-      if (isMatch) {
-        return res.status(200).json({
-          status: 'success',
-          data: { userId },
-        });
-      } else {
-        throw new Error('not a match');
-      }
-    } else {
-      throw new Error('no user found');
-    }
-  } catch (error) {
-    next(error);
-  }
-};
-
-const resetPassword = async (req, res, next) => {
-  try {
-    const userId = req.body.userId;
-    const newPassword = req.body.password;
-
-    const passwordStrength = zxcvbn(newPassword);
-
-    if (passwordStrength?.score < 3) {
-      let response = {
-        status_code: 400,
-        message: 'Das Passwort sollte sicher sein',
-      };
-      return res.status(400).send(response);
-    }
-
-    const user = await UserSchema.findOne({ _id: userId });
-
-    if (user && newPassword) {
-      const newPassHash = await bcrypt.hash(newPassword, 10);
-      const oldPasswordHash = user.password;
-      const emergencyPasswordHash = user.emergencyPassword;
-
-      if (oldPasswordHash && emergencyPasswordHash && newPassHash) {
-        let vault = await UserVault.find({ userId: userId });
-        let clientVault = await ClientVault.find({ userId: userId });
-        let serverVault = await ServerVault.find();
-
-        if (vault.length === 3 && clientVault.length === 3 && serverVault[0]) {
-          user.password = newPassHash;
-          await user.save();
-
-          return res.status(200).json({
-            status: 'success',
-            data: {
-              fileVaults: vault,
-              clientVaults: clientVault,
-              serverVault: serverVault,
-              oldPasswordHash: oldPasswordHash,
-              emergencyPassword: user.emergencyPassword,
-              newPassword: newPassHash,
-            },
-          });
-        }
-      } else {
-        throw new Error('failed to update password');
-      }
-    } else {
-      throw new Error('no user or new password available');
-    }
-  } catch (error) {
-    next(error);
-  }
-};
 module.exports = {
   register,
   login,
@@ -656,7 +473,4 @@ module.exports = {
   get,
   save,
   saveLogo,
-  TwoFaAuth,
-  validateRecoveryPhrase,
-  resetPassword,
 };

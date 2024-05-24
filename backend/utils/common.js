@@ -1,4 +1,3 @@
-/* global document */
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
@@ -8,15 +7,7 @@ const {
   EmailUser,
   EmailPassword,
   EmailFrom,
-  SubscriptionPlans,
 } = require('./constants');
-const {
-  globalPricing,
-  vatPercentage,
-  globalExtendedPricing,
-  globalPricing_noVat,
-  globalExtendedPricing_noVat,
-} = require('../config');
 
 // Create a function to get today's date in the desired format
 const getFormattedDate = (date) => {
@@ -163,43 +154,4 @@ const sendSMTPMail = async (
   return info?.messageId;
 };
 
-/**
- *
- * @param {keyof SubscriptionPlans} plan
- */
-function getPlanInfo(plan) {
-  return {
-    [SubscriptionPlans.GLOBAL]: {
-      pricing: globalPricing,
-      pricing_noVat: globalPricing_noVat,
-      vatPercentage,
-      name: 'Global',
-    },
-    [SubscriptionPlans.GLOBAL_EXTENDED]: {
-      pricing: globalExtendedPricing,
-      pricing_noVat: globalExtendedPricing_noVat,
-      vatPercentage,
-      name: 'Global Extended',
-    },
-  }[plan];
-}
-
-/** Exempts route path from middleware if it matches predicate
- * @param {import('express').Handler} middleware - Middleware Function
- * @param {string[]} paths - Paths to exempt
- */
-const unless = (middleware, ...paths) => {
-  /** @type {import('express').Handler} middleware */
-  return function (req, res, next) {
-    const pathCheck = paths.some((path) => path === req.path);
-    pathCheck ? next() : middleware(req, res, next);
-  };
-};
-module.exports = {
-  getFormattedDate,
-  randomCodeStr,
-  generatePDF,
-  sendSMTPMail,
-  getPlanInfo,
-  unless,
-};
+module.exports = { getFormattedDate, randomCodeStr, generatePDF, sendSMTPMail };

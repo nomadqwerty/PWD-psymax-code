@@ -5,13 +5,11 @@ module.exports = {
     commonjs: true,
     es2021: true,
   },
-  // extends: ['eslint:recommended','plugin:prettier/recommended',"prettier"],
-  extends: ['eslint:recommended'],
+  extends: ['eslint:recommended','plugin:prettier/recommended',"prettier"],
   parserOptions: {
-    ecmaVersion: 2022,
+    ecmaVersion: 12,
   },
   rules: {
-    'no-unused-vars': 'warn',
     // Your backend-specific ESLint rules
   },
 };

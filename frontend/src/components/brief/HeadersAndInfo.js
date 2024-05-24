@@ -20,7 +20,7 @@ const BriefHeader = () => {
   );
 };
 
-const Options = ({ handleBriefAction }) => {
+const options = (handleBriefAction) => {
   return (
     <>
       <div
@@ -137,4 +137,4 @@ const Options = ({ handleBriefAction }) => {
   );
 };
 
-export { BriefHeader, Options };
+export { BriefHeader, options };

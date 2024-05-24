@@ -3,11 +3,11 @@ const Schema = mongoose.Schema;
 
 const arztAppSchema = new Schema({
   Anrede: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   Titel: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   email: {
@@ -15,27 +15,27 @@ const arztAppSchema = new Schema({
     trim: true,
   },
   Vorname: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   Nachname: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   Strasse_und_Hausnummer: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   PLZ: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   Ort: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   Land: {
-    type: Buffer,
+    type: String,
     trim: true,
   },
   Telefonnummer: {

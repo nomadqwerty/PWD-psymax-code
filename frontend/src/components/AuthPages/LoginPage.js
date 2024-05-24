@@ -1,18 +1,16 @@
 'use client';
-import Worker from 'worker-loader!./AuthUtils/authWorker';
+
 import { Grid, Typography } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import CssTextField from '../../components/CssTextField';
 import toast from 'react-hot-toast';
 import axiosInstance from '../../utils/axios';
 import { SOMETHING_WRONG } from '../../utils/constants';
-import { useContext, useEffect, useState } from 'react';
+import { useContext } from 'react';
 import { AuthContext } from '../../context/auth.context';
-import vaultContext from '../../context/vault.context';
 import { useRouter } from 'next/navigation';
 import Layout from '../../components/Layout';
 import { handleApiError } from '../../utils/apiHelpers';
-import { isEncrypted } from '../../utils/utilityFn';
 
 const LoginPage = () => {
   const {
@@ -20,133 +18,27 @@ const LoginPage = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
-  const [userData, setUserData] = useState();
-  const [userSubcriptionStatus, setUserSubcriptionStatus] = useState(undefined);
+
   const { dispatch } = useContext(AuthContext);
   const router = useRouter();
-
-  const { vaultState } = useContext(vaultContext);
-  const {
-    fileVault,
-    setFileVault,
-    clientVault,
-    setClientVault,
-    serverVault,
-    setServerVault,
-    updateFileVault,
-    setUpdateFileVault,
-    updateClientVault,
-    setUpdateClientVault,
-  } = vaultState;
 
   const onSubmit = async (data) => {
     try {
       const response = await axiosInstance.post(`/login`, data);
       const responseData = response?.data?.data;
       if (response?.status === 200) {
-        const user_id = responseData._id;
-        const vaultRes = await axiosInstance.get(`/vault/user/${user_id}`);
-        setUserData(responseData);
-        if (vaultRes?.status === 200) {
-          toast('Encrypting Client and Password Directories');
-          const vaultResData = vaultRes?.data?.data;
-          const operations = window.crypto.subtle || window.crypto.webkitSubtle;
-          let clientVault = vaultResData.clientVaults;
-          let fileVault = vaultResData.vaults;
-
-          let clientEncrypted = isEncrypted(clientVault);
-          let fileEncrypted = isEncrypted(fileVault);
-          //
-          // TODO: create user vault if none is found.
-          if (!clientEncrypted && !fileEncrypted) {
-            if (!operations) {
-              alert('Web Crypto is not supported on this browser');
-              console.warn('Web Crypto API not supported');
-            } else {
-              const authWorker = new Worker();
-              let userData = responseData;
-              const response = await axiosInstance.get(`/vault/server`);
-              const psymaxToken = localStorage.getItem('psymax-token');
-
-              authWorker.postMessage({
-                type: 'encryptOnLoginA',
-                data: JSON.stringify({
-                  clientVault,
-                  fileVault,
-                  response,
-                  userData,
-                  psymaxToken,
-                }),
-              });
-              authWorker.onmessage = (message) => {
-                const decryptedData = JSON.parse(message.data);
-                // console.log(decryptedData);
-                setClientVault(decryptedData.setClientVault);
-                setFileVault(decryptedData.setFileVault);
-                setServerVault(decryptedData.setServerVault);
-                setUpdateClientVault(decryptedData.setUpdateClientVault);
-                setUpdateFileVault(decryptedData.setUpdateFileVault);
-                toast.success(
-                  'successfully encrypted Client and Password directories'
-                );
-              };
-            }
-          }
-          //
-          else {
-            const authWorker = new Worker();
-
-            if (!operations) {
-              alert('Web Crypto is not supported on this browser');
-              console.warn('Web Crypto API not supported');
-            } else {
-              let userData = responseData;
-              const response = await axiosInstance.get(`/vault/server`);
-              toast('Loading Client and Password Directories');
-              const psymaxToken = localStorage.getItem('psymax-token');
-              authWorker.postMessage({
-                type: 'encryptOnLoginB',
-                data: JSON.stringify({
-                  clientVault,
-                  fileVault,
-                  response,
-                  userData,
-                  psymaxToken,
-                }),
-              });
-              authWorker.onmessage = (message) => {
-                const decryptedData = JSON.parse(message.data);
-
-                setClientVault(decryptedData.setClientVault);
-                setFileVault(decryptedData.setFileVault);
-                setServerVault(decryptedData.setServerVault);
-                setUpdateClientVault(decryptedData.setUpdateClientVault);
-                setUpdateFileVault(decryptedData.setUpdateFileVault);
-                toast.success(
-                  'successfully loaded Client and Password directories'
-                );
-              };
-            }
-          }
-        }
-
         localStorage.setItem('psymax-loggedin', true);
-        localStorage.setItem(
-          'psymax-account-restricted',
-          !!response.data?.subscription_status
-        );
         localStorage.setItem('psymax-token', responseData?.token);
         localStorage.setItem('psymax-user-data', JSON.stringify(responseData));
         localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
-
         dispatch({
           type: 'LOGIN',
           payload: { isLoggedin: true, userData: responseData },
         });
-        if (response.data?.subscription_status) {
-          setUserSubcriptionStatus(response.data?.subscription_status);
+        if (responseData?.isAdmin === 1) {
+          router.push('/admin');
         } else {
-          setUserSubcriptionStatus(false);
+          router.push('/dashboard');
         }
       } else {
         toast.error(SOMETHING_WRONG);
@@ -155,43 +47,6 @@ const LoginPage = () => {
       handleApiError(error, router);
     }
   };
-
-  useEffect(() => {
-    let fileVaultLength = Object.keys(fileVault).length;
-    let clientVaultLength = Object.keys(clientVault).length;
-    let serverVaultLength = Object.keys(serverVault).length;
-    let updateFileVaultLength = Object.keys(updateFileVault).length;
-    let updateClientVaultLength = Object.keys(updateClientVault).length;
-    // console.log(
-    //   fileVault,
-    //   clientVault,
-    //   serverVault,
-    //   updateClientVault,
-    //   updateFileVault
-    // );
-    if (
-      fileVaultLength > 0 &&
-      clientVaultLength > 0 &&
-      serverVaultLength > 0 &&
-      updateFileVaultLength > 0 &&
-      updateClientVaultLength > 0
-    ) {
-      const vaultStateJson = JSON.stringify(vaultState);
-      sessionStorage.setItem('vaultState', vaultStateJson);
-      // console.log(vaultState);
-
-      if (userSubcriptionStatus === false) {
-        router.push('/dashboard');
-        // router.push('/subscription');
-        // router.push(`/twofactorauthentication/${userData._id}-login`);
-      }
-      if (userData?.isAdmin === 1) {
-        router.push('/admin');
-      } else if (userData?.isAdmin === 0 && userSubcriptionStatus) {
-        router.push(`/twofactorauthentication/${userData._id}-login`);
-      }
-    }
-  }, [fileVault, clientVault, serverVault, updateFileVault, updateClientVault]);
   return (
     <Layout>
       <div className="main-content">
@@ -287,10 +142,6 @@ const LoginPage = () => {
                     fontSize: 12,
                     fontWeight: 400,
                     lineHeight: '20px',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => {
-                    router.push(`/accountrecovery`);
                   }}
                 >
                   Passwort vergessen?

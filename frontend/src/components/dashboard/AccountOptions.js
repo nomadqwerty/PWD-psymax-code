@@ -11,7 +11,6 @@ const PaymentDetailsAndSubscription = ({ router }) => {
           borderRadius: '4px',
           wordWrap: 'anywhere',
         }}
-        onClick={() => router.push('/dashboard/subscription')}
       >
         <button
           type="button"

@@ -88,7 +88,6 @@ const send = async (req, res, next) => {
         }));
 
         const subject = requestBody?.Betreff;
-        // TODO: check what happens to file when sent as attachment in email.
         await sendSMTPMail(
           CheckKlientExist?.email,
           subject,

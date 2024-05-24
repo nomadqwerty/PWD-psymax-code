@@ -8,15 +8,26 @@ class PaymentProvider {
    */
   baseCurrency;
   /**
+<<<<<<< HEAD
    * Process Payment
+=======
+   * Create one time payment
+>>>>>>> origin/payment_subscription
    * @abstract
    * @param {...any} args
    * @returns {Promise<any>}
    */
+<<<<<<< HEAD
   async processPayment(...args) {}
 
   /**
    * Process Payment
+=======
+  async createPayment(...args) {}
+
+  /**
+   * Create new customer subscription
+>>>>>>> origin/payment_subscription
    * @abstract
    * @param {...any} args
    * @returns {Promise<any>}
@@ -32,15 +43,27 @@ class PaymentProvider {
   async getSubscription(...args) {}
 
   /**
+<<<<<<< HEAD
    * @abstract
    * @param {...any} args Get status of a payment
+=======
+   * Get status of a payment
+   * @abstract
+   * @param {...any} args
+>>>>>>> origin/payment_subscription
    * @returns {any}
    */
   async getPaymentStatus(...args) {}
 
   /**
+<<<<<<< HEAD
    * @abstract
    * @param {...any} args Cancels an existing subscription
+=======
+   * Cancels an existing subscription
+   * @abstract
+   * @param {...any} args
+>>>>>>> origin/payment_subscription
    * @returns {any}
    */
   async cancelSubscription(...args) {}

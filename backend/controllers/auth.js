@@ -150,15 +150,19 @@ const login = async (req, res, next) => {
     }
 
     if (user && (await bcrypt.compare(password, user.password))) {
-      // TODO: ON LOGIN IF THE TRIAL PHASE IS OVER, SET TRIAL TO EXPIRED
+      // ON LOGIN IF THE TRIAL PHASE IS OVER, SET TRIAL TO EXPIRED
       const subscription = await SubscriptionSchema.findOne({
         userId: user._id,
         statusTracking: { $nin: [SubscriptionStatusTracking.INACTIVE] },
       });
       let subscription_status;
-      // FIXME: Rethink on this
+
       if (dayjs().isAfter(user.trialEnd) && !subscription) {
         subscription_status = 'pending_subscription';
+        // Update user, revoke any active free trials date
+        user.trialPeriodActive = false;
+        user.trialEnd = dayjs().startOf('day');
+        user.trialDays = 0;
       }
 
       // Create token
@@ -208,17 +212,21 @@ const refreshToken = async (req, res, next) => {
 
     if (newToken) {
       const user = await UserSchema.findOne({ _id: decodedOldToken?.user_id });
-      user.token = newToken;
-      await user.save();
-
-      // TODO: ON LOGIN IF THE TRIAL PHASE IS OVER, SET TRIAL TO EXPIRED
+      // ON LOGIN IF THE TRIAL PHASE IS OVER, SET TRIAL TO EXPIRED
       const subscription = await SubscriptionSchema.findOne({
         userId: user._id,
       });
       let subscription_status;
-      if (dayjs().isAfter(user.trialEnd && !subscription)) {
+      if (dayjs().isAfter(user.trialEnd) && !subscription) {
         subscription_status = 'pending_subscription';
+        // Update user, revoke any active free trials date
+        user.trialPeriodActive = false;
+        user.trialEnd = dayjs().startOf('day');
+        user.trialDays = 0;
       }
+
+      user.token = newToken;
+      await user.save();
 
       let response = {
         status_code: 200,

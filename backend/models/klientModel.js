@@ -7,6 +7,10 @@ const klientAppSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'users',
   },
+  isEncrypted: {
+    type: Boolean,
+    required: [true, 'indicate if vault is encrypted'],
+  },
   userChiffre: {
     type: String,
     required: true,
@@ -20,39 +24,40 @@ const klientAppSchema = new Schema({
     type: String,
     required: true,
   },
+  // TODO: turn fields to buffers.
   Anrede: {
-    type: String,
+    type: Buffer,
     required: true,
   },
   Titel: {
-    type: String,
+    type: Buffer,
   },
   Firma: {
-    type: String,
+    type: Buffer,
     required: true,
   },
   Vorname: {
-    type: String,
+    type: Buffer,
     trim: true,
   },
   Nachname: {
-    type: String,
+    type: Buffer,
     trim: true,
   },
   Strasse_und_Hausnummer: {
-    type: String,
+    type: Buffer,
     trim: true,
   },
   PLZ: {
-    type: String,
+    type: Buffer,
     trim: true,
   },
   Ort: {
-    type: String,
+    type: Buffer,
     trim: true,
   },
   Land: {
-    type: String,
+    type: Buffer,
     trim: true,
   },
   Telefonnummer: {
@@ -60,11 +65,11 @@ const klientAppSchema = new Schema({
     trim: true,
   },
   Diagnose: {
-    type: Array,
+    type: Buffer,
     trim: true,
   },
   Geburtsdatum: {
-    type: String,
+    type: Buffer,
     trim: true,
   },
   ArztId: {

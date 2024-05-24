@@ -23,6 +23,8 @@ const FullRtc = () => {
   //check for media devices
   const [isCameraOn, setIsCameraOn] = useState(null); //camera
 
+  const [videoTrack, setVideoTrack] = useState(null)
+
   const [isMicOn, setIsMicOn] = useState(null); //audio
 
   const [screenStream, setScreenStream] = useState(null); // State to store screen stream
@@ -44,7 +46,7 @@ const FullRtc = () => {
   const remoteVideoRef = useRef(null); // Ref for remote video element
   const screenShareRef = useRef(null); // Ref for screen share video element
   // let sharedScreenStream;
-
+  const isCameraOnRef = useRef(null);
   const searchParams = useSearchParams();
   const accessKey = searchParams.get("accessKey");
   const localClientName = searchParams.get("clientName");
@@ -104,6 +106,7 @@ const FullRtc = () => {
     const { room, userSocketID, remoteName } = data;
     if (socketRef.current && !offerCreated && room === roomAccessKey) {
       socketRef.current.emit("localClientName", localClientName); //emit current local client name when a new socket joins
+      
       setSocketID(socketRef.current.id)
       console.log(
         "user",
@@ -156,7 +159,7 @@ const FullRtc = () => {
   //user leaves server handler
   const handleUserLeft = async (data) => {
     try {
-      document.getElementById("user2").style.display = "none"; //set user2 element display to none when the user/disconnects leaves
+      document.getElementById("user2_div").style.display = "none"; //set user2 element display to none when the user/disconnects leaves
 
       document.getElementById("user1_div").classList.remove("smallFrame"); //set localuser//user1 element display to full view
     } catch (e) {
@@ -209,6 +212,29 @@ const FullRtc = () => {
     window.scrollTo(0, document.body.scrollHeight);
     // socketRef.current.auth.serverOffset = serverOffset;
   };
+  useEffect(() => {
+    const clientNameEl = document.getElementById('localClientName');
+
+    if (stream) {
+      const videoTrack = stream.getTracks().find(track => track.kind === 'video');
+      setVideoTrack(videoTrack);
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+      if (videoTrack.enabled && clientNameEl) {
+      if(socketRef.current)
+      {
+        socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"on"})
+      }
+  
+      } else {
+      if(socketRef.current)
+      {
+        socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"off"})
+      }
+      }
+    }
+  }, [stream]);
 
   //get local stream
   useEffect(() => {
@@ -220,7 +246,9 @@ const FullRtc = () => {
           // const videoTracks = stream.getVideoTracks();
           // console.log(videoTracks);
           setStream(stream);
-          localVideoRef.current.srcObject = stream;
+          if (localVideoRef.current){
+            localVideoRef.current.srcObject = stream;
+          }
           // const localVideoEl = document.getElementById("user1");
           // localVideoEl.srcObject = stream;
           // localStream.current.srcObject = stream;
@@ -243,8 +271,11 @@ const FullRtc = () => {
           .getTracks()
           .find((track) => track.kind === "video");
         setIsCameraOn(videoTrack.enabled);
+    isCameraOnRef.current= videoTrack.enabled;
       }
+    return isCameraOn
     };
+
 
     const checkMicState = async () => {
       if (stream) {
@@ -260,13 +291,45 @@ const FullRtc = () => {
     // Call the function when component mounts
     checkCameraState();
     checkMicState();
+    // checkRemoteVidState();
   }, [stream]);
 
+  const handleRemoteCamera = async (cameraState) => {
+    // const checkRemoteVidState = async () => {
+      // const remoteEl = document.getElementById('user2');
+      const remoteClientNameEl = document.getElementById('remoteClientName'); //get remote client name
+      const remoteVideoEl = document.getElementById('user2'); //get remote video element
+
+      //test camera state
+      if(cameraState === "off" || false){ 
+        try{
+          remoteVideoEl.style.display ="none";
+          remoteVideoRef.current.style.display = "none";
+          remoteClientNameEl.style.display = "block";
+        }
+       catch(e){
+        console.log(e)
+       }
+      }
+      
+      else {
+        try{
+          remoteVideoEl.style.display ="block";
+          remoteVideoRef.current.style.display = "block";
+          remoteClientNameEl.style.display = "none";
+        }
+
+        catch(e){
+          console.log(e);
+        }
+      }
+    };
+  
   //create socket connection & initialise events if !socketconn && stream
   useEffect(() => {
     if (!socketRef.current && stream) {
       socketRef.current = io("http://localhost:3050"); //create socket instance if noRef and video stream avail
-
+     
       // socket.emit("hello", "hello from offer UE");
       socketRef.current.on("connect", handleSocketConnected);
 
@@ -281,6 +344,9 @@ const FullRtc = () => {
 
       socketRef.current.on("chat message", handleChatMsg);
 
+      socketRef.current.on("remote-camera", handleRemoteCamera);
+
+
       let leaveChannel = async () => {
         if (socketRef.current) {
           socketRef.current.disconnect();
@@ -290,6 +356,8 @@ const FullRtc = () => {
           socketRef.current.off("connect", handleSocketConnected);
           socketRef.current.off("remoteName", handleRemoteName);
           socketRef.current.off("chat message", handleChatMsg);
+      socketRef.current.off("remote-camera", handleRemoteCamera);
+
 
           socketRef.current = null;
         }
@@ -327,11 +395,15 @@ const FullRtc = () => {
     peerConnection = new RTCPeerConnection(servers); //passed ice servers into connection
     const remoteStream = new MediaStream();
     remoteVideoRef.current.srcObject = remoteStream; //set remote elemt srcobject to remotestream
-    setRemoteStream(remoteVideoRef.current.srcObject);
-   remoteVideoRef.current.style.display = "block";
-   
-    document.getElementById("user1_div").classList.add("smallFrame");
+    setRemoteStream(remoteStream);
+    
+    document.getElementById("user2_div").style.display = "block"; //set user2 element display to true when the user connects
 
+  //  remoteVideoRef.current.style.display = "block";
+   
+    document.getElementById("user1_div").classList.add("smallFrame"); //add smallframe to user1 div on peer connection
+
+    //get stream and set localvideoref 
     if (!stream) {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(stream);
@@ -345,6 +417,18 @@ const FullRtc = () => {
       });
     }
 
+    //emit camerastate of peer when peer connection is being established
+    if(socketRef.current)
+    {
+      let  videoTrack = stream.getTracks().find((track) => track.kind === "video"); //get video tracks
+      
+      if(videoTrack.enabled){
+      socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"on"})
+      }
+      else{
+      socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"off"})
+      }
+    }
     // if (!screenStream) {
     //      const stream = await navigator.mediaDevices.getDisplayMedia(
     //       screenRecordConstraints
@@ -363,16 +447,16 @@ const FullRtc = () => {
           remoteStream.addTrack(track, remoteStream);
         } 
         
-        else if (track.kind === "screen") {
-          const screenShareEl = document.getElementById("screenshare");
+        // else if (track.kind === "screen") {
+        //   const screenShareEl = document.getElementById("screenshare");
           
-          if (screenShareEl) {
-            screenShareEl.srcObject = new MediaStream([track]);
-            screenShareEl.style.display = "block";
-          }
-          // For screen share tracks, add them to screen share element
-          // remoteStream.addTrack(track, remoteStream);
-        }
+        //   if (screenShareEl) {
+        //     screenShareEl.srcObject = new MediaStream([track]);
+        //     screenShareEl.style.display = "block";
+        //   }
+        //   // For screen share tracks, add them to screen share element
+        //   // remoteStream.addTrack(track, remoteStream);
+        // }
       });
 
       // event.streams[1].getTracks().forEach((track) => {
@@ -453,16 +537,39 @@ const FullRtc = () => {
   //     playsInline
   //   ></video>)
   // }
+
   // user camera toggler
   let toggleCamera = async () => {
-    let videoTrack = stream.getTracks().find((track) => track.kind === "video");
+    const clientNameEl = document.getElementById('localClientName'); //get client name element 
+    let  videoTrack = stream.getTracks().find((track) => track.kind === "video"); //get video tracks
+    setVideoTrack(videoTrack);
 
-    if (videoTrack.enabled) {
+    // disable videotrack if enabled and display clientName
+    if (videoTrack.enabled && clientNameEl) {
       videoTrack.enabled = false;
+      localVideoRef.current.style.display= "none";
+      clientNameEl.style.display="block";
       setIsCameraOn(false); // Toggle the state
-    } else {
+    console.log("is camera on vidtrack",videoTrack.enabled)
+
+    if(socketRef.current)
+    {
+      socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"off"})
+    }
+
+    } 
+    // enable videotrack if disabled and hide clientName
+    else {
       videoTrack.enabled = true;
+      localVideoRef.current.style.display= "block";
+      clientNameEl.style.display="none";
+
       setIsCameraOn(true);
+    console.log("is camera on vidtrack",videoTrack.enabled)
+    if(socketRef.current)
+    {
+      socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"on"})
+    }
     }
   };
 
@@ -734,27 +841,30 @@ const FullRtc = () => {
   //   });
   // };
 
+
   return (
     <main className="containerr m-0 p-0">
       <Row id="room_container" className="p-0 m-0">
         <Col xs={12} id="members_container" className="p-0 m-0">
           <Row id="videos" className="p-0 m-0">
-            {typeof window !== "undefined" && (
-              <Col className="p-0 m-0" id="user1_div">
-                {/* <h1 className="clientName">{localClientName}</h1> */}
-                <video
-                  className="videoPlayer p-0"
-                  id="user1"
-                  ref={localVideoRef}
-                  autoPlay
-                  playsInline
-                  muted="muted"
-                ></video>
+
+            {/* {typeof window !== "undefined" && ( */}
+              <Col className="p-0 m-0 videoBg" id="user1_div">
+              <video
+        className="videoPlayer p-0"
+        id="user1"
+        ref={localVideoRef}
+        autoPlay
+        playsInline
+        muted
+      >
+      </video>
+      <h1 id="localClientName" className="clientDisplayName">{localClientName}</h1>
               </Col>
-            )}
+            {/* )} */}
 
-            {typeof window !== "undefined" && (
-
+            {/* {typeof window !== "undefined" && ( */}
+            <Col id="user2_div" className="p-0 m-0 videoBg">
               <video
                 className="videoPlayer p-0"
                 id="user2"
@@ -763,27 +873,15 @@ const FullRtc = () => {
                 playsInline
               ></video>
 
-            )}
+      <h1 id="remoteClientName" className="clientDisplayName">{remoteClientName}</h1>
+
+            </Col>
+              
+
+            {/* )} */}
           </Row>
         </Col>
-
-        <Col xs={12} id="stream-container p-0 m-0">
-          <div id="stream_box"></div>
-
-          {/* {isScreenSharing && (
-            // <div id="screenShareContainer smallerFrame">
-            <video
-              id="screenShare"
-              ref={screenShareRef}
-              className="videoPlayer smallerFrame"
-              autoPlay
-              playsInline
-              // srcobject={screenStream}
-            ></video>
-            // </div>
-          )} */}
-        </Col>
-
+        
         <Col xs={12} className="footer-container">
           <Row className="footer p-3">
             <Col title="Psymax Logo" className="logo_div logo">
@@ -893,6 +991,7 @@ const FullRtc = () => {
                     title="message area"
                     id="msgInput"
                     className="border-0 p-2"
+                    autoComplete="off"
                   />
                 </Col>
 
@@ -914,12 +1013,11 @@ const FullRtc = () => {
         </Col>
 
         <Col id="settings_container">
-         <p>hello settings oage</p>
+         {/* <p>hello settings oage</p> */}
         </Col>
       </Row>
     </main>
   );
 };
-// };
 
 export { FullRtc };

@@ -139,6 +139,16 @@ const PORT = 3050;
       socket.broadcast.to(roomAccessKey).emit("userDisconnected",{userID:socket.id})
     });
 
+    socket.on("remote-camera",(data)=>{
+      const {roomAccessKey, cameraState} = data;
+      if(cameraState=="off"||false){
+      console.log("user off cam", data);
+    }
+      else{
+      console.log("user ON cam", data);}
+      socket.broadcast.to(roomAccessKey).emit("remote-camera", cameraState)
+    })
+
     // socket.on("hello", async (data) => {
     //     // Assuming data contains { recipientId, message }
     //     // const { recipientId, message } = data;

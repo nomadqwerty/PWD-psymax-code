@@ -52,19 +52,57 @@
   border-radius: 5px;
   /* padding: 0.2rem; */
   overflow: hidden;
-  display: block;
+  /* display: block; */
   /* z-index: 0; */
 }
 
 .p-right{
   padding-right: 0.2rem;
 }
+
+.align{
+  /* display: flex; */
+  justify-content: center;
+  align-items: center;
+}
+
+#user1{
+  /* display: none; */
+}
+
 #user2_div{
   display: none;
 }
 
 #user2 {
   display: none;
+}
+
+.videoBg{
+  background-color: #3C3C3C !important;
+  position: relative;
+}
+/* .videoBg h1{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+} */
+#localClientName{
+  display: none;
+}
+
+#remoteClientName{
+  display: none;
+}
+
+.clientDisplayName{
+  color: white;
+  width: 100%;
+  position: absolute;
+  top: 50%;
+  /* border: 1px solid red; */
+  margin: 0;
+  text-align: center;
 }
 
 .stream-container{

@@ -10,6 +10,7 @@ const dayjs = require('dayjs');
 const {
   SubscriptionStatusTracking,
   SubscriptionPlans,
+  DAYS_PER_CYCLE,
 } = require('../../utils/constants');
 const { globalExtendedPricing } = require('../../config');
 const { InvoiceSchema } = require('../../models/invoiceModel');
@@ -33,7 +34,7 @@ function getSubscriptionTrackingStatus(cycles, rewardingAllowed = false) {
  * @param {number} cycles
  */
 function cyclesToDays(cycles) {
-  return cycles * 30;
+  return cycles * DAYS_PER_CYCLE;
 }
 
 /**
@@ -192,10 +193,25 @@ class GoCardlessProvider extends PaymentProvider {
     };
   }
 
+  #removeNonPermittedKeysFromSubscriptionResponse(response) {
+    // Remove non-permitted keys
+    delete response.__response__;
+    delete response.created_at;
+    delete response.earliest_charge_date_after_resume;
+    delete response.status;
+    delete response.upcoming_payments;
+    delete response.id;
+  }
+
   async extendSubscription(id, newStartDate) {
     try {
       // Cancel existing subscription
       const oldSubscriptionParams = await this.client.subscriptions.cancel(id);
+
+      // Remove non-permitted keys
+      this.#removeNonPermittedKeysFromSubscriptionResponse(
+        oldSubscriptionParams
+      );
 
       // Create a new subscription
       const newSubscription = await this.client.subscriptions.create({
@@ -252,6 +268,9 @@ class GoCardlessProvider extends PaymentProvider {
     const newStartDate = dayjs(oldSubscriptionParams.start_date)
       .add(cyclesToDays(user.referralBonusCycles + 1 ?? 1), 'day')
       .format('YYYY-MM-DD');
+
+    // Remove non-permitted keys
+    this.#removeNonPermittedKeysFromSubscriptionResponse(oldSubscriptionParams);
 
     const newSubscriptionParams = await this.client.subscriptions.create(
       {

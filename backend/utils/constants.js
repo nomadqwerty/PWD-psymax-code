@@ -29,4 +29,5 @@ module.exports = Object.freeze({
     COMMITTED: 'COMMITTED',
     INACTIVE: 'INACTIVE',
   }),
+  DAYS_PER_CYCLE: 28,
 });

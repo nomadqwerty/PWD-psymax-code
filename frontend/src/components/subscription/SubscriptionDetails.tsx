@@ -15,7 +15,7 @@ import axiosInstance from '@/utils/axios';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { SOMETHING_WRONG } from '@/utils/constants';
-import { getPlanInfo } from '@/utils/payment';
+import { cyclesToDays, getPlanInfo } from '@/utils/payment';
 import { handleApiError } from '@/utils/apiHelpers';
 import kontoContext from '@/context/konto.context';
 import {
@@ -74,10 +74,6 @@ function SubscriptionDetails() {
       invoice.referenceId.includes(search)
     );
   }, [search, invoicesData]);
-
-  function cyclesToDays(cycles: number) {
-    return cycles * 28;
-  }
 
   const exportInvoices = async () => {
     const exportAndZip = async () => {
@@ -155,32 +151,11 @@ function SubscriptionDetails() {
       endDate: subscriptionData?.data?.startDate
         ? format(
             addDays(new Date(subscriptionData?.data?.startDate), 1),
-            'E..EEE LLLL yyyy, kk:mm:ss'
+            'E LLLL yyyy, kk:mm:ss'
           )
         : 'N/A',
     };
   }, [kontoData, subscriptionData]);
-
-  // const rows = [
-  //   {
-  //     id: 1,
-  //     date: '{Date}',
-  //     invoice: '{Rechnungsnummer}',
-  //     name: '{documentname}',
-  //   },
-  //   {
-  //     id: 2,
-  //     date: '{Date}',
-  //     invoice: '{Rechnungsnummer}',
-  //     name: '{documentname}',
-  //   },
-  //   {
-  //     id: 3,
-  //     date: '{Date}',
-  //     invoice: '{Rechnungsnummer}',
-  //     name: '{documentname}',
-  //   },
-  // ];
 
   useEffect(() => {
     async function fetchData() {
@@ -189,7 +164,6 @@ function SubscriptionDetails() {
         const responseData = response?.data?.data;
         if (response?.status === 200) {
           setKontoData(responseData);
-          // router.push('/dashboard');
         } else {
           toast.error(SOMETHING_WRONG);
         }
@@ -202,13 +176,13 @@ function SubscriptionDetails() {
   }, []);
 
   async function cancelSubscription() {
-    // TODO: Redirect user out of dashboard
     try {
       const response = await axiosInstance.post(
         `/subscriptions/${kontoData._id}/cancel`
       );
       if (response?.status === 200) {
         toast.success('Subscription cancelled successfully');
+        router.push('/dashboard');
       } else {
         toast.error(SOMETHING_WRONG);
       }
@@ -226,44 +200,48 @@ function SubscriptionDetails() {
     <AppLayout>
       <div>
         <h1 className="font-bold text-4xl">Abonnement & Zahlungsdaten</h1>
-        <div className="mt-8">
-          <div className="flex justify-between items-center">
-            <h2 className="font-bold text-3xl">Abonnement</h2>
-            <button
-              className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6"
-              onClick={() => setIsCancelDialogModalOpen(true)}
-            >
-              Abonnement kündigen
-            </button>
-          </div>
-          <div>
-            <p className="font-bold text-3xl">
-              {subscriptionPlan?.amount ?? '--'}€
-              <span className="text-base text-[#707070] font-normal">
-                {' '}
-                / 28 Tage zzgl. MwSt. von{' '}
-                {subscriptionPlan?.vatAmount
-                  ? subscriptionPlan.vatAmount.toLocaleString()
-                  : '--'}
-                €
-              </span>
-            </p>
-            <p className="my-2 text-[#707070]">
-              Ihr Abonnement wird in{' '}
-              {differenceInDays(
-                new Date(subscriptionData?.data?.nextChargeDate ?? Date.now()),
-                new Date()
-              )}{' '}
-              {/* TODO: No need for optional operator */}
-              {/* {differenceInDays(subscriptionData?.nextChargeDate, new Date())}{' '} */}
-              Tage(n) verlängert.
-            </p>
-            <div className="flex items-center gap-2">
-              <AccountCircleOutlinedIcon htmlColor="#2B86FC" />
-              <p className="text-[#707070]">1 Nutzer</p>
+        {subscriptionData?.data && (
+          <div className="mt-8">
+            <div className="flex justify-between items-center">
+              <h2 className="font-bold text-3xl">Abonnement</h2>
+              <button
+                className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6"
+                onClick={() => setIsCancelDialogModalOpen(true)}
+              >
+                Abonnement kündigen
+              </button>
+            </div>
+            <div>
+              <p className="font-bold text-3xl">
+                {subscriptionPlan?.amount ?? '--'}€
+                <span className="text-base text-[#707070] font-normal">
+                  {' '}
+                  / 28 Tage zzgl. MwSt. von{' '}
+                  {subscriptionPlan?.vatAmount
+                    ? subscriptionPlan.vatAmount.toLocaleString()
+                    : '--'}
+                  €
+                </span>
+              </p>
+              <p className="my-2 text-[#707070]">
+                Ihr Abonnement wird in{' '}
+                {differenceInDays(
+                  new Date(
+                    subscriptionData?.data?.nextChargeDate ?? Date.now()
+                  ),
+                  new Date()
+                )}{' '}
+                {/* TODO: No need for optional operator */}
+                {/* {differenceInDays(subscriptionData?.nextChargeDate, new Date())}{' '} */}
+                Tage(n) verlängert.
+              </p>
+              <div className="flex items-center gap-2">
+                <AccountCircleOutlinedIcon htmlColor="#2B86FC" />
+                <p className="text-[#707070]">1 Nutzer</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
         {/* TODO: IF is subscribed */}
         {/* If subscription is in the past(over) */}
         {!kontoData?.trialPeriodActive ? (

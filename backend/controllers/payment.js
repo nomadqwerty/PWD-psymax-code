@@ -170,16 +170,37 @@ async function changePaymentMethod(req, res) {
       }
     );
 
-    // TODO: If older Payment method is "debit" and new is wire... cancel current debit subscription.,
+    // TODO: Confirm proper behavior on payment method change
+    // If older Payment method is "debit" and new is wire... cancel current debit subscription.,
+    // If older Payment method is "wire" and new is debit... create new debit subscription, schedule user wire job to be over at end of cycle
+
     if (
       oldSubscription.paymentMethod === PaymentMethods.DIRECT_DEBIT &&
-      req.body === PaymentMethods.WIRE_TRANSFER
+      req.body.method === PaymentMethods.WIRE_TRANSFER
     ) {
-      await paymentService.cancelSubscription(oldSubscription.subscriptionId);
+      await paymentService.cancelSubscription(
+        oldSubscription.paymentMethod,
+        oldSubscription.subscriptionId
+      );
 
-      // .... TODO: Complete
+      const { pricing, name } = getPlanInfo(oldSubscription.plan);
+
+      // payments will be taken end of cycle, regardless of cancelation
+      // so keep subscription active till then.
+
+      // start new wire subscription at the end of current cycle
+      const subscription = await paymentService.getSubscription(
+        oldSubscription.paymentMethod,
+        oldSubscription.subscriptionId
+      );
+
+      await paymentService.createSubscription(
+        req.body.method,
+        pricing,
+        { ...oldSubscription, start_date: subscription.nextChargeDate },
+        `${name} Payment`
+      );
     }
-    // TODO: If older Payment method is "wire" and new is debit... create new debit subscription, schedule user wire job to be over at end of cycle
   } catch (error) {
     console.error(error);
 

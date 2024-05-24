@@ -60,6 +60,7 @@ function cyclesToDays(cycles) {
  * @property {string} country_code
  * @property {string} account_holder_name
  * @property {string} email
+ * @property {string} [start_date]
  */
 
 /**
@@ -146,6 +147,7 @@ class GoCardlessProvider extends PaymentProvider {
         name: description,
         links: { mandate: mandate.links.mandate_request_mandate },
         retry_if_possible: true,
+        start_date: subscriptionData.start_date,
       }
       // '0uuid-for-idempotency-key-seems-optional?-prolly-not'
     );

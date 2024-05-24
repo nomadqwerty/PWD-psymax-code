@@ -23,7 +23,7 @@ const paymentService = createPaymentService();
  */
 async function makeSubscription(req, res) {
   const subscriptionData = req.body;
-  const userId = req.user.user_id;
+  const { user_id: userId, email } = req.user;
   const { payment_method } = req.body;
 
   // Validation on card fields
@@ -68,7 +68,12 @@ async function makeSubscription(req, res) {
     let subscription = await paymentService.createSubscription(
       payment_method,
       globalPricing,
-      subscriptionData,
+      {
+        ...subscriptionData,
+        userId,
+        email,
+        plan: SubscriptionPlans.GLOBAL,
+      },
       `${getPlanInfo(SubscriptionPlans.GLOBAL).name} Payment`
     );
 

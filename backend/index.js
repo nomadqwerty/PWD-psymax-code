@@ -15,11 +15,6 @@ const {
   requestLogger,
   errorMiddleware,
 } = require('./utils/logger');
-// const {
-//   dailyQueue,
-//   processBonusCycleReset,
-//   processNonCommittedUserDelete,
-// } = require('./payment/queues/subscription');
 
 dotenv.config({
   path: path.join(__dirname, './config.env'),
@@ -27,14 +22,11 @@ dotenv.config({
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger/swagger');
+const { initializeQueues } = require('./payment/queues');
 
 const { PORT, DB_URL } = process.env;
 
 const app = express();
-
-// Process the daily task
-// dailyQueue.process(processBonusCycleReset);
-// dailyQueue.process(processNonCommittedUserDelete);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -51,6 +43,8 @@ async function connectToDatabase() {
     console.log(`Connected to ${DB_URL}`);
     // Run seeder after connecting to the database
     await seedBriefData();
+    // Initialize the queues after the database connection is established
+    initializeQueues();
     console.log('Seeder executed successfully');
   } catch (err) {
     console.error(err);

@@ -42,7 +42,7 @@ const LoginPage = () => {
           payload: { isLoggedin: true, userData: responseData },
         });
         if (response.data?.subscription_status) {
-          return router.push('/subscription');
+          return router.push('/renewal');
         }
         if (responseData?.isAdmin === 1) {
           router.push('/admin');

@@ -51,7 +51,7 @@ const PrivateRoute = (WrappedComponent) => {
       }
 
       if (isAccountRestricted) {
-        return router.push('/subscription');
+        return router.push('/renewal');
       }
 
       refreshToken();

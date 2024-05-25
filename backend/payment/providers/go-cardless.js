@@ -404,6 +404,11 @@ class GoCardlessProvider extends PaymentProvider {
         // THEN END OF DAY, RENEW SUBSCRIPTIONS
 
         const user = await UserSchema.findById(subscription.userId);
+        if (!user) {
+          // TODO: weird...
+          return;
+        }
+
         // THIS CODE BLOCK SHOULD ONLY TRIGGER ONCE PER USER, ONLY IF TRIAL PHASE IS OVER AND 3 CYCLES PAID
 
         // THIS ENDPOINT ONLY GETS TRIGGERED WHEN TRIAL PERIOD IS OVER
@@ -415,18 +420,13 @@ class GoCardlessProvider extends PaymentProvider {
 
         const referrer = await UserSchema.findById(user.invitedUserId);
 
-        // IF REFERRER IS ADMIN, NO BONUS
-        if (referrer.isAdmin) return;
-
-        if (!user) {
-          // TODO: weird...
-          return;
-        }
-
         if (!referrer) {
           // TODO: weird...
           return;
         }
+
+        // IF REFERRER IS ADMIN, NO BONUS
+        if (referrer.isAdmin) return;
 
         const referrerSubscription = await SubscriptionSchema.findOne({
           userId: referrer._id,

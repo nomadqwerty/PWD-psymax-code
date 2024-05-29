@@ -5,6 +5,9 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { io } from "socket.io-client";
 import { Row, Col } from "react-bootstrap";
+import Modal from "../Modal/Modal";
+import Chat from "../Chat/Chat";
+import Settings from "../Settings/Settings";
 // import Link from "next/link";
 
 const FullRtc = () => {
@@ -33,13 +36,14 @@ const FullRtc = () => {
 
   const [isSettingsVisible, setIsSettingsVisible] = useState(false); // State to track settings page status
 
-
-  
-
-
+  const [isModalOpen, setIsModalOpen] = useState(false); // State to track chat view status
   const [isChatVisible, setIsChatVisible] = useState(false); // State to track chat view status
 
-  const [messages, setMessages] = useState([]); //track messages
+  const [modalContent, setModalContent] = useState(null); // content of modal
+
+  // const [messages, setMessages] = useState([]); //track messages
+  const [renderTrigger, setRenderTrigger] = useState(false); // State to trigger re-renders
+  const messagesRef = useRef([]); // Ref to store messages
 
   //get time stamp
   const localVideoRef = useRef(null); // Ref for local video element
@@ -66,12 +70,20 @@ const FullRtc = () => {
     },
   };
 
-  let screenRecordConstraints = {
+  //screen record constraints
+ let screenRecordConstraints = {
     video: {
       cursor: "always",
       displaySurface: "application" | "browser" | "monitor" | "window",
-    },
+    },  
+    systemAudio: "include",
+    surfaceSwitching: "include",
+    monitorTypeSurfaces: "include",
   };
+  let peerConnection;
+  let socketRef = useRef(null);
+  let supportedConstraints; // supported media constraints 
+ 
   //useeffect to redirect user to lobby if no accesskey is found
   useEffect(() => {
     if (accessKey) {
@@ -82,8 +94,6 @@ const FullRtc = () => {
     }
   }, [router, accessKey]);
 
-  let peerConnection;
-  let socketRef = useRef(null);
 
   const servers = {
     iceServers: [
@@ -95,11 +105,6 @@ const FullRtc = () => {
       },
     ],
   };
-
-  // const appName = "psymax";
-  // socket = io("http://localhost:3050");
-
-  //run on page mount
 
   //handler for when a user joins the server
   const handleUserJoined = async (data) => {
@@ -187,31 +192,41 @@ const FullRtc = () => {
     remoteName ? setremoteClientName(remoteName) : null;
   };
 
-  const handleChatMsg = async (data) => {
-    const { msg, serverOffset, clientName } = await data;
-    console.log(serverOffset, clientName, msg);
-    //  let msgWrapper = document.getElementById("messages");
+  // let handleChatMsg;
 
-    // Create a new message object
-    const newMessage = {
-      id: serverOffset, // Assuming serverOffset can be used as a unique identifier
-      clientName,
-      message: msg,
-      time: getTime(),
-    };
+  // useEffect(()=>{
+  // handleChatMsg = async (data) => {
+  //   const { msg, serverOffset, clientName } = await data;
+  //   console.log(serverOffset, clientName, msg);
+  //   //  let msgWrapper = document.getElementById("messages");
 
-    try{
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-    }
+  //   // Create a new message object
+  //   const newMessage = {
+  //     id: serverOffset, // Assuming serverOffset can be used as a unique identifier
+  //     clientName,
+  //     message: msg,
+  //     time: getTime(),
+  //   };
 
-    catch (e){
-      console.log("messages not sent", e);
-    }
-    // Update messages state with the new message
+  //   try{
+  //     messagesRef.current = [...messagesRef.current, newMessage];
+  //     // setRenderTrigger(prev => !prev); // Trigger re-render
 
-    window.scrollTo(0, document.body.scrollHeight);
-    // socketRef.current.auth.serverOffset = serverOffset;
-  };
+  //   window.scrollTo(0, document.body.scrollHeight);
+  //   // socketRef.current.auth.serverOffset = serverOffset;
+  //     // setMessages((prevMessages) => [...prevMessages, newMessage]);
+  //   }
+
+  //   catch (e){
+  //     console.log("messages not sent", e);
+  //   }
+  //   // Update messages state with the new message
+
+  // };
+
+  // }),[messagesRef.current]
+
+
   useEffect(() => {
     const clientNameEl = document.getElementById('localClientName');
 
@@ -342,7 +357,7 @@ const FullRtc = () => {
 
       socketRef.current.on("remoteName", handleRemoteName);
 
-      socketRef.current.on("chat message", handleChatMsg);
+      // socketRef.current.on("chat message", handleChatMsg);
 
       socketRef.current.on("remote-camera", handleRemoteCamera);
 
@@ -355,7 +370,7 @@ const FullRtc = () => {
           socketRef.current.off("userDisconnected", handleUserLeft);
           socketRef.current.off("connect", handleSocketConnected);
           socketRef.current.off("remoteName", handleRemoteName);
-          socketRef.current.off("chat message", handleChatMsg);
+          // socketRef.current.off("chat message", handleChatMsg);
       socketRef.current.off("remote-camera", handleRemoteCamera);
 
 
@@ -389,7 +404,6 @@ const FullRtc = () => {
   //   };
 
   // }, [messages]);
-
 
   let createPeerConnection = async (userID) => {
     peerConnection = new RTCPeerConnection(servers); //passed ice servers into connection
@@ -593,24 +607,45 @@ const FullRtc = () => {
     return `${hours}:${minutes}`;
   };
 
-  const setMembersContainer = ()=>{
-    
-  }
+  const openChat = () => {
+    setIsChatVisible(true);
 
-  let toggleChat = async () => {
-    // if(!isChatVisible){
-    //   setIsSettingsVisible(false);
-    //   settingsEl.style.width = "0%";
-    //   settingsEl.style.display = "none";
-    //   membersVideoContainer.style.width = "100%";
-    // }
+    setModalContent(
+      <Chat  
+      key={socketRef.current.id}
+      localClientName={localClientName}
+      accessKey={accessKey}
+      socket={socketRef.current}
+      isModalOpen={isModalOpen}
+      />
+    );
+    toggleModal();
+    // setIsModalOpen(true);
+  };
 
-    const messagesContainer = document.getElementById("messages_container");
+  const openSettings = () => {
+    setIsSettingsVisible(true);
+
+    setModalContent(<Settings />);
+    toggleModal();
+    // setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalContent(null);
+  };
+
+  //function to toggle modal which displays chat/settings
+  let toggleModal = async (element) => {
+    const modalContainer = document.getElementById("modal_container");
     const membersVideoContainer = document.getElementById("members_container");
     const input = document.getElementById("msgInput");
 
-    if (!isChatVisible) {
+    if (!isModalOpen) {
+      
       try {
+        setIsModalOpen(true);
         membersVideoContainer.style.width = "75%";
 
         // Add event listener for transitionend event
@@ -618,181 +653,175 @@ const FullRtc = () => {
           "transitionend",
           () => {
             // Render the chat component contents after width adjustment is completed
-            messagesContainer.style.width = "25%";
-            messagesContainer.style.display = "block";
-            input.focus();
-            setIsChatVisible(true);
+            modalContainer.style.width = "25%";
+            modalContainer.style.display = "block";
+      //  document.getElementById("msgInput").focus()
+            // console.log(isModalOpen)
+            // console.log(isChatVisible)
+            // isModalOpen && isChatVisible ? input?.focus(): null;
           },
           { once: true }
         ); // Ensure the event listener is removed after firing once
       } catch (e){
-        console.log("could not set chat visible", e);
+        console.log("could not set modal visible", e);
       }
-    } else {
+    } 
+    
+    else {
       try {
+        setIsModalOpen(false);
         setIsChatVisible(false);
-        messagesContainer.style.width = "0%";
-        messagesContainer.style.display = "none";
+        setIsSettingsVisible(false);
+        modalContainer.style.width = "0%";
+        modalContainer.style.display = "none";
         membersVideoContainer.style.width = "100%";
       } catch {
-        console.log("could not set chat not-visible");
+        console.log("could not set modal not-visible");
       }
     }
   };
-  const Message = ({ message, localClientName }) => {
-  return (
-    <li key={message.id} className={`msgItem mb-1 ${message.clientName === localClientName ? "right" : "left"}`}>
-      <p className={`m-0 mb-1 clientNameDate ${message.clientName === localClientName ? "right" : "left"}`}>
-        <span className="clientName"> {message.clientName} </span>
-        <span className="chatTimeStamp">{message.time} </span>
-      </p>
-      <p className={`msg m-0 ${message.clientName === localClientName ? "right" : "left"}`}>
-        {message.message}
-      </p>
-    </li>
-  );
-};
-  //chat listener
 
-  useEffect(()=>{
-// if (typeof Window !== "undefined") {
-    let counter = 0;
-    const form = document.getElementById("form");
-    const input = document.getElementById("msgInput");
-    // const messages = document.getElementById("messages");
+//   const Message = ({ message, localClientName }) => {
+//   return (
+//     <li key={message.id} className={`msgItem mb-1 ${message.clientName === localClientName ? "right" : "left"}`}>
+//       <p className={`m-0 mb-1 clientNameDate ${message.clientName === localClientName ? "right" : "left"}`}>
+//         <span className="clientName"> {message.clientName} </span>
+//         <span className="chatTimeStamp">{message.time} </span>
+//       </p>
+//       <p className={`msg m-0 ${message.clientName === localClientName ? "right" : "left"}`}>
+//         {message.message}
+//       </p>
+//     </li>
+//   );
+// };
 
-    if (form){
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        if (input.value) {
-          // compute a unique offset
-          if (socketRef.current) {
-            const clientOffset = `${socketRef.current.id}-${counter++}`;
-            socketRef.current.emit("chat message", {
-              msg: input.value,
-              clientOffset: clientOffset,
-              roomAccessKey: accessKey,
-              clientName: localClientName,
-            });
-            input.value = "";
-          }
-        }
-      });
-    }
-  // }
-  },[])
-
-  // let toggleSettings = async () =>{
-  //   const messagesContainer = document.getElementById("messages_container");
-  //   const membersVideoContainer = document.getElementById("members_container");
-  //   if (isChatVisible && !isSettingsVisible){
-  //       setIsChatVisible(false);
-  //       messagesContainer.style.width = "0%";
-  //       messagesContainer.style.display = "none";
-  //       membersVideoContainer.style.width = "100%";
-  //   }
-
-  //   // const settingsEl = document.getElementById("settings_container");
-  //   // const membersVideoContainer = document.getElementById("members_container");
-  //   membersVideoContainer.style.width = "75%";
-
-  //   // isChatVisible?setIsChatVisible(false):null;
-
-  //   if(!isSettingsVisible && !isChatVisible){
-  //     // settingsEl.style.display = 'block';
-  //     try {
-  //       membersVideoContainer.style.width = "75%";
-
-  //       // Add event listener for transitionend event
-  //       membersVideoContainer.addEventListener(
-  //         "transitionend",
-  //         () => {
-  //           // Render the chat component contents after width adjustment is completed
-  //           settingsEl.style.width = "25%";
-  //           settingsEl.style.display = "block";
-  //           setIsSettingsVisible(true);
-  //         },
-  //         { once: true }
-  //       ); // Ensure the event listener is removed after firing once
-  //     } catch {
-  //       console.log("could not set setings visible");
-  //     }
-  //   } else {
-  //     try {
-  //       setIsSettingsVisible(false);
-  //       settingsEl.style.width = "0%";
-  //       settingsEl.style.display = "none";
-  //       membersVideoContainer.style.width = "100%";
-  //     } catch {
-  //       console.log("could not set settings not-visible");
-  //     }
-  //   }
-  // }
-
-  //switch cureent stream 
-//  const switchStream =  (mediaStream) =>{
-//       setStream(mediaStream);
-//       setScreenSharingId(socketRef?.current.id || "")
-//     };
-
-  // Function to start screen sharing
   let toggleScreenSharing = async () => {
     if (!isScreenSharing && !screenSharingId) {
-      // Check for screensharing true and existing screenshareID
-      // If no IDs exist, get new stream for the screen stream
       setIsScreenSharing(true);
+  
+      // Stop only the video track from the current stream
+      const videoTrack = stream?.getTracks().find(track => track.kind === 'video');
+      if (videoTrack) {
+        videoTrack.stop();
+      }
+  
       try {
-        const stream = await navigator.mediaDevices.getDisplayMedia(screenRecordConstraints);
-        
-        setStream(stream);
-        setScreenStream(stream);
-        localVideoRef.current.srcObject = stream;
+        const screenStream = await navigator.mediaDevices.getDisplayMedia(screenRecordConstraints);
+        const screenVideoTrack = screenStream.getVideoTracks()[0];
+  
+        // Keep the audio track from the original stream
+        const audioTrack = stream?.getAudioTracks()[0];
+        if (audioTrack) {
+          const combinedStream = new MediaStream([screenVideoTrack, audioTrack]);
+          setScreenStream(combinedStream);
+          setStream(combinedStream);
+          localVideoRef.current.srcObject = combinedStream;
+        } else {
+          setScreenStream(screenStream);
+          setStream(screenStream);
+          localVideoRef.current.srcObject = screenStream;
+        }
+  
         setScreenSharingId(socketID);
         console.log("current share screen user", localClientName, socketID);
         setIsScreenSharing(true);
       } catch (e) {
         console.error("Could not switch stream to screenshare", e);
+        setIsScreenSharing(false);
       }
     } else {
-      // Check for screensharing true and existing screenshareID
-      // If IDs exist, get new stream for video and audio camera
       setIsScreenSharing(false);
   
-      if (screenStream) {
-        screenStream.getTracks().forEach((track) => track.stop());
-        setScreenStream(null);
-      }
+      // Stop all tracks in the screen stream
+      screenStream?.getTracks().forEach(track => track.stop());
+      setScreenStream(null);
       setScreenSharingId("");
   
       try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints); // Get video and audio devices from user
-        setStream(stream); // Switch stream to obtained media stream
-        localVideoRef.current.srcObject = stream;
+        const userStream = await navigator.mediaDevices.getUserMedia(constraints);
+        setStream(userStream);
+        localVideoRef.current.srcObject = userStream;
       } catch (e) {
         console.error("Could not turn on user screen & switch stream", e);
       }
     }
   
+    // Replace the video track in the peer connections, but keep the audio track
     if (socketID?.peerConnection) {
-      Object.values(socketID.peerConnection).forEach((peer) => {
+      Object.values(socketID.peerConnection).forEach(peer => {
         const videoTrack = stream?.getTracks().find(track => track.kind === 'video');
         if (videoTrack) {
-          peer.getSenders()[1].replaceTrack(videoTrack).catch((e) => {
-            console.error(e);
+          peer.getSenders().forEach(sender => {
+            if (sender.track.kind === 'video') {
+              sender.replaceTrack(videoTrack).catch(e => {
+                console.error(e);
+              });
+            }
           });
         }
       });
     }
   };
   
-    //listen for end of stream from outside screen toggle button
+   //listen for end of stream from outside screen toggle button
 
     screenStream ? (screenStream.getVideoTracks()[0].onended = function () {
-      setIsScreenSharing(false);
+      
+      // setIsScreenSharing(false);
       toggleScreenSharing();
      // doWhatYouNeedToDo();
    })
  : null;
+  
+  let displayElement = (element) =>{
+    if (element==="chat"){
+      return (<div className="">
+      <h2 className="p-3 chat-title mb-0">Chat</h2>
+      <ul id="messages" className="p-3">
+       {messages.map((message) => (
+<Message key={message.id} message={message} localClientName={localClientName} />
+))}
+      </ul>
+
+      <form id="form" action="" className="">
+        <Row id="sendMsgRow" className="p-0 m-0">
+          <Col xs={11} className="p-0">
+            <input
+              placeholder="Nachricht absenden"
+              title="message area"
+              id="msgInput"
+              className="border-0 p-2"
+              autoComplete="off"
+            />
+          </Col>
+
+          <Col xs={1} className="p-0">
+            <button
+              type="submit"
+              id="sendMsgBtn"
+              title="send message button"
+              className="sendMsgBtn btn"
+            >
+              <img src="/icons/send-chat-msg.svg"></img>
+            </button>
+          </Col>
+        </Row>
+      </form>
+    </div>)
+    }
+
+    if (element ==="settings"){
+      return (<div id="settings_container">
+         <p>hello settings oage</p>
+        </div> 
+        )
+    }
+  }
+
+  let hideElement = (element) => {
+
+  }
+   
   // let displayFrame = document.getElementById
 
   // const reInitializeStream = (video, audio, type='userMedia') => {
@@ -856,7 +885,7 @@ const FullRtc = () => {
         ref={localVideoRef}
         autoPlay
         playsInline
-        muted
+        // muted
       >
       </video>
       <h1 id="localClientName" className="clientDisplayName">{localClientName}</h1>
@@ -941,7 +970,7 @@ const FullRtc = () => {
                   className="icon"
                   src="/icons/settings.svg"
                   alt="settings button"
-                  // onClick={toggleSettings}
+                  onClick={openSettings}
                 />
               </div>
 
@@ -968,53 +997,19 @@ const FullRtc = () => {
                 className="icon"
                 src="/icons/chat.svg"
                 alt="Plaudern"
-                onClick={toggleChat}
+                onClick={openChat}
               />
             </Col>
           </Row>
-        </Col>
+        </Col>         
 
-        <Col id="messages_container" className="p-0">
-          <div className="">
-            <h2 className="p-3 chat-title mb-0">Chat</h2>
-            <ul id="messages" className="p-3">
-             {messages.map((message) => (
-    <Message key={message.id} message={message} localClientName={localClientName} />
-  ))}
-            </ul>
+          <Modal onClose={toggleModal}>
+                  {modalContent}
+          {/* <div id="settings-container">
+            <p>Settings Page</p>
+          </div> */}
+          </Modal>
 
-            <form id="form" action="" className="">
-              <Row id="sendMsgRow" className="p-0 m-0">
-                <Col xs={11} className="p-0">
-                  <input
-                    placeholder="Nachricht absenden"
-                    title="message area"
-                    id="msgInput"
-                    className="border-0 p-2"
-                    autoComplete="off"
-                  />
-                </Col>
-
-                <Col xs={1} className="p-0">
-                  <button
-                    type="submit"
-                    id="sendMsgBtn"
-                    title="send message button"
-                    className="sendMsgBtn btn"
-                  >
-                    <img src="/icons/send-chat-msg.svg"></img>
-                  </button>
-                </Col>
-              </Row>
-            </form>
-          </div>
-         {/* <p>hello settings oage</p> */}
-
-        </Col>
-
-        <Col id="settings_container">
-         {/* <p>hello settings oage</p> */}
-        </Col>
       </Row>
     </main>
   );

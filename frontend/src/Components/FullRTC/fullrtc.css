@@ -227,26 +227,10 @@ display: none;
   font-weight: bold;
   height: 5%;
   margin: none;
+  padding-bottom: 0px !important;
+  padding-top: 0px !important;
 }
 
-#messages_container, #settings-container{
-  display: none;
-  z-index: 999;
-  /* border: 1px solid red; */
-  /* border-radius: 5px; */
-  position: absolute;
-  top: 0px;
-  right: 0px;
-  width: 0%;
-  height: 93%;
-  margin: auto;
-  /* transition: 0.5s ease-in-out; */
-}
-/* #messages_container .show-chat {
-  display: block;
-  z-index: 999;
-  opacity: 1;
-} */
 .messages{
   /* border: 1px solid red; */
 }
@@ -332,4 +316,16 @@ display: none;
     /* .control-container img{
         
     } */
+}
+
+#chat-container {
+  display: flex;
+  flex-direction: column;
+  height: inherit;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 180px); /* Adjust based on your layout */
 }

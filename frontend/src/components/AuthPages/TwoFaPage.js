@@ -63,10 +63,14 @@ const TwoFactorAuthPage = ({ id, type }) => {
     (async () => {
       setTimeout(async () => {
         if (twoFaCode) {
-          const twoFaRes = await axiosInstance.post(`/user/twofactor`, {
+          let reqObj = {
             code: twoFaCode,
             userId: id,
-          });
+          };
+          if (type === 'recovery') {
+            reqObj.reqType = 'accountReset';
+          }
+          const twoFaRes = await axiosInstance.post(`/user/twofactor`, reqObj);
           if (twoFaRes.status === 200) {
             setCode(twoFaCode);
             setSent(true);

@@ -176,6 +176,7 @@ let encryptOnLoginA = async (
         fileVault: fileVaultArray,
         clientVault: clientVaultArray,
         recoveryKey: Array.from(masterKeyEncUint),
+        reqType: 'login',
       });
 
       if (resVault.status === 200) {
@@ -391,6 +392,7 @@ let encryptOnLoginB = async (
                 passwordsMain: Array.from(mainUint),
                 passwordsArchive: Array.from(archiveUint),
                 vault: 'file',
+                reqType: 'login',
               }
             );
           }
@@ -421,6 +423,7 @@ let encryptOnLoginB = async (
               type: 'main',
               passwords: Array.from(mergeUint),
               vault: 'file',
+              reqType: 'login',
             });
           }
         }
@@ -489,6 +492,7 @@ let encryptOnLoginB = async (
                 clientsMain: Array.from(mainUint),
                 clientsArchive: Array.from(archiveUint),
                 vault: 'client',
+                reqType: 'login',
               }
             );
           }
@@ -515,6 +519,7 @@ let encryptOnLoginB = async (
               type: 'main',
               clients: Array.from(mergeUint),
               vault: 'client',
+              reqType: 'login',
             });
           }
         }
@@ -618,6 +623,7 @@ const fetchData_encryptOnLogout = async (
             type: 'update',
             passwords: Array.from(fileUpdateUint),
             vault: 'file',
+            reqType: 'login',
           });
           storeFile.forEach(async (data, i) => {
             // console.log(storeFile);
@@ -625,6 +631,7 @@ const fetchData_encryptOnLogout = async (
               userId: userData._id,
               file: data.file,
               name: data.name,
+              reqType: 'login',
             });
           });
         }
@@ -642,6 +649,7 @@ const fetchData_encryptOnLogout = async (
             type: 'update',
             clients: Array.from(clientUpdateUint),
             vault: 'client',
+            reqType: 'login',
           });
         }
         if (clientVault.data) {
@@ -659,12 +667,15 @@ const fetchData_encryptOnLogout = async (
             type: 'main',
             clients: Array.from(clientUint),
             vault: 'client',
+            reqType: 'login',
           });
         }
       }
     }
 
-    const response = await axiosInstance.delete(`/logout`);
+    const response = await axiosInstance.delete(`/logout`, {
+      headers: { reqType: 'login' },
+    });
     if (response?.status === 200) {
       self.postMessage('clearData');
     }
@@ -693,6 +704,7 @@ const restoreEncryption = async (
     const recoveryRes = await axiosInstance.post(`/user/resetpassword`, {
       userId: id,
       password: password,
+      reqType: 'accountReset',
     });
 
     if (recoveryRes.status === 200) {

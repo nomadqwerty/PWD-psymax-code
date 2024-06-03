@@ -32,6 +32,7 @@ const RecoveryPhrasePage = ({ id }) => {
       const recoveryRes = await axiosInstance.post(`/user/recoveryphrase`, {
         userId: id,
         phrase: data.phrase,
+        reqType: 'accountReset',
       });
       // console.log(recoveryRes);
       if (recoveryRes.status === 200) {

@@ -24,6 +24,7 @@ const ClientFileDownLoad = () => {
       const response = await axiosInstance.post(`/file/download`, {
         userId: userId,
         name: fileName,
+        reqType: 'fileDownload',
       });
       if (response.status === 200) {
         setStage('preparing file for decryption...');

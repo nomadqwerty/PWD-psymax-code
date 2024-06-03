@@ -47,7 +47,9 @@ const LoginPage = () => {
         const user_id = responseData._id;
         let subResData;
         try {
-          const subRes = await axiosInstance.get(`/subscriptions/${user_id}`);
+          const subRes = await axiosInstance.get(`/subscriptions/${user_id}`, {
+            headers: { reqType: 'login' },
+          });
           if (subRes.status === 200) {
             subResData = subRes.data.data;
           }
@@ -55,7 +57,9 @@ const LoginPage = () => {
           console.log('no subscription');
         }
 
-        const vaultRes = await axiosInstance.get(`/vault/user/${user_id}`);
+        const vaultRes = await axiosInstance.get(`/vault/user/${user_id}`, {
+          headers: { reqType: 'login' },
+        });
         setUserData(responseData);
         if (vaultRes?.status === 200) {
           toast('Encrypting Client and Password Directories');
@@ -111,7 +115,9 @@ const LoginPage = () => {
               console.warn('Web Crypto API not supported');
             } else {
               let userData = responseData;
-              const response = await axiosInstance.get(`/vault/server`);
+              const response = await axiosInstance.get(`/vault/server`, {
+                headers: { reqType: 'login' },
+              });
               toast('Loading Client and Password Directories');
               const psymaxToken = localStorage.getItem('psymax-token');
               authWorker.postMessage({

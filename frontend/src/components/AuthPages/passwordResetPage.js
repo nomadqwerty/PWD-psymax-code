@@ -33,8 +33,9 @@ const PasswordResetPage = ({ id }) => {
           fileVault: fileEncVault,
           clientVault: clientEncVault,
           recoveryKey: newRecoveryKey,
+          reqType: 'accountReset',
         });
-        // console.log(resVault);
+        console.log(resVault);
         if (resVault.status === 200) {
           toast.success('Account Reset is Successful');
           router.push(`/login`);

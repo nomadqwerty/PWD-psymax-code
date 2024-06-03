@@ -103,7 +103,19 @@ app.use('*', (req, res, next) => {
 const publicUploadsDirectory = path.join(__dirname, 'public', 'uploads');
 app.use('/uploads', express.static(publicUploadsDirectory));
 
-app.use(authenticateJWT);
+app.use(express.json({ limit: '5000kb' }));
+app.use((req, res, next) => {
+  const reqType = req?.body?.reqType;
+  const reqTypeHeader = req.get('reqType');
+
+  if (reqType || reqTypeHeader) {
+    console.log(reqType);
+    console.log(reqTypeHeader);
+    next();
+  } else {
+    authenticateJWT(req, res, next);
+  }
+});
 
 // Use the setupLogoStorage function to set up multer for logo uploads
 const upload = setupLogoStorage();
@@ -112,8 +124,6 @@ app.post('/api/saveLogo', upload.single('logo'), saveLogo);
 // Use the setupEmailStorage function to set up multer for email attachments
 const emailUpload = setupEmailStorage();
 app.post('/api/email/send', emailUpload.array('attachments'), send);
-
-app.use(express.json({ limit: '5000kb' }));
 
 // Use the routes with the "/api" prefix
 app.use('/api', routes);

@@ -30,6 +30,7 @@ const TwoFactorEmailAuth = ({ id }) => {
       const twoFaRes = await axiosInstance.post(`/user/twofactor`, {
         code: twoFaCode,
         email: data.email,
+        reqType: 'accountReset',
       });
       // console.log(twoFaRes);
       if (twoFaRes.status === 200) {

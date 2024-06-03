@@ -163,6 +163,17 @@ const userAppSchema = new Schema({
   },
   trialPeriodActive: { type: Boolean },
   referralBonusCycles: { type: Number },
+  emergencyPassword: {
+    type: String,
+    required:[true, 'emergency password required']
+  },
+  recoveryKey:{
+      type:Buffer,
+      default:''
+  },
+  recoveryPhrase:{
+      type:String,
+  }
 });
 
 const UserSchema = mongoose.model('users', userAppSchema);

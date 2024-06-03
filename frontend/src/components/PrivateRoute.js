@@ -18,15 +18,27 @@ const PrivateRoute = (WrappedComponent) => {
           const responseData = response?.data?.data;
           if (response?.status === 200) {
             localStorage.setItem('psymax-token', responseData?.token);
+            const subRes = await axiosInstance.get(
+              `/subscriptions/${responseData._id}`
+            );
+            let subResData;
+
             localStorage.setItem(
               'psymax-user-data',
               JSON.stringify(responseData)
             );
             // FIXME: Might be preferable to use next-js server side fetch to prevent page access
-            localStorage.setItem(
-              'psymax-account-restricted',
-              !!response.data?.subscription_status
-            );
+            if (subRes.status === 200) {
+              subResData = subRes.data.data;
+
+              let subStatus = subResData.status;
+              let trialPeriod = responseData.trialPeriodActive;
+
+              if (subStatus !== 'ACTIVE' && trialPeriod === false) {
+                localStorage.setItem('psymax-account-restricted', true);
+              }
+            }
+
             dispatch({
               type: 'LOGIN',
               payload: { isLoggedin: true, userData: responseData },
@@ -49,7 +61,7 @@ const PrivateRoute = (WrappedComponent) => {
         router.push('/logout');
         return;
       }
-
+      console.log(isAccountRestricted);
       if (isAccountRestricted) {
         return router.push('/subscription');
       }

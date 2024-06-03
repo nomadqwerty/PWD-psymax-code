@@ -68,6 +68,15 @@ export default function SubscriptionPageCompletion() {
   const onSubmit = async (data) => {
     const submitPromise = async () => {
       try {
+        console.log(data);
+        let userObj = localStorage.getItem('psymax-user-data');
+        if (userObj) {
+          userObj = JSON.parse(userObj);
+          if (userObj['_id']) {
+            data.userId = userObj['_id'];
+          }
+        }
+        console.log(data);
         await axiosInstance.post(`/subscriptions`, {
           ...data,
           email: kontoData?.email || '',

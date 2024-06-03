@@ -22,38 +22,42 @@ const paymentService = createPaymentService();
  * @type {import('express').Handler}
  */
 async function makeSubscription(req, res) {
-  const subscriptionData = req.body;
-  const userId = req.user.user_id;
-  const { payment_method } = req.body;
-
-  // Validation on card fields
-  const subscriptionSchema = Joi.object({
-    iban: Joi.string().required(),
-    given_name: Joi.string().required(),
-    family_name: Joi.string().required(),
-    address_line1: Joi.string().required(),
-    postal_code: Joi.string().required(),
-    city: Joi.string().required(),
-    country_code: Joi.string().required(),
-    email: Joi.string().email().required(),
-    account_holder_name: Joi.string().required(),
-    payment_method: Joi.string()
-      .valid(...Object.values(PaymentMethods))
-      .required(),
-  });
-
-  const { error } = subscriptionSchema.validate(req.body);
-
-  if (error) {
-    let response = {
-      status_code: 400,
-      message: error?.details[0]?.message,
-      data: error,
-    };
-    return res.status(400).send(response);
-  }
-
   try {
+    const subscriptionData = req.body;
+    const userId = req.user?.user_id || req.body?.userId;
+    const { payment_method } = req.body;
+
+    if (userId) {
+      console.log(userId);
+      delete req.body?.userId;
+    }
+    // Validation on card fields
+    const subscriptionSchema = Joi.object({
+      iban: Joi.string().required(),
+      given_name: Joi.string().required(),
+      family_name: Joi.string().required(),
+      address_line1: Joi.string().required(),
+      postal_code: Joi.string().required(),
+      city: Joi.string().required(),
+      country_code: Joi.string().required(),
+      email: Joi.string().email().required(),
+      account_holder_name: Joi.string().required(),
+      payment_method: Joi.string()
+        .valid(...Object.values(PaymentMethods))
+        .required(),
+    });
+
+    const { error } = subscriptionSchema.validate(req.body);
+
+    if (error) {
+      let response = {
+        status_code: 400,
+        message: error?.details[0]?.message,
+        data: error,
+      };
+      return res.status(400).send(response);
+    }
+
     // Check if user has an active subscription
     const existingSubscription = await SubscriptionSchema.findOne({
       userId,

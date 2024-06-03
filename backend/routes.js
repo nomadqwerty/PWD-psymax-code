@@ -19,6 +19,9 @@ router.post('/refreshToken', authController.refreshToken);
 router.delete('/logout', authController.logout);
 router.get('/user/get', authController.get);
 router.post('/user/save', authController.save);
+router.post('/user/twofactor', authController.TwoFaAuth);
+router.post('/user/recoveryphrase', authController.validateRecoveryPhrase);
+router.post('/user/resetpassword', authController.resetPassword);
 
 /* Begruendungstexte */
 router.get('/begruendungstexte/getAll', begruendungstexteController.getAll);

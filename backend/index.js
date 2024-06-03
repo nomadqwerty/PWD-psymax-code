@@ -5,6 +5,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authenticateJWT = require('./middleware/auth');
 const routes = require('./routes');
+const routesVault = require('./routesVault');
+const fileRoutes = require('./fileRoutes');
 const path = require('path');
 const { saveLogo } = require('./controllers/auth');
 const seedBriefData = require('./seeders/brief');
@@ -111,10 +113,12 @@ app.post('/api/saveLogo', upload.single('logo'), saveLogo);
 const emailUpload = setupEmailStorage();
 app.post('/api/email/send', emailUpload.array('attachments'), send);
 
-app.use(express.json());
+app.use(express.json({ limit: '5000kb' }));
 
 // Use the routes with the "/api" prefix
 app.use('/api', routes);
+app.use('/api', routesVault);
+app.use('/api', fileRoutes);
 
 // Use the request error logger middleware globally
 app.use(errorMiddleware);

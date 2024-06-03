@@ -430,7 +430,9 @@ function SubscriptionDetails() {
       <ModelDialogue
         className=""
         actionTitle={'Confirm Cancellation'}
-        options={''}
+        children={() => {
+          return <></>;
+        }}
         open={isCancelDialogModalOpen}
         setOpen={setIsCancelDialogModalOpen}
         confirmationText="Bitte überprüfen Sie Ihre Aktion. Die von Ihnen beabsichtigte Aktion kann nicht rückgängig gemacht werden."

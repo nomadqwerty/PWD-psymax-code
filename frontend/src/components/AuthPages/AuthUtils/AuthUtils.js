@@ -497,6 +497,8 @@ let encryptOnLoginB = async (
             );
           }
           const mergedVaults = vaultMerger('client', updateVault, mainVault);
+          console.log(updateVault);
+          console.log(mainVault);
 
           let newMainVault = { data: mergedVaults, type: 'main' };
           // console.log(newMainVault);

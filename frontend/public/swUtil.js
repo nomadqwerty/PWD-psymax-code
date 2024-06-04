@@ -51,6 +51,7 @@ const fetchWrap = async (url, method, payload) => {
   try {
     let headers = {
       'Content-Type': 'application/json',
+      reqType: 'vaultUpdate',
     };
     if (method == 'GET') {
       let data = await fetch(url, {
@@ -91,12 +92,14 @@ const bgSynReq = async (e, idb) => {
         type: 'update',
         passwords: updateVaultData[0].files,
         vault: 'file',
+        reqType: 'vaultUpdate',
       });
       await fetchWrap(`${serverUrl}/api/vault/user/update/main`, 'POST', {
         userId: updateVaultData[0].userId,
         type: 'update',
         clients: updateVaultData[0].clients,
         vault: 'client',
+        reqType: 'vaultUpdate',
       });
     }
   } else {

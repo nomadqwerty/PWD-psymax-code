@@ -7,6 +7,7 @@ const authenticateJWT = require('./middleware/auth');
 const routes = require('./routes');
 const routesVault = require('./routesVault');
 const fileRoutes = require('./fileRoutes');
+const meetingScheduleRoutes = require('./meetingRoutes');
 const path = require('path');
 const { saveLogo } = require('./controllers/auth');
 const seedBriefData = require('./seeders/brief');
@@ -129,6 +130,7 @@ app.post('/api/email/send', emailUpload.array('attachments'), send);
 app.use('/api', routes);
 app.use('/api', routesVault);
 app.use('/api', fileRoutes);
+app.use('/api', meetingScheduleRoutes);
 
 // Use the request error logger middleware globally
 app.use(errorMiddleware);

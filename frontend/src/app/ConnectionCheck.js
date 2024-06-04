@@ -39,6 +39,7 @@ const ConnectionChecker = ({
           networkStatus = true;
           if (isOffline === true) {
             setIsOffline(false);
+            toast.success('connection restored');
           }
         } else if (navigator.onLine === false) {
           networkStatus = false;
@@ -47,16 +48,20 @@ const ConnectionChecker = ({
             toast('connection lost');
           }
         } else if (navigator.onLine === undefined) {
-          axiosInstance.get(`/vault/user/status`).then((res) => {
-            if (res.status.startsWith('40')) {
-              networkStatus = false;
-              if (isOffline === false) {
-                setIsOffline(true);
+          axiosInstance
+            .get(`/vault/user/status`, {
+              headers: { reqType: 'vaultUpdate' },
+            })
+            .then((res) => {
+              if (res.status.startsWith('40')) {
+                networkStatus = false;
+                if (isOffline === false) {
+                  setIsOffline(true);
+                }
               }
-            }
-          });
+            });
         }
-      }, 60000);
+      }, 1000);
     }
 
     return () => {
@@ -69,6 +74,7 @@ const ConnectionChecker = ({
   useEffect(() => {
     const syncManager = window.SyncManager;
     let indexDB = window.idb;
+    console.log(indexDB, syncManager, isOffline);
     if (
       isOffline === true &&
       syncManager !== undefined &&
@@ -78,6 +84,7 @@ const ConnectionChecker = ({
     ) {
       (async () => {
         if (isOffline === true) {
+          console.log(isOffline);
           // TODO: encrypt data and register BG sync task.
           let fileVaultLength = Object.keys(fileVault).length;
           let clientVaultLength = Object.keys(clientVault).length;
@@ -86,6 +93,12 @@ const ConnectionChecker = ({
           let updateClientVaultLength = Object.keys(updateClientVault).length;
 
           let userData = localStorage.getItem('psymax-user-data');
+          console.log(
+            fileVaultLength,
+            clientVaultLength,
+            updateFileVaultLength,
+            updateClientVaultLength
+          );
           if (
             fileVaultLength > 0 &&
             clientVaultLength > 0 &&
@@ -110,8 +123,9 @@ const ConnectionChecker = ({
               masterKeySalt,
               window
             );
+
             let keysLength = Object.keys(allKeys).length;
-            // console.log(allKeys);
+            console.log(allKeys);
             if (keysLength > 0) {
               const {
                 masterKey,
@@ -127,7 +141,7 @@ const ConnectionChecker = ({
                 operations,
                 masterKey,
                 iv,
-                updateFileVault
+                updateFileVault.data
               );
               let fileUpdateUint = new Uint8Array(fileUpdateEnc);
 
@@ -135,7 +149,7 @@ const ConnectionChecker = ({
                 operations,
                 masterKey,
                 iv,
-                updateClientVault
+                updateClientVault.data
               );
               let clientUpdateUint = new Uint8Array(clientUpdateEnc);
 

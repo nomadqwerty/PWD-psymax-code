@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { io } from "socket.io-client";
 import { Row, Col } from "react-bootstrap";
+import Settings from "../Settings/Settings";
 // import Link from "next/link";
 
 const FullRtc = () => {
@@ -22,10 +23,22 @@ const FullRtc = () => {
 
   //check for media devices
   const [isCameraOn, setIsCameraOn] = useState(null); //camera
+  const [isCameraTest, setIsCameraTest] = useState(false); //camera
 
-  const [videoTrack, setVideoTrack] = useState(null)
+  const videoTestRef = useRef(null); //child testref
+
+  const [videoTrack, setVideoTrack] = useState(null);
 
   const [isMicOn, setIsMicOn] = useState(null); //audio
+  const [isMicTest, setIsMicTest] = useState(false); // is audio test on?
+  const micTestRef = useRef(null); // microphone child test ref?
+
+
+  const [isSpeakerOn, setIsSpeakerOn] = useState(null); //audio
+  const [isSpeakerTest, setIsSpeakerTest] = useState(false); // is audio test on?
+
+
+  
 
   const [screenStream, setScreenStream] = useState(null); // State to store screen stream
   const [isScreenSharing, setIsScreenSharing] = useState(false); // State to track screen sharing status
@@ -33,13 +46,10 @@ const FullRtc = () => {
 
   const [isSettingsVisible, setIsSettingsVisible] = useState(false); // State to track settings page status
 
-
-  
-
-
   const [isChatVisible, setIsChatVisible] = useState(false); // State to track chat view status
 
   const [messages, setMessages] = useState([]); //track messages
+  const messagesEndRef = useRef(null); // Ref to track the end of the messages list
 
   //get time stamp
   const localVideoRef = useRef(null); // Ref for local video element
@@ -50,20 +60,34 @@ const FullRtc = () => {
   const searchParams = useSearchParams();
   const accessKey = searchParams.get("accessKey");
   const localClientName = searchParams.get("clientName");
-
   //VIDEO APP STATE CONTROLS
 
   //add video quality
-  let constraints = {
+  // let constraints = {
+  //   video: {
+  //     noiseSuppression: true,
+  //     width: { min: 640, ideal: 1920, max: 1920 },
+  //     height: { min: 640, ideal: 1920, max: 1920 },
+  //   },
+  //   audio: {
+  //     echoCancellation: true,
+  //     noiseSuppression: true,
+  //   },
+  // };
+
+  const [constraints, setConstraints] = useState({
     video: {
+      deviceId: "",
       noiseSuppression: true,
       width: { min: 640, ideal: 1920, max: 1920 },
       height: { min: 640, ideal: 1920, max: 1920 },
     },
-    audio: {
-      echoCancellation: true,
-      noiseSuppression: true,
-    },
+    audio: { deviceId: "", echoCancellation: true, noiseSuppression: true },
+  });
+
+  const handleDeviceChange = (newStream) => {
+    setStream(newStream);
+    // Further processing with the new stream
   };
 
   let screenRecordConstraints = {
@@ -106,8 +130,8 @@ const FullRtc = () => {
     const { room, userSocketID, remoteName } = data;
     if (socketRef.current && !offerCreated && room === roomAccessKey) {
       socketRef.current.emit("localClientName", localClientName); //emit current local client name when a new socket joins
-      
-      setSocketID(socketRef.current.id)
+
+      setSocketID(socketRef.current.id);
       console.log(
         "user",
         remoteName,
@@ -200,11 +224,9 @@ const FullRtc = () => {
       time: getTime(),
     };
 
-    try{
+    try {
       setMessages((prevMessages) => [...prevMessages, newMessage]);
-    }
-
-    catch (e){
+    } catch (e) {
       console.log("messages not sent", e);
     }
     // Update messages state with the new message
@@ -213,25 +235,30 @@ const FullRtc = () => {
     // socketRef.current.auth.serverOffset = serverOffset;
   };
   useEffect(() => {
-    const clientNameEl = document.getElementById('localClientName');
+    const clientNameEl = document.getElementById("localClientName");
 
     if (stream) {
-      const videoTrack = stream.getTracks().find(track => track.kind === 'video');
+      const videoTrack = stream
+        .getTracks()
+        .find((track) => track.kind === "video");
       setVideoTrack(videoTrack);
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
       if (videoTrack.enabled && clientNameEl) {
-      if(socketRef.current)
-      {
-        socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"on"})
-      }
-  
+        if (socketRef.current) {
+          socketRef.current.emit("remote-camera", {
+            roomAccessKey: accessKey,
+            cameraState: "on",
+          });
+        }
       } else {
-      if(socketRef.current)
-      {
-        socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"off"})
-      }
+        if (socketRef.current) {
+          socketRef.current.emit("remote-camera", {
+            roomAccessKey: accessKey,
+            cameraState: "off",
+          });
+        }
       }
     }
   }, [stream]);
@@ -246,21 +273,50 @@ const FullRtc = () => {
           // const videoTracks = stream.getVideoTracks();
           // console.log(videoTracks);
           setStream(stream);
-          if (localVideoRef.current){
+          if (localVideoRef.current) {
             localVideoRef.current.srcObject = stream;
           }
           // const localVideoEl = document.getElementById("user1");
           // localVideoEl.srcObject = stream;
           // localStream.current.srcObject = stream;
         }
-      } catch (error)  {
-       console.log("Error accessing media devices: ", error);
+      } catch (error) {
+        console.log("Error accessing media devices: ", error);
       }
     };
 
     getLocalStream();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
     // })
   }, [roomAccessKey]);
+
+  useEffect(() => {
+    const getLocalStream = async () => {
+      try {
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop()); // Stop previous tracks
+        }
+        if (roomAccessKey) {
+          const newStream = await navigator.mediaDevices.getUserMedia(
+            constraints
+          );
+          setStream(newStream);
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = newStream;
+          }
+        }
+      } catch (error) {
+        console.error("Error accessing media devices:", error);
+      }
+    };
+
+    getLocalStream();
+  }, [constraints]);
 
   //check status of media devices and update control icons accordingly
   useEffect(() => {
@@ -271,11 +327,10 @@ const FullRtc = () => {
           .getTracks()
           .find((track) => track.kind === "video");
         setIsCameraOn(videoTrack.enabled);
-    isCameraOnRef.current= videoTrack.enabled;
+        isCameraOnRef.current = videoTrack.enabled; //set camera status useref
       }
-    return isCameraOn
+      return isCameraOn;
     };
-
 
     const checkMicState = async () => {
       if (stream) {
@@ -296,40 +351,35 @@ const FullRtc = () => {
 
   const handleRemoteCamera = async (cameraState) => {
     // const checkRemoteVidState = async () => {
-      // const remoteEl = document.getElementById('user2');
-      const remoteClientNameEl = document.getElementById('remoteClientName'); //get remote client name
-      const remoteVideoEl = document.getElementById('user2'); //get remote video element
+    // const remoteEl = document.getElementById('user2');
+    const remoteClientNameEl = document.getElementById("remoteClientName"); //get remote client name
+    const remoteVideoEl = document.getElementById("user2"); //get remote video element
 
-      //test camera state
-      if(cameraState === "off" || false){ 
-        try{
-          remoteVideoEl.style.display ="none";
-          remoteVideoRef.current.style.display = "none";
-          remoteClientNameEl.style.display = "block";
-        }
-       catch(e){
-        console.log(e)
-       }
+    //test camera state
+    if (cameraState === "off" || false) {
+      try {
+        remoteVideoEl.style.display = "none";
+        remoteVideoRef.current.style.display = "none";
+        remoteClientNameEl.style.display = "block";
+      } catch (e) {
+        console.log(e);
       }
-      
-      else {
-        try{
-          remoteVideoEl.style.display ="block";
-          remoteVideoRef.current.style.display = "block";
-          remoteClientNameEl.style.display = "none";
-        }
+    } else {
+      try {
+        remoteVideoEl.style.display = "block";
+        remoteVideoRef.current.style.display = "block";
+        remoteClientNameEl.style.display = "none";
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  };
 
-        catch(e){
-          console.log(e);
-        }
-      }
-    };
-  
   //create socket connection & initialise events if !socketconn && stream
   useEffect(() => {
     if (!socketRef.current && stream) {
       socketRef.current = io("http://localhost:3050"); //create socket instance if noRef and video stream avail
-     
+
       // socket.emit("hello", "hello from offer UE");
       socketRef.current.on("connect", handleSocketConnected);
 
@@ -346,7 +396,6 @@ const FullRtc = () => {
 
       socketRef.current.on("remote-camera", handleRemoteCamera);
 
-
       let leaveChannel = async () => {
         if (socketRef.current) {
           socketRef.current.disconnect();
@@ -356,8 +405,7 @@ const FullRtc = () => {
           socketRef.current.off("connect", handleSocketConnected);
           socketRef.current.off("remoteName", handleRemoteName);
           socketRef.current.off("chat message", handleChatMsg);
-      socketRef.current.off("remote-camera", handleRemoteCamera);
-
+          socketRef.current.off("remote-camera", handleRemoteCamera);
 
           socketRef.current = null;
         }
@@ -390,20 +438,19 @@ const FullRtc = () => {
 
   // }, [messages]);
 
-
   let createPeerConnection = async (userID) => {
     peerConnection = new RTCPeerConnection(servers); //passed ice servers into connection
     const remoteStream = new MediaStream();
     remoteVideoRef.current.srcObject = remoteStream; //set remote elemt srcobject to remotestream
     setRemoteStream(remoteStream);
-    
+
     document.getElementById("user2_div").style.display = "block"; //set user2 element display to true when the user connects
 
-  //  remoteVideoRef.current.style.display = "block";
-   
+    //  remoteVideoRef.current.style.display = "block";
+
     document.getElementById("user1_div").classList.add("smallFrame"); //add smallframe to user1 div on peer connection
 
-    //get stream and set localvideoref 
+    //get stream and set localvideoref
     if (!stream) {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(stream);
@@ -418,15 +465,21 @@ const FullRtc = () => {
     }
 
     //emit camerastate of peer when peer connection is being established
-    if(socketRef.current)
-    {
-      let  videoTrack = stream.getTracks().find((track) => track.kind === "video"); //get video tracks
-      
-      if(videoTrack.enabled){
-      socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"on"})
-      }
-      else{
-      socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"off"})
+    if (socketRef.current) {
+      let videoTrack = stream
+        .getTracks()
+        .find((track) => track.kind === "video"); //get video tracks
+
+      if (videoTrack.enabled) {
+        socketRef.current.emit("remote-camera", {
+          roomAccessKey: accessKey,
+          cameraState: "on",
+        });
+      } else {
+        socketRef.current.emit("remote-camera", {
+          roomAccessKey: accessKey,
+          cameraState: "off",
+        });
       }
     }
     // if (!screenStream) {
@@ -445,11 +498,11 @@ const FullRtc = () => {
       event.streams[0].getTracks().forEach((track) => {
         if (track.kind === "video") {
           remoteStream.addTrack(track, remoteStream);
-        } 
-        
+        }
+
         // else if (track.kind === "screen") {
         //   const screenShareEl = document.getElementById("screenshare");
-          
+
         //   if (screenShareEl) {
         //     screenShareEl.srcObject = new MediaStream([track]);
         //     screenShareEl.style.display = "block";
@@ -528,51 +581,49 @@ const FullRtc = () => {
     }
   };
 
-  // let returnVideo = () =>{
-  //   return(<video
-  //     className="videoPlayer p-0"
-  //     id="user2"
-  //     ref={remoteVideoRef}
-  //     autoPlay
-  //     playsInline
-  //   ></video>)
-  // }
-
   // user camera toggler
   let toggleCamera = async () => {
-    const clientNameEl = document.getElementById('localClientName'); //get client name element 
-    let  videoTrack = stream.getTracks().find((track) => track.kind === "video"); //get video tracks
+    const clientNameEl = document.getElementById("localClientName"); //get client name element
+    let videoTrack = stream.getTracks().find((track) => track.kind === "video"); //get video tracks
     setVideoTrack(videoTrack);
 
     // disable videotrack if enabled and display clientName
     if (videoTrack.enabled && clientNameEl) {
       videoTrack.enabled = false;
-      localVideoRef.current.style.display= "none";
-      clientNameEl.style.display="block";
+      isCameraOnRef.current = videoTrack.enabled;
+      localVideoRef.current.style.display = "none";
+      clientNameEl.style.display = "block";
       setIsCameraOn(false); // Toggle the state
-    console.log("is camera on vidtrack",videoTrack.enabled)
+      console.log("is camera on vidtrack", videoTrack.enabled);
 
-    if(socketRef.current)
-    {
-      socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"off"})
+      if (socketRef.current) {
+        socketRef.current.emit("remote-camera", {
+          roomAccessKey: accessKey,
+          cameraState: "off",
+        });
+      }
     }
-
-    } 
     // enable videotrack if disabled and hide clientName
     else {
       videoTrack.enabled = true;
-      localVideoRef.current.style.display= "block";
-      clientNameEl.style.display="none";
+      localVideoRef.current.style.display = "block";
+      clientNameEl.style.display = "none";
 
       setIsCameraOn(true);
-    console.log("is camera on vidtrack",videoTrack.enabled)
-    if(socketRef.current)
-    {
-      socketRef.current.emit("remote-camera",{roomAccessKey:accessKey, cameraState:"on"})
+      console.log("is camera on vidtrack", videoTrack.enabled);
+      if (socketRef.current) {
+        socketRef.current.emit("remote-camera", {
+          roomAccessKey: accessKey,
+          cameraState: "on",
+        });
+      }
     }
-    }
+     // Call the getVideoTestOutput method from the child component
+   if (videoTestRef.current && isCameraTest) {
+    videoTestRef.current.getVideoTestOutput();
+  }
   };
-
+  
   //user mic toggler
   let toggleMic = async () => {
     let audioTrack = stream.getTracks().find((track) => track.kind === "audio");
@@ -585,7 +636,7 @@ const FullRtc = () => {
       setIsMicOn(true);
     }
   };
-  
+
   let getTime = () => {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, "0");
@@ -593,11 +644,9 @@ const FullRtc = () => {
     return `${hours}:${minutes}`;
   };
 
-  const setMembersContainer = ()=>{
-    
-  }
+  const setMembersContainer = () => {};
 
-  let toggleChat = async () => {
+  let toggleSettings = async () => {
     // if(!isChatVisible){
     //   setIsSettingsVisible(false);
     //   settingsEl.style.width = "0%";
@@ -605,11 +654,12 @@ const FullRtc = () => {
     //   membersVideoContainer.style.width = "100%";
     // }
 
-    const messagesContainer = document.getElementById("messages_container");
+    const messagesContainer = document.getElementById("component_wrapper");
     const membersVideoContainer = document.getElementById("members_container");
-    const input = document.getElementById("msgInput");
+    // const input = document.getElementById("msgInput");
+    const settingsContainer = document.getElementById("settings-wrapper");
 
-    if (!isChatVisible) {
+    if (!isSettingsVisible && !isChatVisible) {
       try {
         membersVideoContainer.style.width = "75%";
 
@@ -620,48 +670,77 @@ const FullRtc = () => {
             // Render the chat component contents after width adjustment is completed
             messagesContainer.style.width = "25%";
             messagesContainer.style.display = "block";
-            input.focus();
-            setIsChatVisible(true);
+            if (settingsContainer) {
+              settingsContainer.style.display = "block";
+              setIsSettingsVisible(true);
+            }
+            // input.focus();
           },
           { once: true }
         ); // Ensure the event listener is removed after firing once
-      } catch (e){
-        console.log("could not set chat visible", e);
+      } catch (e) {
+        console.log("could not set settings visible", e);
       }
+    } else if (isChatVisible) {
+      toggleChat();
     } else {
       try {
-        setIsChatVisible(false);
         messagesContainer.style.width = "0%";
         messagesContainer.style.display = "none";
         membersVideoContainer.style.width = "100%";
-      } catch {
-        console.log("could not set chat not-visible");
+
+        setIsSettingsVisible(false);
+        if (settingsContainer) {
+          settingsContainer.style.display = "none";
+        }
+      } catch (e) {
+        console.log("could not set settings not-visible", e);
       }
     }
   };
+
+  let leaveCall = async () =>{
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop()); // Stop previous tracks
+    }
+    router.push("/lobby")
+  }
   const Message = ({ message, localClientName }) => {
-  return (
-    <li key={message.id} className={`msgItem mb-1 ${message.clientName === localClientName ? "right" : "left"}`}>
-      <p className={`m-0 mb-1 clientNameDate ${message.clientName === localClientName ? "right" : "left"}`}>
-        <span className="clientName"> {message.clientName} </span>
-        <span className="chatTimeStamp">{message.time} </span>
-      </p>
-      <p className={`msg m-0 ${message.clientName === localClientName ? "right" : "left"}`}>
-        {message.message}
-      </p>
-    </li>
-  );
-};
+    return (
+      <li
+        key={message.id}
+        className={`msgItem mb-1 ${
+          message.clientName === localClientName ? "right" : "left"
+        }`}
+      >
+        <p
+          className={`m-0 mb-1 clientNameDate ${
+            message.clientName === localClientName ? "right" : "left"
+          }`}
+        >
+          <span className="clientName"> {message.clientName} </span>
+          <span className="chatTimeStamp">{message.time} </span>
+        </p>
+        <p
+          className={`msg m-0 ${
+            message.clientName === localClientName ? "right" : "left"
+          }`}
+        >
+          {message.message}
+        </p>
+      </li>
+    );
+  };
   //chat listener
 
-  useEffect(()=>{
-// if (typeof Window !== "undefined") {
+  useEffect(() => {
+    // if (typeof Window !== "undefined") {
     let counter = 0;
     const form = document.getElementById("form");
     const input = document.getElementById("msgInput");
     // const messages = document.getElementById("messages");
 
-    if (form){
+    if (form) {
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         if (input.value) {
@@ -679,61 +758,52 @@ const FullRtc = () => {
         }
       });
     }
-  // }
-  },[])
+    // }
+  }, []);
 
-  // let toggleSettings = async () =>{
-  //   const messagesContainer = document.getElementById("messages_container");
-  //   const membersVideoContainer = document.getElementById("members_container");
-  //   if (isChatVisible && !isSettingsVisible){
-  //       setIsChatVisible(false);
-  //       messagesContainer.style.width = "0%";
-  //       messagesContainer.style.display = "none";
-  //       membersVideoContainer.style.width = "100%";
-  //   }
+  let toggleChat = async () => {
+    const messagesContainer = document.getElementById("component_wrapper");
+    const membersVideoContainer = document.getElementById("members_container");
+    const input = document.getElementById("msgInput");
+    const chatContainer = document.getElementById("chat-container");
 
-  //   // const settingsEl = document.getElementById("settings_container");
-  //   // const membersVideoContainer = document.getElementById("members_container");
-  //   membersVideoContainer.style.width = "75%";
+    if (!isChatVisible && !isSettingsVisible) {
+      try {
+        membersVideoContainer.style.width = "75%";
 
-  //   // isChatVisible?setIsChatVisible(false):null;
-
-  //   if(!isSettingsVisible && !isChatVisible){
-  //     // settingsEl.style.display = 'block';
-  //     try {
-  //       membersVideoContainer.style.width = "75%";
-
-  //       // Add event listener for transitionend event
-  //       membersVideoContainer.addEventListener(
-  //         "transitionend",
-  //         () => {
-  //           // Render the chat component contents after width adjustment is completed
-  //           settingsEl.style.width = "25%";
-  //           settingsEl.style.display = "block";
-  //           setIsSettingsVisible(true);
-  //         },
-  //         { once: true }
-  //       ); // Ensure the event listener is removed after firing once
-  //     } catch {
-  //       console.log("could not set setings visible");
-  //     }
-  //   } else {
-  //     try {
-  //       setIsSettingsVisible(false);
-  //       settingsEl.style.width = "0%";
-  //       settingsEl.style.display = "none";
-  //       membersVideoContainer.style.width = "100%";
-  //     } catch {
-  //       console.log("could not set settings not-visible");
-  //     }
-  //   }
-  // }
-
-  //switch cureent stream 
-//  const switchStream =  (mediaStream) =>{
-//       setStream(mediaStream);
-//       setScreenSharingId(socketRef?.current.id || "")
-//     };
+        // Add event listener for transitionend event
+        membersVideoContainer.addEventListener(
+          "transitionend",
+          () => {
+            // Render the chat component contents after width adjustment is completed
+            messagesContainer.style.width = "25%";
+            messagesContainer.style.display = "block";
+            chatContainer.style.display = "block";
+            input.focus();
+            if (messagesEndRef.current) {
+              messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+            }
+            setIsChatVisible(true);
+          },
+          { once: true }
+        ); // Ensure the event listener is removed after firing once
+      } catch (e) {
+        console.log("could not set chat visible", e);
+      }
+    } else if (isSettingsVisible) {
+      toggleSettings();
+    } else {
+      try {
+        setIsChatVisible(false);
+        chatContainer.style.display = "none";
+        messagesContainer.style.width = "0%";
+        messagesContainer.style.display = "none";
+        membersVideoContainer.style.width = "100%";
+      } catch {
+        console.log("could not set chat not-visible");
+      }
+    }
+  };
 
   // Function to start screen sharing
   let toggleScreenSharing = async () => {
@@ -742,8 +812,10 @@ const FullRtc = () => {
       // If no IDs exist, get new stream for the screen stream
       setIsScreenSharing(true);
       try {
-        const stream = await navigator.mediaDevices.getDisplayMedia(screenRecordConstraints);
-        
+        const stream = await navigator.mediaDevices.getDisplayMedia(
+          screenRecordConstraints
+        );
+
         setStream(stream);
         setScreenStream(stream);
         localVideoRef.current.srcObject = stream;
@@ -757,13 +829,13 @@ const FullRtc = () => {
       // Check for screensharing true and existing screenshareID
       // If IDs exist, get new stream for video and audio camera
       setIsScreenSharing(false);
-  
+
       if (screenStream) {
         screenStream.getTracks().forEach((track) => track.stop());
         setScreenStream(null);
+        setScreenSharingId("");
       }
-      setScreenSharingId("");
-  
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia(constraints); // Get video and audio devices from user
         setStream(stream); // Switch stream to obtained media stream
@@ -772,75 +844,43 @@ const FullRtc = () => {
         console.error("Could not turn on user screen & switch stream", e);
       }
     }
-  
+
     if (socketID?.peerConnection) {
       Object.values(socketID.peerConnection).forEach((peer) => {
-        const videoTrack = stream?.getTracks().find(track => track.kind === 'video');
+        const videoTrack = stream
+          ?.getTracks()
+          .find((track) => track.kind === "video");
         if (videoTrack) {
-          peer.getSenders()[1].replaceTrack(videoTrack).catch((e) => {
-            console.error(e);
-          });
+          peer
+            .getSenders()[1]
+            .replaceTrack(videoTrack)
+            .catch((e) => {
+              console.error(e);
+            });
         }
       });
     }
   };
-  
-    //listen for end of stream from outside screen toggle button
 
-    screenStream ? (screenStream.getVideoTracks()[0].onended = function () {
-      setIsScreenSharing(false);
-      toggleScreenSharing();
-     // doWhatYouNeedToDo();
-   })
- : null;
-  // let displayFrame = document.getElementById
+  //listen for end of stream from outside screen toggle button
 
-  // const reInitializeStream = (video, audio, type='userMedia') => {
-  //   const media = type === 'userMedia' 
-  //     ? getVideoAudioStream(video, audio) 
-  //     : navigator.mediaDevices.getDisplayMedia({ video: true });
-
-  //   return new Promise((resolve, reject) => {
-  //     media.then((stream) => {
-  //       if (type === 'displayMedia') {
-  //         toggleVideoTrack({ audio, video });
-  //       }
-  //       createVideo({ id: myID, stream });
-  //       replaceStream(stream);
-  //       resolve(true);
-  //     }).catch((error) => {
-  //       console.error("Error in reInitializeStream: ", error);
-  //       reject(error);
-  //     });
-  //   });
-  // };
-
-  // const toggleVideoTrack = (status) => {
-  //   const myVideo = getMyVideo();
-  //   if (myVideo && !status.video) {
-  //     myVideo.srcObject?.getVideoTracks().forEach((track) => {
-  //       if (track.kind === 'video') {
-  //         track.stop();
-  //       }
-  //     });
-  //   } else if (myVideo) {
-  //     reInitializeStream(status.video, status.audio);
-  //   }
-  // };
-
-  // const replaceStream = (mediaStream) => {
-  //   Object.values(peers).forEach((peer) => {
-  //     peer.peerConnection?.getSenders().forEach((sender) => {
-  //       if (sender.track.kind === "audio" && mediaStream.getAudioTracks().length > 0) {
-  //         sender.replaceTrack(mediaStream.getAudioTracks()[0]);
-  //       }
-  //       if (sender.track.kind === "video" && mediaStream.getVideoTracks().length > 0) {
-  //         sender.replaceTrack(mediaStream.getVideoTracks()[0]);
-  //       }
-  //     });
-  //   });
-  // };
-
+ if (screenStream){
+  (screenStream.getVideoTracks().onended = function () {
+        // setIsScreenSharing(false);
+        // toggleScreenSharing();
+        // doWhatYouNeedToDo();
+        setIsScreenSharing(false);
+          screenStream.getTracks().forEach((track) => track.stop());
+          setScreenStream(null);
+          setScreenSharingId("");
+      })
+    }
+  // Scroll to the bottom of the chat when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   return (
     <main className="containerr m-0 p-0">
@@ -848,22 +888,22 @@ const FullRtc = () => {
         <Col xs={12} id="members_container" className="p-0 m-0">
           <Row id="videos" className="p-0 m-0">
 
-            {/* {typeof window !== "undefined" && ( */}
-              <Col className="p-0 m-0 videoBg" id="user1_div">
-              <video
-        className="videoPlayer p-0"
-        id="user1"
-        ref={localVideoRef}
-        autoPlay
-        playsInline
-        muted
-      >
-      </video>
-      <h1 id="localClientName" className="clientDisplayName">{localClientName}</h1>
-              </Col>
-            {/* )} */}
+            <Col className="p-0 m-0 videoBg" id="user1_div">
+              {/* {stream && ( */}
+                <video
+                  className="videoPlayer p-0"
+                  id="user1"
+                  autoPlay
+                  playsInline
+                  muted
+                  ref={localVideoRef} 
+                ></video>
 
-            {/* {typeof window !== "undefined" && ( */}
+              <h1 id="localClientName" className="clientDisplayName">
+                {localClientName}
+              </h1>
+            </Col>
+
             <Col id="user2_div" className="p-0 m-0 videoBg">
               <video
                 className="videoPlayer p-0"
@@ -873,15 +913,13 @@ const FullRtc = () => {
                 playsInline
               ></video>
 
-      <h1 id="remoteClientName" className="clientDisplayName">{remoteClientName}</h1>
-
+              <h1 id="remoteClientName" className="clientDisplayName">
+                {remoteClientName}
+              </h1>
             </Col>
-              
-
-            {/* )} */}
           </Row>
         </Col>
-        
+
         <Col xs={12} className="footer-container">
           <Row className="footer p-3">
             <Col title="Psymax Logo" className="logo_div logo">
@@ -890,10 +928,10 @@ const FullRtc = () => {
 
             <Col id="controls" className="">
               <div
-               className="control-container"
-                title="Mikrofon umschalten" 
+                className="control-container"
+                title="Mikrofon umschalten"
                 id="mic-btn"
-                >
+              >
                 <img
                   className="icon"
                   src={isMicOn ? "/icons/mic-on.svg" : "/icons/mic-off.svg"}
@@ -902,7 +940,11 @@ const FullRtc = () => {
                 />
               </div>
 
-              <div className="control-container" id="camera-btn" title="Kamera umschalten">
+              <div
+                className="control-container"
+                id="camera-btn"
+                title="Kamera umschalten"
+              >
                 <img
                   id="cameraBtn"
                   className="icon"
@@ -916,10 +958,11 @@ const FullRtc = () => {
                 />
               </div>
 
-              <div 
-              className="control-container" 
-              id="pres-btn" 
-              title="Bildschirm teilen">
+              <div
+                className="control-container"
+                id="pres-btn"
+                title="Bildschirm teilen"
+              >
                 <img
                   className="icon"
                   src={
@@ -932,38 +975,36 @@ const FullRtc = () => {
                 />
               </div>
 
-              <div 
-              className="control-container" 
-              id="settings-btn"
-              title="Einstellungen"
+              <div
+                className="control-container"
+                id="settings-btn"
+                title="Einstellungen"
               >
                 <img
                   className="icon"
                   src="/icons/settings.svg"
                   alt="settings button"
-                  // onClick={toggleSettings}
+                  onClick={toggleSettings}
                 />
               </div>
 
-              <a 
-              href="/lobby"
-              title="Anruf beenden"
-              >
-                <div className="control-container" id="leave-call-btn">
+                <div 
+                title="Anruf beenden"
+                className="control-container" id="leave-call-btn">
                   <img
                     className="icon"
                     src="/icons/leave-call.svg"
                     alt="leave call button"
+                    onClick={leaveCall}
                   />
                 </div>
-              </a>
             </Col>
 
             <Col
-             className="chat_div control-container" 
-             id="chat-btn"
-             title="Plaudern"
-             >
+              className="chat_div control-container"
+              id="chat-btn"
+              title="Plaudern"
+            >
               <img
                 className="icon"
                 src="/icons/chat.svg"
@@ -974,21 +1015,31 @@ const FullRtc = () => {
           </Row>
         </Col>
 
-        <Col id="messages_container" className="p-0">
-          <div className="">
+        <Col id="component_wrapper" className="p-0">
+          <Row id="chat-container" className="">
+            <Col>
             <h2 className="p-3 chat-title mb-0">Chat</h2>
-            <ul id="messages" className="p-3">
-             {messages.map((message) => (
-    <Message key={message.id} message={message} localClientName={localClientName} />
-  ))}
+            </Col>
+            <Col className="p-0 m-0 chat-messages"> 
+            <ul id="messages" className="p-3 mb-0">
+              {messages.map((message) => (
+                <Message
+                  key={message.id}
+                  message={message}
+                  localClientName={localClientName}
+                />
+              ))}
+              <li className="messagesEndRef" ref={messagesEndRef} />
             </ul>
-
+            </Col>
+           
+           <Col>
             <form id="form" action="" className="">
               <Row id="sendMsgRow" className="p-0 m-0">
                 <Col xs={11} className="p-0">
                   <input
                     placeholder="Nachricht absenden"
-                    title="message area"
+                    title="Nachrichtenbereich"
                     id="msgInput"
                     className="border-0 p-2"
                     autoComplete="off"
@@ -999,21 +1050,38 @@ const FullRtc = () => {
                   <button
                     type="submit"
                     id="sendMsgBtn"
-                    title="send message button"
+                    title="Chat-Nachricht senden"
                     className="sendMsgBtn btn"
                   >
-                    <img src="/icons/send-chat-msg.svg"></img>
+                    <img alt="Chat-Nachricht senden" src="/icons/send-chat-msg.svg"></img>
                   </button>
                 </Col>
               </Row>
             </form>
-          </div>
-         {/* <p>hello settings oage</p> */}
+           </Col>
+          </Row>
 
-        </Col>
+          <Settings 
+          isCameraTest={isCameraTest} 
+          setIsCameraTest={setIsCameraTest}
+          isCameraOn={isCameraOn} 
+          videoTestRef={videoTestRef} 
 
-        <Col id="settings_container">
-         {/* <p>hello settings oage</p> */}
+          isMicTest = {isMicTest}
+          setIsMicTest = {setIsMicTest}
+          micTestRef={micTestRef} 
+          isMicOn = {isMicOn}
+
+
+          isSpeakerTest = {isSpeakerTest}
+          setIsSpeakerTest = {setIsSpeakerTest}
+          setIsSpeakerOn = {setIsSpeakerOn}
+          isSpeakerOn = {isSpeakerOn}
+
+
+           onDeviceChange={handleDeviceChange} 
+           stream={stream} 
+           />
         </Col>
       </Row>
     </main>

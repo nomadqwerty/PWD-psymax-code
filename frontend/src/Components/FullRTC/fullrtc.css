@@ -25,7 +25,7 @@
   height: 93%;
   /* border: 1px solid red; */
   overflow: hidden;
-  transition: 0.5s ease-in-out;
+  transition: 0.3s ease-in-out;
 }
 
 /* .clientName{
@@ -229,7 +229,7 @@ display: none;
   margin: none;
 }
 
-#messages_container, #settings-container{
+#component_wrapper{
   display: none;
   z-index: 999;
   /* border: 1px solid red; */
@@ -247,7 +247,8 @@ display: none;
   z-index: 999;
   opacity: 1;
 } */
-.messages{
+#messages{
+  list-style-type: none !important;
   /* border: 1px solid red; */
 }
 .msgItem{
@@ -276,6 +277,11 @@ display: none;
   background-color: rgba(238, 238, 238, 0.517);
   padding: 0.3rem;
   border-radius: 0.5rem;
+}
+
+.messagesEndRef{
+
+  /* display: none; */
 }
 
 #form{
@@ -332,4 +338,18 @@ display: none;
     /* .control-container img{
         
     } */
+}
+
+#chat-container {
+  display: flex;
+  flex-direction: column;
+  height: inherit;
+  display: none;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(94%); /* Adjust based on your layout */
+  margin-bottom: 0px;
 }

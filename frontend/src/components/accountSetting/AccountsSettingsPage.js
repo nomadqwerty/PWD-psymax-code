@@ -461,18 +461,19 @@ const AccountSettingsPage = React.memo(() => {
             errors={errors}
           /> */}
           {/* TwoFA */}
-          <TwoFaktorAuthentifizierung spacing={spacing} />
+          {/* FIXME: 2fa has been added to login and account recovery by default */}
+          {/* <TwoFaktorAuthentifizierung spacing={spacing} /> */}
 
-          <TwoFA
+          {/* <TwoFA
             spacing={spacing}
             kontoData={kontoData}
             setKontoData={setKontoData}
             handleChange={handleChange}
             register={register}
             errors={errors}
-          />
+          /> */}
           {/* TwoFA message */}
-          <TwoFaktorMessage spacing={spacing} />
+          {/* <TwoFaktorMessage spacing={spacing} /> */}
 
           <SubmitBtn isSubmitting={isSubmitting} />
         </form>

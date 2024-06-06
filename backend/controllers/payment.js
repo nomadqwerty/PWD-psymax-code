@@ -57,7 +57,7 @@ async function makeSubscription(req, res) {
     // Check if user has an active subscription
     const existingSubscription = await SubscriptionSchema.findOne({
       userId,
-      // status: 'active',
+      // statusTracking: { $ne: SubscriptionStatusTracking.INACTIVE },
     });
     if (existingSubscription) {
       return res
@@ -123,7 +123,10 @@ async function makeSubscription(req, res) {
 async function getSubscriptionByUser(req, res) {
   const userId = req.params.userId;
   try {
-    const subscription = await SubscriptionSchema.findOne({ userId });
+    const subscription = await SubscriptionSchema.findOne({
+      userId,
+      // statusTracking: { $ne: SubscriptionStatusTracking.INACTIVE },
+    });
 
     if (!subscription) {
       return res.status(404).json({ message: 'Subscription not found' });
@@ -220,11 +223,9 @@ async function changePaymentMethod(req, res) {
 async function cancelSubscription(req, res) {
   const userId = req.params.userId;
   try {
-    const subscription = await SubscriptionSchema.findOneAndUpdate(
+    const subscription = await SubscriptionSchema.findOneAndDelete(
       { userId },
-      {
-        statusTracking: SubscriptionStatusTracking.INACTIVE,
-      }
+      { new: true }
     );
     await paymentService.cancelSubscription(
       subscription.paymentMethod,

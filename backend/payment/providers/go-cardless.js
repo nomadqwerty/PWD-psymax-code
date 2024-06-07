@@ -15,6 +15,14 @@ const {
 const { globalExtendedPricing } = require('../../config');
 const { InvoiceSchema } = require('../../models/invoiceModel');
 
+const Redis = require('ioredis');
+const Bull = require('bull');
+
+const redis = new Redis();
+const eventQueue = new Bull('event-queue', {
+  redis: { host: 'localhost', port: 6379 },
+});
+
 /**
  *
  * @param {Number} cycles
@@ -81,6 +89,13 @@ class GoCardlessProvider extends PaymentProvider {
     super();
     this.baseCurrency = 'EUR';
     this.client = new GoCardlessClient(apiKey, constants.Environments.Sandbox);
+    this.eventQueue = eventQueue;
+
+    // Set up the event queue
+    eventQueue.process(async (job) => {
+      const event = job.data;
+      await this.processEvent(event);
+    });
   }
 
   /**
@@ -314,39 +329,20 @@ class GoCardlessProvider extends PaymentProvider {
    */
 
     switch (event.action) {
-      case 'confirmed':
-        return `Payment ${event.links.payment} has been confirmed.\n`;
-      default:
-        return `Do not know how to process an event with action ${event.action}`;
-    }
-  }
-
-  /**
-   *
-   * @param {WebhookEvent} event
-   * @returns
-   */
-  async processSubscription(event) {
-    /*
-     You should keep some kind of record of what events have been processed
-     to avoid double-processing, checking if the event already exists
-     before processing it.
-  
-     You should perform processing steps asynchronously to avoid timing out
-     if you receive many events at once. To do this, you could use a
-     queueing system like
-     # Bull https://github.com/OptimalBits/bull
-  
-     Once you've performed the actions you want to perform for an event, you
-     should make a record to avoid accidentally processing the same one twice
-   */
-
-    switch (event.action) {
-      case 'payment_created': {
+      case 'confirmed': {
         // TODO: Move non gocardless logic out of here for ..reusability?
+        const paymentId = event.links.payment;
+
         const subscriptionOld = await SubscriptionSchema.findOne({
-          subscriptionId: event.links.subscription,
+          lastCreatedPaymentId: paymentId,
         });
+
+        if (!subscription) {
+          return `Payment ${paymentId} has not been created yet.\n`;
+        }
+        // const subscriptionOld = await SubscriptionSchema.findOne({
+        //   subscriptionId: event.links.subscription,
+        // });
 
         const cyclesNew = subscriptionOld.paidCyclesCount + 1;
 
@@ -367,14 +363,12 @@ class GoCardlessProvider extends PaymentProvider {
           return;
         }
 
-        // FIXME: ASSUMING THIS PAYMENT IS SUCCESSFUL
         const invoice = new InvoiceSchema({
           userId: subscription.userId,
           referenceId: event.links.payment,
           plan: subscription.plan,
         });
         await invoice.save();
-        // FIXME: STOP ASSUMPTION
 
         // if user has paid >= 12, move to extended plan
         if (
@@ -449,10 +443,50 @@ class GoCardlessProvider extends PaymentProvider {
         await this.rewardReferrer(referrer._id, referrerSubscription._id);
 
         return `Subscription ${event.links.subscription} has new payment ${event.links.payment} created.\n`;
+        // return `Payment ${event.links.payment} has been confirmed.\n`;
       }
-      case 'payment_confirmed':
-        // TODO: Move logic from "payment_created" here after confirmation this exists
-        break;
+      default:
+        return `Do not know how to process an event with action ${event.action}`;
+    }
+  }
+
+  storePaymentId = async (paymentId) => {
+    // Perhaps store this a field in the subscription model?
+    await SubscriptionSchema.findOneAndUpdate(
+      { lastCreatedPaymentId: paymentId },
+      {
+        lastCreatedPaymentId: paymentId,
+      },
+      { new: true }
+    );
+  };
+  /**
+   *
+   * @param {WebhookEvent} event
+   * @returns
+   */
+  async processSubscription(event) {
+    /*
+     You should keep some kind of record of what events have been processed
+     to avoid double-processing, checking if the event already exists
+     before processing it.
+  
+     You should perform processing steps asynchronously to avoid timing out
+     if you receive many events at once. To do this, you could use a
+     queueing system like
+     # Bull https://github.com/OptimalBits/bull
+  
+     Once you've performed the actions you want to perform for an event, you
+     should make a record to avoid accidentally processing the same one twice
+   */
+
+    switch (event.action) {
+      case 'payment_created': {
+        // Store the payment id, then wait for next event of payment_confirmed to get the payment status
+        const paymentId = event.links.payment;
+        await this.storePaymentId(paymentId);
+        return `Payment ${paymentId} has been created.\n`;
+      }
       default:
         return `Do not know how to process an event with action ${event.action}`;
     }
@@ -491,20 +525,36 @@ class GoCardlessProvider extends PaymentProvider {
    * @param {WebhookEvent} event
    * @returns
    */
-  processEvent = (event) => {
-    console.log('Event is', event);
+  async processEvent(event) {
     switch (event.resource_type) {
       case 'mandates':
-        return this.processMandate(event);
+        await this.processMandate(event);
+        break;
       case 'payments':
-        return this.processPayment(event);
+        await this.processPayment(event);
+        break;
       case 'subscriptions':
-        return this.processSubscription(event);
+        await this.processSubscription(event);
+        break;
       default:
-        console.log(event);
-        return `Do not know how to process an event with resource_type ${event.resource_type}`;
+        console.log(
+          `Do not know how to process an event with resource_type ${event.resource_type}`
+        );
+        throw new Error(
+          `Do not know how to process an event with resource_type ${event.resource_type}`
+        );
     }
-  };
+  }
+
+  // Function to check if an event has already been processed
+  async isEventProcessed(eventId) {
+    return await redis.exists(eventId);
+  }
+
+  // Function to mark an event as processed
+  async markEventAsProcessed(eventId) {
+    await redis.set(eventId, 'processed');
+  }
 
   /**
    * @param  {import('express').Request} request
@@ -546,7 +596,15 @@ class GoCardlessProvider extends PaymentProvider {
     const events = parseEvents(body, webhookEndpointSecret, signatureHeader);
     try {
       for (const event of events) {
-        await this.processEvent(event);
+        // Check if event has already been processed
+        if (await this.isEventProcessed(event.id)) {
+          continue;
+        }
+        // Add the event to the queue for processing
+        await eventQueue.add(event);
+
+        // Mark the event as processed
+        await this.markEventAsProcessed(event.id);
       }
     } catch (error) {
       console.log('Error occurred handling webhook event', error);

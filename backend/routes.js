@@ -141,6 +141,16 @@ router.post(
   '/subscriptions/:userId/cancel',
   paymentsController.cancelSubscription
 );
+router.get(
+  '/subscriptions/:userId/invoices',
+  paymentsController.getInvoicesByUser
+);
+router.put(
+  '/subscriptions/:userId/method',
+  paymentsController.changePaymentMethod
+);
+
+/* Invoices */
 router.post(
   '/invoices/:id/download-receipt',
   paymentsController.downloadReceiptPDF
@@ -149,15 +159,11 @@ router.post(
   '/invoices/download-summary',
   paymentsController.downloadSummaryReceiptPDFs
 );
-router.get(
-  '/subscriptions/:userId/invoices/',
-  paymentsController.getInvoicesByUser
-);
-router.put(
-  '/subscriptions/:userId/method/',
-  paymentsController.changePaymentMethod
-);
+
+/* User */
+router.put('/users/:id/extend-trial', userController.extendTrialPhase);
+
+/* Webhooks */
 router.post('/webhooks/checkout', paymentsController.webhookHandler);
-router.put('/user/extendTrialPhase/:id', userController.extendTrialPhase);
 
 module.exports = router;

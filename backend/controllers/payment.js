@@ -373,11 +373,19 @@ async function downloadReceiptPDF(req, res) {
 async function downloadSummaryReceiptPDFs(req, res) {
   const { invoiceIds } = req.body;
 
-  if (!invoiceIds) {
-    return res.status(400).json({
-      status: 'fail',
-      message: 'Bad request', // translate!
-    });
+  const subscriptionSchema = Joi.object({
+    invoiceIds: Joi.array().items(Joi.string()).required(),
+  });
+
+  const { error } = subscriptionSchema.validate(req.body);
+
+  if (error) {
+    let response = {
+      status_code: 400,
+      message: error?.details[0]?.message,
+      data: error,
+    };
+    return res.status(400).send(response);
   }
 
   const pdfsFolderPath = path.join('public', 'pdfs');

@@ -2,6 +2,7 @@ import { Grid } from '@mui/material';
 import { passwordGenerator } from '../../utils/utilityFn';
 import axiosInstance from '../../utils/axios';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 const SubmitBtn = ({ isSubmitting, setValues, values }) => {
   const [userId, setUserId] = useState(null);
@@ -32,7 +33,9 @@ const SubmitBtn = ({ isSubmitting, setValues, values }) => {
                 `/meetings/create`,
                 meetingDetails
               );
-              console.log(meetingRes);
+              if (meetingRes.status === 200) {
+                toast.success('meeting scheduled');
+              }
             }
           }}
         >

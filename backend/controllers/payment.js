@@ -22,46 +22,42 @@ const paymentService = createPaymentService();
  * @type {import('express').Handler}
  */
 async function makeSubscription(req, res) {
+  const subscriptionData = req.body;
+  const { user_id: userId, email } = req.user;
+  const { payment_method } = req.body;
+
+  // Validation on card fields
+  const subscriptionSchema = Joi.object({
+    iban: Joi.string().required(),
+    given_name: Joi.string().required(),
+    family_name: Joi.string().required(),
+    address_line1: Joi.string().required(),
+    postal_code: Joi.string().required(),
+    city: Joi.string().required(),
+    country_code: Joi.string().required(),
+    email: Joi.string().email().required(),
+    account_holder_name: Joi.string().required(),
+    payment_method: Joi.string()
+      .valid(...Object.values(PaymentMethods))
+      .required(),
+  });
+
+  const { error } = subscriptionSchema.validate(req.body);
+
+  if (error) {
+    let response = {
+      status_code: 400,
+      message: error?.details[0]?.message,
+      data: error,
+    };
+    return res.status(400).send(response);
+  }
+
   try {
-    const subscriptionData = req.body;
-    const userId = req.user?.user_id || req.body?.userId;
-    const { payment_method } = req.body;
-
-    if (userId) {
-      console.log(userId);
-      delete req.body?.userId;
-    }
-    // Validation on card fields
-    const subscriptionSchema = Joi.object({
-      iban: Joi.string().required(),
-      given_name: Joi.string().required(),
-      family_name: Joi.string().required(),
-      address_line1: Joi.string().required(),
-      postal_code: Joi.string().required(),
-      city: Joi.string().required(),
-      country_code: Joi.string().required(),
-      email: Joi.string().email().required(),
-      account_holder_name: Joi.string().required(),
-      payment_method: Joi.string()
-        .valid(...Object.values(PaymentMethods))
-        .required(),
-    });
-
-    const { error } = subscriptionSchema.validate(req.body);
-
-    if (error) {
-      let response = {
-        status_code: 400,
-        message: error?.details[0]?.message,
-        data: error,
-      };
-      return res.status(400).send(response);
-    }
-
     // Check if user has an active subscription
     const existingSubscription = await SubscriptionSchema.findOne({
       userId,
-      // status: 'active',
+      // statusTracking: { $ne: SubscriptionStatusTracking.INACTIVE },
     });
     if (existingSubscription) {
       return res
@@ -72,7 +68,12 @@ async function makeSubscription(req, res) {
     let subscription = await paymentService.createSubscription(
       payment_method,
       globalPricing,
-      subscriptionData,
+      {
+        ...subscriptionData,
+        userId,
+        email,
+        plan: SubscriptionPlans.GLOBAL,
+      },
       `${getPlanInfo(SubscriptionPlans.GLOBAL).name} Payment`
     );
 
@@ -122,7 +123,10 @@ async function makeSubscription(req, res) {
 async function getSubscriptionByUser(req, res) {
   const userId = req.params.userId;
   try {
-    const subscription = await SubscriptionSchema.findOne({ userId });
+    const subscription = await SubscriptionSchema.findOne({
+      userId,
+      // statusTracking: { $ne: SubscriptionStatusTracking.INACTIVE },
+    });
 
     if (!subscription) {
       return res.status(404).json({ message: 'Subscription not found' });
@@ -174,16 +178,37 @@ async function changePaymentMethod(req, res) {
       }
     );
 
-    // TODO: If older Payment method is "debit" and new is wire... cancel current debit subscription.,
+    // TODO: Confirm proper behavior on payment method change
+    // If older Payment method is "debit" and new is wire... cancel current debit subscription.,
+    // If older Payment method is "wire" and new is debit... create new debit subscription, schedule user wire job to be over at end of cycle
+
     if (
       oldSubscription.paymentMethod === PaymentMethods.DIRECT_DEBIT &&
-      req.body === PaymentMethods.WIRE_TRANSFER
+      req.body.method === PaymentMethods.WIRE_TRANSFER
     ) {
-      await paymentService.cancelSubscription(oldSubscription.subscriptionId);
+      await paymentService.cancelSubscription(
+        oldSubscription.paymentMethod,
+        oldSubscription.subscriptionId
+      );
 
-      // .... TODO: Complete
+      const { pricing, name } = getPlanInfo(oldSubscription.plan);
+
+      // payments will be taken end of cycle, regardless of cancelation
+      // so keep subscription active till then.
+
+      // start new wire subscription at the end of current cycle
+      const subscription = await paymentService.getSubscription(
+        oldSubscription.paymentMethod,
+        oldSubscription.subscriptionId
+      );
+
+      await paymentService.createSubscription(
+        req.body.method,
+        pricing,
+        { ...oldSubscription, start_date: subscription.nextChargeDate },
+        `${name} Payment`
+      );
     }
-    // TODO: If older Payment method is "wire" and new is debit... create new debit subscription, schedule user wire job to be over at end of cycle
   } catch (error) {
     console.error(error);
 
@@ -198,11 +223,9 @@ async function changePaymentMethod(req, res) {
 async function cancelSubscription(req, res) {
   const userId = req.params.userId;
   try {
-    const subscription = await SubscriptionSchema.findOneAndUpdate(
+    const subscription = await SubscriptionSchema.findOneAndDelete(
       { userId },
-      {
-        statusTracking: SubscriptionStatusTracking.INACTIVE,
-      }
+      { new: true }
     );
     await paymentService.cancelSubscription(
       subscription.paymentMethod,
@@ -350,11 +373,19 @@ async function downloadReceiptPDF(req, res) {
 async function downloadSummaryReceiptPDFs(req, res) {
   const { invoiceIds } = req.body;
 
-  if (!invoiceIds) {
-    return res.status(400).json({
-      status: 'fail',
-      message: 'Bad request', // translate!
-    });
+  const subscriptionSchema = Joi.object({
+    invoiceIds: Joi.array().items(Joi.string()).required(),
+  });
+
+  const { error } = subscriptionSchema.validate(req.body);
+
+  if (error) {
+    let response = {
+      status_code: 400,
+      message: error?.details[0]?.message,
+      data: error,
+    };
+    return res.status(400).send(response);
   }
 
   const pdfsFolderPath = path.join('public', 'pdfs');

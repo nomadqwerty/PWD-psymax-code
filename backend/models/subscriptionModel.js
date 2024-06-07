@@ -40,7 +40,7 @@ const subscriptionAppSchema = new Schema({
   discount: Number,
   paidCyclesCount: {
     type: Number,
-    default: 1,
+    default: 0,
   },
 });
 

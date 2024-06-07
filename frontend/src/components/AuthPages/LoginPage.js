@@ -79,7 +79,9 @@ const LoginPage = () => {
             } else {
               const authWorker = new Worker();
               let userData = responseData;
-              const response = await axiosInstance.get(`/vault/server`);
+              const response = await axiosInstance.get(`/vault/server`, {
+                headers: { reqType: 'login' },
+              });
               const psymaxToken = localStorage.getItem('psymax-token');
 
               authWorker.postMessage({
@@ -162,6 +164,13 @@ const LoginPage = () => {
             status: subResData.status,
             trialPeriod: responseData.trialPeriodActive,
           });
+          sessionStorage.setItem(
+            'userSubcriptionStatus',
+            JSON.stringify({
+              status: subResData.status,
+              trialPeriod: responseData.trialPeriodActive,
+            })
+          );
         } else {
           setUserSubcriptionStatus(false);
         }

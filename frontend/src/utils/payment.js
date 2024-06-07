@@ -33,4 +33,16 @@ function getPlanInfo(plan) {
   }[plan];
 }
 
-export { getPlanInfo, PaymentMethods, SubscriptionPlans };
+const DAYS_PER_CYCLE = 28;
+
+function cyclesToDays(cycles) {
+  return cycles * DAYS_PER_CYCLE;
+}
+
+export {
+  getPlanInfo,
+  PaymentMethods,
+  SubscriptionPlans,
+  DAYS_PER_CYCLE,
+  cyclesToDays,
+};

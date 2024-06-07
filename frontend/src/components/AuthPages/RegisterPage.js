@@ -49,11 +49,14 @@ const Register = () => {
 
           passwords: fileVault.data,
           clients: clientVault.data,
+          reqType: 'register',
         });
         // create user file store.
         const resFile = await axiosInstance.post(`/file/create`, {
           userId: user_id,
+          reqType: 'register',
         });
+        console.log(resVault, resFile);
         dispatch({ type: 'INITIAL_STATE' });
         router.push('/login');
         toast.success(responseData?.message);

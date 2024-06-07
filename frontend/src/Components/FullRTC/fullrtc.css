@@ -42,6 +42,9 @@
   /* border: 1px solid red; */
 }
 
+.smallFrame .videoPlayer{
+  object-fit: cover;
+}
 .videoPlayer {
   background-color: white;
   /* border:1px solid red; */
@@ -66,8 +69,8 @@
   align-items: center;
 }
 
-#user1{
-  /* display: none; */
+#user1_div{
+  object-fit: cover;
 }
 
 #user2_div{

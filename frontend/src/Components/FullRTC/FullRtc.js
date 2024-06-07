@@ -637,14 +637,13 @@ const FullRtc = () => {
     }
   };
 
+  //get localuser current time stamp
   let getTime = () => {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, "0");
     const minutes = now.getMinutes().toString().padStart(2, "0");
     return `${hours}:${minutes}`;
   };
-
-  const setMembersContainer = () => {};
 
   let toggleSettings = async () => {
     // if(!isChatVisible){
@@ -658,6 +657,7 @@ const FullRtc = () => {
     const membersVideoContainer = document.getElementById("members_container");
     // const input = document.getElementById("msgInput");
     const settingsContainer = document.getElementById("settings-wrapper");
+    const chatContainer = document.getElementById("chat-container");
 
     if (!isSettingsVisible && !isChatVisible) {
       try {
@@ -674,15 +674,22 @@ const FullRtc = () => {
               settingsContainer.style.display = "block";
               setIsSettingsVisible(true);
             }
-            // input.focus();
           },
           { once: true }
         ); // Ensure the event listener is removed after firing once
       } catch (e) {
         console.log("could not set settings visible", e);
       }
-    } else if (isChatVisible) {
-      toggleChat();
+    } else if (isChatVisible && !isSettingsVisible) {
+      setIsChatVisible(false);
+      chatContainer.style.display = "none";
+
+
+      setIsSettingsVisible(true);
+      settingsContainer.style.display = "block";
+
+
+      // toggleChat();
     } else {
       try {
         messagesContainer.style.width = "0%";
@@ -690,9 +697,15 @@ const FullRtc = () => {
         membersVideoContainer.style.width = "100%";
 
         setIsSettingsVisible(false);
+        setIsChatVisible(false);
         if (settingsContainer) {
           settingsContainer.style.display = "none";
         }
+
+        if (chatContainer) {
+          chatContainer.style.display = "none";
+        }
+
       } catch (e) {
         console.log("could not set settings not-visible", e);
       }
@@ -766,6 +779,7 @@ const FullRtc = () => {
     const membersVideoContainer = document.getElementById("members_container");
     const input = document.getElementById("msgInput");
     const chatContainer = document.getElementById("chat-container");
+    const settingsContainer = document.getElementById("settings-wrapper");
 
     if (!isChatVisible && !isSettingsVisible) {
       try {
@@ -779,28 +793,42 @@ const FullRtc = () => {
             messagesContainer.style.width = "25%";
             messagesContainer.style.display = "block";
             chatContainer.style.display = "block";
+            
+            setIsChatVisible(true);
             input.focus();
             if (messagesEndRef.current) {
               messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
             }
-            setIsChatVisible(true);
           },
           { once: true }
         ); // Ensure the event listener is removed after firing once
       } catch (e) {
         console.log("could not set chat visible", e);
       }
-    } else if (isSettingsVisible) {
-      toggleSettings();
+    } else if (isSettingsVisible && !isChatVisible) {
+      setIsSettingsVisible(false);
+      settingsContainer.style.display = "none";
+
+      setIsChatVisible(true);
+
+      chatContainer.style.display = "block";
+      input.focus();
+            if (messagesEndRef.current) {
+              messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+            }
+
+      // toggleSettings();
     } else {
       try {
         setIsChatVisible(false);
+        setIsSettingsVisible(false);
         chatContainer.style.display = "none";
         messagesContainer.style.width = "0%";
         messagesContainer.style.display = "none";
         membersVideoContainer.style.width = "100%";
-      } catch {
-        console.log("could not set chat not-visible");
+        settingsContainer.style.display = "none";
+      } catch (e) {
+        console.log("could not set chat not-visible", e);
       }
     }
   };

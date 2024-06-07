@@ -74,6 +74,7 @@ export default function SubscriptionPageCompletion() {
         });
 
         reset();
+        localStorage.setItem('psymax-account-restricted', 'false');
         router.push('/dashboard/subscription');
       } catch (error) {
         if (error.response.status === 400) {

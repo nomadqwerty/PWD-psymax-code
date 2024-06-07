@@ -182,6 +182,7 @@ function SubscriptionDetails() {
       );
       if (response?.status === 200) {
         toast.success('Subscription cancelled successfully');
+        localStorage.setItem('psymax-account-restricted', 'true');
         router.push('/dashboard');
       } else {
         toast.error(SOMETHING_WRONG);

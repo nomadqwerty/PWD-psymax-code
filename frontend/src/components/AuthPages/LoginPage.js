@@ -32,7 +32,9 @@ const LoginPage = () => {
         // FIXME: Might be preferable to use next-js server side fetch to prevent page access
         localStorage.setItem(
           'psymax-account-restricted',
-          !!response.data?.subscription_status
+          responseData.trialPeriodActive
+            ? false
+            : !!response.data?.subscription_status
         );
         localStorage.setItem('psymax-token', responseData?.token);
         localStorage.setItem('psymax-user-data', JSON.stringify(responseData));

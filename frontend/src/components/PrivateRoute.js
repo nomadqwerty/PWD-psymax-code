@@ -25,7 +25,9 @@ const PrivateRoute = (WrappedComponent) => {
             // FIXME: Might be preferable to use next-js server side fetch to prevent page access
             localStorage.setItem(
               'psymax-account-restricted',
-              !!response.data?.subscription_status
+              responseData.trialPeriodActive
+                ? false
+                : !!response.data?.subscription_status
             );
             dispatch({
               type: 'LOGIN',

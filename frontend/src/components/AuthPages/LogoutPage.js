@@ -45,7 +45,7 @@ const LogoutPage = () => {
         localStorage.removeItem('psymax-user-data');
         localStorage.removeItem('psymax-is-admin');
         localStorage.removeItem('psymax-loggedin');
-
+        sessionStorage.removeItem('vaultState');
         // TODO: add url to env
         window.location.replace(`${process.env.NEXT_PUBLIC_CLIENT_HOST}/login`);
       } else {

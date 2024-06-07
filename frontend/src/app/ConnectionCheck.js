@@ -84,7 +84,6 @@ const ConnectionChecker = ({
     ) {
       (async () => {
         if (isOffline === true) {
-          console.log(isOffline);
           // TODO: encrypt data and register BG sync task.
           let fileVaultLength = Object.keys(fileVault).length;
           let clientVaultLength = Object.keys(clientVault).length;
@@ -93,12 +92,7 @@ const ConnectionChecker = ({
           let updateClientVaultLength = Object.keys(updateClientVault).length;
 
           let userData = localStorage.getItem('psymax-user-data');
-          console.log(
-            fileVaultLength,
-            clientVaultLength,
-            updateFileVaultLength,
-            updateClientVaultLength
-          );
+
           if (
             fileVaultLength > 0 &&
             clientVaultLength > 0 &&
@@ -125,7 +119,6 @@ const ConnectionChecker = ({
             );
 
             let keysLength = Object.keys(allKeys).length;
-            console.log(allKeys);
             if (keysLength > 0) {
               const {
                 masterKey,

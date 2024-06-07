@@ -2,6 +2,7 @@
 import { useContext, useEffect, useState } from 'react';
 import vaultContext from '../context/vault.context';
 import { usePathname } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 const VaultSession = ({ children }) => {
   const { vaultState } = useContext(vaultContext);
@@ -20,6 +21,7 @@ const VaultSession = ({ children }) => {
     setUpdateClientVault,
   } = vaultState;
 
+  // update userState with sessionStorage if userState is lost.
   useEffect(() => {
     let fileVaultLength = Object.keys(fileVault).length;
     let clientVaultLength = Object.keys(clientVault).length;
@@ -58,7 +60,7 @@ const VaultSession = ({ children }) => {
             setServerVault(serverVault);
             setUpdateFileVault(updateFileVault);
             setUpdateClientVault(updateClientVault);
-            // console.log('loaded state from session storage');
+            toast.success('loaded state from session storage');
           }
         }
       }
@@ -73,6 +75,7 @@ const VaultSession = ({ children }) => {
   ]);
 
   useEffect(() => {
+    // check if userState is empty.
     let vaultChecker = setInterval(() => {
       // console.log('vault check');
       let fileVaultLength = Object.keys(fileVault).length;
@@ -89,18 +92,105 @@ const VaultSession = ({ children }) => {
         updateClientVaultLength <= 0 &&
         userData &&
         !path.includes('/login') &&
-        !path.includes('/logout')
+        !path.includes('/logout') &&
+        !path.includes('/accountrecovery') &&
+        !path.includes('/register') &&
+        !path.includes('/passwordreset') &&
+        !path.includes('/twofactorauthentication') &&
+        !path.includes('/recoveryphrase') &&
+        !path.includes('/download')
       ) {
         if (vaultStatus === true) {
           setVaultStatus(false);
-          // console.log('vault is empty');
+          toast('vault is empty');
         }
       }
-    }, 1000);
+    }, 15000);
+
+    // Check if userState changes and update session storage.
+    let sessionStoreCheck = setInterval(() => {
+      if (
+        !path.includes('/login') &&
+        !path.includes('/logout') &&
+        !path.includes('/accountrecovery') &&
+        !path.includes('/register') &&
+        !path.includes('/passwordreset') &&
+        !path.includes('/twofactorauthentication') &&
+        !path.includes('/recoveryphrase') &&
+        !path.includes('/download')
+      ) {
+        let fileVaultLength = Object.keys(fileVault).length;
+        let clientVaultLength = Object.keys(clientVault).length;
+        let serverVaultLength = Object.keys(serverVault).length;
+        let updateFileVaultLength = Object.keys(updateFileVault).length;
+        let updateClientVaultLength = Object.keys(updateClientVault).length;
+        let vaultSessionStore = sessionStorage.getItem('vaultState');
+        let vaultStateJson;
+
+        // get session vault
+        if (vaultSessionStore) {
+          vaultStateJson = JSON.parse(vaultSessionStore);
+        }
+        let fileVaultSessionLength;
+        let clientVaultSessionLength;
+        let serverVaultSessionLength;
+        let updateFileVaultSessionLength;
+        let updateClientVaultSessionLength;
+        if (vaultStateJson) {
+          const {
+            fileVault,
+            clientVault,
+            serverVault,
+            updateFileVault,
+            updateClientVault,
+          } = vaultStateJson;
+
+          if (
+            fileVault?.data &&
+            clientVault?.data &&
+            updateFileVault?.data &&
+            updateClientVault?.data
+          ) {
+            fileVaultSessionLength = vaultStateJson.fileVault?.data.length;
+            clientVaultSessionLength = vaultStateJson.clientVault?.data.length;
+
+            updateFileVaultSessionLength =
+              vaultStateJson.updateFileVault?.data.length;
+            updateClientVaultSessionLength =
+              vaultStateJson.updateClientVault?.data.length;
+          }
+        }
+
+        if (
+          fileVaultLength > 0 &&
+          clientVaultLength > 0 &&
+          serverVaultLength > 0 &&
+          updateFileVaultLength > 0 &&
+          updateClientVaultLength > 0 &&
+          vaultStateJson
+        ) {
+          if (
+            fileVault?.data?.length !==
+              vaultStateJson?.fileVault?.data?.length ||
+            clientVault?.data?.length !==
+              vaultStateJson?.clientVault?.data?.length ||
+            updateFileVault?.data?.length !==
+              vaultStateJson?.updateFileVault?.data?.length ||
+            updateClientVault?.data?.length !==
+              vaultStateJson?.updateClientVault?.data?.length
+          ) {
+            const vaultStateJsonNew = JSON.stringify(vaultState);
+            sessionStorage.setItem('vaultState', vaultStateJsonNew);
+            toast.success('updated session vault');
+          }
+        }
+      }
+    }, 20000);
 
     return () => {
-      if (vaultChecker) {
+      if (vaultChecker && sessionStoreCheck) {
         clearInterval(vaultChecker);
+        clearInterval(sessionStoreCheck);
       }
     };
   });

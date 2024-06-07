@@ -18,14 +18,7 @@ import { SOMETHING_WRONG } from '@/utils/constants';
 import { cyclesToDays, getPlanInfo } from '@/utils/payment';
 import { handleApiError } from '@/utils/apiHelpers';
 import kontoContext from '@/context/konto.context';
-import {
-  addDays,
-  differenceInDays,
-  format,
-  isAfter,
-  isBefore,
-  isEqual,
-} from 'date-fns';
+import { addDays, differenceInDays, format, isAfter, isEqual } from 'date-fns';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import useSWR from 'swr';
@@ -50,13 +43,19 @@ function SubscriptionDetails() {
 
   const {
     data: subscriptionData,
-    // error: subscriptionError,
+    error: subscriptionError,
     isLoading: isSubscriptionLoading,
     mutate: mutateSubscriptionData,
   } = useSWR(
     kontoData._id ? `/subscriptions/${kontoData._id}` : null,
     fetchData
   );
+
+  // Check if subscription error is 404
+  const isSubscriptionNotFound = useMemo(() => {
+    return subscriptionError?.response?.status === 404;
+  }, [subscriptionError]);
+
   const {
     data: invoicesData,
     // error: invoicesError,
@@ -201,7 +200,7 @@ function SubscriptionDetails() {
     <AppLayout>
       <div>
         <h1 className="font-bold text-4xl">Abonnement & Zahlungsdaten</h1>
-        {subscriptionData?.data && (
+        {subscriptionData?.data && !isSubscriptionNotFound && (
           <div className="mt-8">
             <div className="flex justify-between items-center">
               <h2 className="font-bold text-3xl">Abonnement</h2>
@@ -245,7 +244,7 @@ function SubscriptionDetails() {
         )}
         {/* TODO: IF is subscribed */}
         {/* If subscription is in the past(over) */}
-        {!kontoData?.trialPeriodActive ? (
+        {!kontoData?.trialPeriodActive && !isSubscriptionNotFound ? (
           <div className="mt-16">
             <div className="flex justify-between items-center">
               <h2 className="font-bold text-3xl">Zahlungsmethode</h2>
@@ -275,9 +274,12 @@ function SubscriptionDetails() {
         <div className="mt-16">
           <div className="flex justify-between items-center">
             <h2 className="font-bold text-3xl">Rechnungsangaben</h2>
-            <button className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6">
+            <Link
+              className="px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border bg-gray-100 rounded-md font-medium  mt-6"
+              href="/dashboard/kontoeinstellungen"
+            >
               Rechnungsangaben ändern
-            </button>
+            </Link>
           </div>
           <ul className="text-[#707070]">
             <li>Praxis/Instiut/Firma</li>
@@ -313,8 +315,11 @@ function SubscriptionDetails() {
                 <span className="text-[#707070]"> {trialInfo.trialEnd}</span>
               </p>
             ) : // {/* If startDate is still in the future */}
-            isAfter(subscriptionData?.data?.startDate, new Date()) ||
-              isEqual(subscriptionData?.data?.startDate, new Date()) ? (
+            isAfter(new Date(subscriptionData?.data?.startDate), new Date()) ||
+              isEqual(
+                new Date(subscriptionData?.data?.startDate),
+                new Date()
+              ) ? (
               <p>
                 Sie befinden sich derzeit in Ihren {referralCycles.totalDays}{' '}
                 kostenlosen Testtagen, diese würden um ablaufen

@@ -102,8 +102,8 @@ async function sendInvoiceEmail(email, invoice) {
 // Create a Bull queue for invoice emails
 const invoiceQueue = new Queue('invoice', {
   redis: {
-    host: '127.0.0.1', // Adjust the host and port as needed
-    port: 6379,
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
   },
 });
 
@@ -154,7 +154,6 @@ function scheduleInvoice(id, userId, email, invoice) {
   invoiceQueue.add(
     { id, email, invoice },
     {
-      // repeat: { every: 60 * 1000 }, // 28 days in milliseconds
       repeat: { every: DAYS_PER_CYCLE * 24 * 60 * 60 * 1000 }, // 28 days in milliseconds
       jobId: `invoice:${userId}`, // Unique job ID for each user's recurring job
     }

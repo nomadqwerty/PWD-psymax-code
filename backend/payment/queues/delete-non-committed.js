@@ -45,8 +45,8 @@ async function deleteOldUsers() {
 // Create a Bull queue for the daily task
 const deleteNonCommittedUsersQueue = new Queue('delete-non-committed-users', {
   redis: {
-    host: '127.0.0.1', // Adjust the host and port as needed
-    port: 6379,
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
   },
 });
 

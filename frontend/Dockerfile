@@ -36,6 +36,12 @@ COPY --from=builder /app/.next/static ./.next/static
 
 # Set the port on which the application will listen
 ENV PORT 3000
+# Set required environment variables
+ENV NEXT_PUBLIC_PRICING_GLOBAL 69
+ENV NEXT_PUBLIC_PRICING_GLOBAL_EXTENDED 99
+ENV NEXT_PUBLIC_PRICING_VAT_PERCENTAGE 19
+ENV NEXT_DAYS_PER_CYCLE 28
+
 EXPOSE 3000
 
 CMD ["npm", "start"]

@@ -17,6 +17,7 @@ const dayjs = require('dayjs');
 const { SubscriptionSchema } = require('../models/subscriptionModel');
 const Email = require('./contactUtil/contactUtil');
 const ServerVault = require('../models/ServerVault');
+const { sendSMTPMail } = require('../utils/common');
 
 const register = async (req, res, next) => {
   try {
@@ -538,11 +539,14 @@ const TwoFaAuth = async (req, res, next) => {
         name: 'psymax',
       };
 
-      const mailer = new Email(contactObject);
-      const sent = await mailer.send('two factor authentication', code);
+      const subject = 'Your account has been deleted';
+
+      const sent = await sendSMTPMail(user.email, subject, code);
+      // const sent = await mailer.send('two factor authentication', code);
 
       // send target email
-      // console.log(sent);
+      console.log(sent);
+
       if (sent?.status === 'success' || sent?.response.startsWith('250')) {
         console.log('sent');
         return res.status(200).json({
@@ -559,6 +563,7 @@ const TwoFaAuth = async (req, res, next) => {
       throw new Error('no user found.');
     }
   } catch (error) {
+    console.log(error);
     return res.status(400).json({
       status: 'failed',
       message: error.message,

@@ -53,6 +53,28 @@ exports.storeMeetingDetails = async (req, res) => {
 
 exports.deleteMeetingDetails = async (req, res) => {
   try {
-    res.end('reached');
-  } catch (error) {}
+    const meetingId = req.params?.meetingId;
+    console.log(meetingId);
+    const removedMeeting = await MeetingSchedule.findOneAndDelete({
+      _id: meetingId,
+    });
+
+    if (removedMeeting) {
+      let detailObject = {
+        status: 'success',
+        message: 'removed meeting schedule',
+      };
+
+      return res.status(204).json(detailObject);
+    } else {
+      throw new Error('failed to remove meeting schedule');
+    }
+  } catch (error) {
+    let errorObject = {
+      status: 'failed',
+      message: error.message,
+    };
+
+    return res.status(400).json(errorObject);
+  }
 };

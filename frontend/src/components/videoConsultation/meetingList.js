@@ -1,6 +1,10 @@
 import Button from '../common/Button';
 import { Grid } from '@mui/material';
 import { useRouter } from 'next/navigation';
+import axiosInstance from '@/utils/axios';
+import { handleApiError } from '@/utils/apiHelpers';
+import toast from 'react-hot-toast';
+
 const MeetingList = ({ meetingsList, userName }) => {
   const router = useRouter();
   if (!meetingsList) {
@@ -79,6 +83,23 @@ const MeetingList = ({ meetingsList, userName }) => {
               size="xm"
               varient="destructive"
               className="radius4 xs:my-2 md:mb-1 sm:mb-0"
+              onClick={async () => {
+                try {
+                  const meetingId = meeting?._id;
+
+                  if (meetingId) {
+                    const meetingRes = await axiosInstance.delete(
+                      `/meetings/delete/${meetingId}`
+                    );
+
+                    if (meetingRes.status === 204) {
+                      toast.success('meeting deleted');
+                    }
+                  }
+                } catch (error) {
+                  handleApiError(error, router);
+                }
+              }}
             >
               Entfernen
             </Button>

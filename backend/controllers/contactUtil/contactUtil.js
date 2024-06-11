@@ -1,6 +1,5 @@
-const nodeMailer = require("nodemailer");
-const path = require("path");
-
+const nodeMailer = require('nodemailer');
+const path = require('path');
 
 // manually set env TODO: please change this.
 
@@ -9,17 +8,17 @@ class Email {
   #port;
   #prodUser;
   #prodPass;
-  constructor(user, url = "") {
+  constructor(user, url = '') {
     this.email = user.email;
     this.name = user.name;
     this.url = url;
-    this.from = 'contact@hilightinterior.com';
+    this.from = 'Psymax <app@systemica-ambulanz.de>';
 
     // private fields
-    this.#prodHost = "smtp.sendgrid.net";
-    this.#port = 2525;
-    this.#prodUser = 'apikey';
-    this.#prodPass = "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";
+    this.#prodHost = 'cp.rrfo.de';
+    this.#port = 587;
+    this.#prodUser = 'app@systemica-ambulanz.de';
+    this.#prodPass = '4YkEa3lE4NUlJFcQ';
   }
 
   newTransport() {
@@ -36,19 +35,19 @@ class Email {
     return transport;
   }
 
-  async send( subject, code) {
-      // mail options
-      const mailOptions = {
-        from: this.from,
-        to: this.email,
-        subject,
-        text: code,
-      };
+  async send(subject, code) {
+    // mail options
+    const mailOptions = {
+      from: this.from,
+      to: this.email,
+      subject,
+      text: code,
+    };
 
-      let transporter = this.newTransport();
-      let sent = await transporter.sendMail(mailOptions);
+    let transporter = this.newTransport();
+    let sent = await transporter.sendMail(mailOptions);
 
-      return sent;
+    return sent;
   }
 }
 

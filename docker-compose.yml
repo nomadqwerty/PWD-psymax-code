@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+    env_file:
+      - ./frontend/.env.local
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - '4000:4000'
+    depends_on:
+      - redis
+      - mongodb
+    env_file:
+      - ./backend/config.env
+    environment:
+      - DB_URL=mongodb://mongodb:27017/psymax
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  redis:
+    image: 'redis:latest'
+    ports:
+      - '6379:6379'
+
+  mongodb:
+    image: 'mongo:latest'
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

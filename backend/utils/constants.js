@@ -3,8 +3,8 @@ module.exports = Object.freeze({
   SOME_64BYTE_BASE64_STRING:
     'okaEYQdU/ITj0vjNlgO47uM1gh+iFSD8xbNKy4/HF8g3Q/GcXhVE5YNKDqqvYxs1V66YvSVSLexYtaBehAPxpw==',
   EmailHost: 'mail.psymax.de',
-  EmailPort: 465,
-  EmailUser: 'kontakt@psymax.de',
+  EmailPort: 587,
+  EmailUser: 'app@psymax.de',
   EmailPassword: 'OhAoV5ceKAnUaxsd',
   EmailFrom: 'Psymax <app@systemica-ambulanz.de>',
   TimeForPasswordExpire: 30,

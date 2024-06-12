@@ -18,9 +18,15 @@ const { InvoiceSchema } = require('../../models/invoiceModel');
 const Redis = require('ioredis');
 const Bull = require('bull');
 
-const redis = new Redis();
+const redis = new Redis({
+  host: process.env.REDIS_HOST,
+  port: process.env.REDIS_PORT,
+});
 const eventQueue = new Bull('event-queue', {
-  redis: { host: 'localhost', port: 6379 },
+  redis: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+  },
 });
 
 /**

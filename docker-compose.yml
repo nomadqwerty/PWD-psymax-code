@@ -1,40 +1,44 @@
-version: '3'
+version: '3.8'
 
 services:
   frontend:
-    container_name: psymax-container-frontend
     build:
-      context: ./frontend/
+      context: ./frontend
       dockerfile: Dockerfile
-      args:
-        - API_HOST=psymax.de
     ports:
-      - 3000:3000
+      - '3000:3000'
     depends_on:
       - backend
-    networks:
-      - node-network
-    environment:
-      - WATCHPACK_POLLING=true
+    env_file:
+      - ./frontend/.env.local
 
   backend:
-    container_name: psymax-container-backend
     build:
-      context: ./backend/
+      context: ./backend
       dockerfile: Dockerfile
     ports:
-      - 4000:4000
+      - '4000:4000'
     depends_on:
+      - redis
       - mongodb
+    env_file:
+      - ./backend/config.env
+    environment:
+      - DB_URL=mongodb://mongodb:27017/psymax
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  redis:
+    image: 'redis:latest'
+    ports:
+      - '6379:6379'
 
   mongodb:
-    container_name: psymax-container-mongodb
-    image: mongo:4.4
+    image: 'mongo:latest'
     ports:
-      - 27017:27017
+      - '27017:27017'
     volumes:
-      - ./data:/data/db
+      - mongo-data:/data/db
 
-networks:
-  node-network:
-    driver: bridge
+volumes:
+  mongo-data:

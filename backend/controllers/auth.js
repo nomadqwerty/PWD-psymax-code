@@ -540,12 +540,16 @@ const TwoFaAuth = async (req, res, next) => {
       };
 
       const subject = 'Your account has been deleted';
-
-      const sent = await sendSMTPMail(user.email, subject, code);
-      // const sent = await mailer.send('two factor authentication', code);
+      let sent;
+      try {
+        sent = await sendSMTPMail(user.email, subject, code);
+      } catch (error) {
+        const mailer = new Email(contactObject);
+        sent = await mailer.send('two factor authentication', code);
+      }
 
       // send target email
-      console.log(sent);
+      // console.log(sent);
 
       if (sent?.status === 'success' || sent?.response.startsWith('250')) {
         console.log('sent');

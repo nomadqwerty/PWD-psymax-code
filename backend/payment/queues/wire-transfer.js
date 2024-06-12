@@ -8,151 +8,28 @@ const {
   generatePDF,
   getPlanInfo,
 } = require('../../utils/common');
-const { SubscriptionPlans } = require('../../utils/constants');
 const { UserSchema } = require('../../models/userModel');
+const { DAYS_PER_CYCLE, SubscriptionPlans } = require('../../utils/constants');
 
-// Define user subscription schema
 const wireTransferSchema = new mongoose.Schema({
   given_name: String,
   family_name: String,
   email: String,
   amount: Number,
+  plan: {
+    type: String,
+    enum: Object.values(SubscriptionPlans),
+    required: true,
+  },
   lastPaymentDate: Date,
-  subscriptionActive: { type: Boolean, default: true }, // Added field for tracking subscription status
+  userId: mongoose.Schema.Types.ObjectId,
+  status: {
+    type: String,
+    enum: ['active', 'canceled', 'cancelling'],
+    default: 'active',
+  },
 });
 const WireTransfer = mongoose.model('WireTransfer', wireTransferSchema);
-
-// Initialize Bull queue
-const subscriptionQueue = new Queue('subscription');
-
-// Job processors
-// subscriptionQueue.process('addUserToQueue', async (job) => {
-//   const userData = job.data;
-//   // Add user to queue logic here
-//   console.log(`Added user ${userData.name} to subscription queue.`);
-//   // Save user to database
-//   await WireTransfer.create(userData);
-// });
-
-subscriptionQueue.process('paymentNotification', async () => {
-  // Payment notification logic here
-  console.log('Sending payment notification...');
-  // Retrieve users whose payment is due and whose subscription is active
-  const users = await WireTransfer.find({
-    lastPaymentDate: { $lt: dayjs().subtract(28, 'days').toDate() },
-    subscriptionActive: true,
-  });
-  // Send email notification to each user
-  users.forEach((user) => {
-    sendPaymentNotification(user.email);
-  });
-});
-
-async function cancelSubscription(userId) {
-  // Cancel subscription logic here
-  console.log(`Cancelling subscription for user with ID: ${userId}`);
-  const user = await WireTransfer.findById(userId);
-  if (user) {
-    const remainingDays = dayjs().diff(dayjs(user.lastPaymentDate), 'days');
-    const nextPaymentDate = dayjs().add(remainingDays, 'days').toDate();
-    const subscription = await WireTransfer.findByIdAndUpdate(userId, {
-      subscriptionActive: false,
-      lastPaymentDate: nextPaymentDate,
-    });
-    return subscription;
-  }
-}
-
-// Function to schedule payment notifications every 28 days
-function schedulePaymentNotifications() {
-  subscriptionQueue.add(
-    'paymentNotification',
-    {},
-    { repeat: { cron: '0 0 */28 * *' } }
-  );
-}
-// Function to send payment notification email
-async function sendPaymentNotification(email) {
-  const pdfsFolderPath = path.join('public', 'pdfs');
-
-  const pdfName = `psymax_reminder_order_${Date.now()}.pdf`;
-  const pdfFilePath = pdfsFolderPath + pdfName;
-
-  let htmlTemplate = fs.readFileSync(
-    path.join('html', 'pdfs', 'invoice-reminder.html'),
-    'utf-8'
-  );
-
-  await generatePDF(htmlTemplate, pdfName, pdfFilePath);
-
-  // create the pdf into a buffer
-  const attachments = [
-    {
-      filename: pdfName,
-      path: pdfFilePath,
-    },
-  ];
-  // Send email
-  sendSMTPMail(
-    email,
-    'Subscription Payment Reminder',
-    'Your subscription payment is due. Please make the payment to continue enjoying our service.',
-    attachments
-  )
-    .then(() => {
-      if (fs.existsSync(pdfFilePath)) {
-        fs.unlinkSync(pdfFilePath);
-      }
-    })
-    .catch((error) => {
-      console.log('There was an error sending mail', error);
-    });
-}
-
-class WireTransferProvider {
-  // Function to cancel subscription for a user
-  async cancelSubscription(userId) {
-    return await cancelSubscription(userId);
-  }
-
-  // Function to query user's subscription information
-  async getUserSubscription(userId) {
-    const subscription = await WireTransfer.findById(userId);
-    if (!subscription) return null;
-
-    // Calculate subscription dates
-    const startDate = subscription.lastPaymentDate;
-    const endDate = dayjs(startDate).add(28, 'days').toDate();
-    const nextPaymentDate = dayjs(startDate).add(56, 'days').toDate(); // Assuming a 28-day cycle
-
-    return {
-      startDate,
-      endDate,
-      nextChargeDate: nextPaymentDate,
-      lastPaymentDate: subscription.lastPaymentDate,
-      subscriptionActive: subscription.subscriptionActive,
-    };
-  }
-
-  // Function to add user to subscription queue
-  async createSubscription(amount, userData) {
-    // await subscriptionQueue.add('addUserToQueue', userData);
-
-    // const userData = job.data;
-    // Add user to queue logic here
-    // console.log(`Added user ${userData.name} to subscription queue.`);
-    // Save user to database
-    const subscription = await WireTransfer.create({ ...userData, amount });
-    // Send invoice email
-    const payload = {
-      id: subscription.id,
-      dateCreated: dayjs().format('DD.MM.YYYY'),
-      endDate: dayjs().add(28, 'days').format('DD.MM.YYYY'),
-    };
-    sendInvoiceEmail(subscription.email, payload);
-    return subscription;
-  }
-}
 
 // Function to send invoice email
 async function sendInvoiceEmail(email, invoice) {
@@ -184,9 +61,7 @@ async function sendInvoiceEmail(email, invoice) {
     .replace(/{{SubscriptionEndDate}}/g, invoice?.endDate)
     .replace(/{{userid}}/g, user?.id);
 
-  const { pricing_noVat, pricing, vatPercentage } = getPlanInfo(
-    SubscriptionPlans.GLOBAL
-  );
+  const { pricing_noVat, pricing, vatPercentage } = getPlanInfo(invoice.plan);
 
   htmlTemplate = htmlTemplate
     .replace(/{{Price_noVat}}/g, pricing_noVat.toLocaleString())
@@ -224,22 +99,166 @@ async function sendInvoiceEmail(email, invoice) {
     });
 }
 
-// Example usage
-// const newUser = { name: 'John', email: 'john@example.com', paymentMethod: 'wire transfer', lastPaymentDate: new Date(), subscriptionActive: true };
-// addUserToQueue(newUser);
-// schedulePaymentNotifications();
+// Create a Bull queue for invoice emails
+const invoiceQueue = new Queue('invoice', {
+  redis: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+  },
+});
 
-// Example cancellation
-// const userIdToCancel = 'userIdToCancel';
-// cancelSubscription(userIdToCancel);
+// invoiceQueue.clean(0);
+invoiceQueue.empty();
 
-// Example querying user subscription info
-// const userIdToQuery = 'userIdToQuery';
-// const userSubscriptionInfo = await getUserSubscription(userIdToQuery);
-// console.log(userSubscriptionInfo);
+// Process jobs in the invoice queue
+invoiceQueue.process(async (job) => {
+  const { id, email, invoice } = job.data;
 
-module.exports = {
-  schedulePaymentNotifications,
-  // addUserToQueue,
-  WireTransferProvider,
-};
+  try {
+    // Fetch the latest subscription data
+    const subscription = await WireTransfer.findById(id);
+
+    if (!subscription) {
+      throw new Error('Subscription not found');
+    }
+
+    invoice.plan = subscription.plan;
+    // Send the invoice email
+    await sendInvoiceEmail(email, invoice);
+
+    // Check if the subscription is in 'cancelling' status
+    if (subscription.status === 'cancelling') {
+      // Mark the subscription as 'canceled'
+      subscription.status = 'canceled';
+      await subscription.save();
+
+      // Remove any recurring invoice jobs for the user
+      await invoiceQueue.removeRepeatableByKey(`invoice:${id}`);
+
+      console.log(
+        `Final invoice sent and subscription canceled for user ${subscription.userId}`
+      );
+    } else {
+      console.log(`Invoice sent to user ${subscription.userId}`);
+    }
+  } catch (error) {
+    console.error('Error processing invoice job:', error);
+  }
+});
+
+function scheduleInvoice(id, userId, email, invoice) {
+  // Schedule the initial invoice immediately
+  invoiceQueue.add({ id, email, invoice }, { delay: 0 });
+
+  // Schedule recurring invoices every 30 days
+  invoiceQueue.add(
+    { id, email, invoice },
+    {
+      repeat: { every: DAYS_PER_CYCLE * 24 * 60 * 60 * 1000 }, // 28 days in milliseconds
+      jobId: `invoice:${userId}`, // Unique job ID for each user's recurring job
+    }
+  );
+}
+
+async function cancelSubscription(id) {
+  try {
+    // Find the subscription for the user
+    const subscription = await WireTransfer.findById(id);
+
+    if (!subscription) {
+      throw new Error('Subscription not found');
+    }
+
+    const remainingDays = dayjs().diff(
+      dayjs(subscription.lastPaymentDate),
+      'days'
+    );
+    const nextPaymentDate = dayjs().add(remainingDays, 'days').toDate();
+
+    // Update subscription status to 'cancelling'
+    subscription.status = 'cancelling';
+    subscription.lastPaymentDate = nextPaymentDate;
+    await subscription.save();
+
+    console.log(
+      'Subscription cancellation requested. You will receive one final invoice.'
+    );
+  } catch (error) {
+    console.error('Error requesting subscription cancellation:', error);
+    throw error;
+  }
+}
+
+class WireTransferProvider {
+  // Function to cancel subscription for a user
+  async cancelSubscription(id) {
+    return await cancelSubscription(id);
+  }
+
+  // Function to query user's subscription information
+  async getSubscription(id) {
+    const subscription = await WireTransfer.findById(id);
+    if (!subscription) return null;
+
+    // Calculate subscription dates
+    const startDate = subscription.lastPaymentDate;
+    const endDate = dayjs(startDate).add(28, 'days').toDate();
+    const nextPaymentDate = dayjs(startDate).add(56, 'days').toDate(); // Assuming a 28-day cycle
+
+    return {
+      startDate,
+      endDate,
+      nextChargeDate: nextPaymentDate,
+      lastPaymentDate: subscription.lastPaymentDate,
+      subscriptionActive: subscription.status === 'active',
+    };
+  }
+
+  // Function to add user to subscription queue
+  async createSubscription(amount, userData) {
+    const subscription = await WireTransfer.create({ ...userData, amount });
+    const payload = {
+      id: subscription.id,
+      dateCreated: dayjs().format('DD.MM.YYYY'),
+      endDate: dayjs().add(28, 'days').format('DD.MM.YYYY'),
+    };
+    scheduleInvoice(subscription.id, userData.userId, userData.email, payload);
+    return subscription;
+  }
+
+  // Function to update subscription details
+  async updateSubscription(id, updatedData) {
+    try {
+      const subscription = await WireTransfer.findById(id);
+
+      if (!subscription) {
+        throw new Error('Subscription not found');
+      }
+
+      // Update the subscription fields with the new data
+      if (updatedData.amount !== undefined) {
+        subscription.amount = updatedData.amount;
+      }
+      if (updatedData.plan !== undefined) {
+        subscription.plan = updatedData.plan;
+      }
+
+      // Save the updated subscription
+      await subscription.save();
+
+      console.log(`Subscription updated for user ${subscription.userId}`);
+
+      return subscription;
+    } catch (error) {
+      console.error('Error updating subscription:', error);
+      throw error;
+    }
+  }
+
+  // TODO: create handlers after wire transfer confirmation from user
+  async confirmSubscription() {
+    throw new Error('Not implemented');
+  }
+}
+
+module.exports = { invoiceQueue, WireTransferProvider };

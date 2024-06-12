@@ -12,13 +12,14 @@ class Email {
     this.email = user.email;
     this.name = user.name;
     this.url = url;
-    this.from = 'Psymax <app@systemica-ambulanz.de>';
+    this.from = 'contact@hilightinterior.com';
 
     // private fields
-    this.#prodHost = 'cp.rrfo.de';
-    this.#port = 587;
-    this.#prodUser = 'app@systemica-ambulanz.de';
-    this.#prodPass = '4YkEa3lE4NUlJFcQ';
+    this.#prodHost = 'smtp.sendgrid.net';
+    this.#port = 2525;
+    this.#prodUser = 'apikey';
+    this.#prodPass =
+      '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';
   }
 
   newTransport() {

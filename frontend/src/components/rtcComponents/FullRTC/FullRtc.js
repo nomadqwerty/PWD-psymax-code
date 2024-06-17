@@ -376,7 +376,7 @@ const FullRtc = () => {
   useEffect(() => {
     if (!socketRef.current && stream) {
       socketRef.current = io(
-        'https://pwd-psymax-code-production-f927.up.railway.app'
+        'https://pwd-psymax-code-production-f927.up.railway.app', { transports : ['websocket'] }
       ); //create socket instance if noRef and video stream avail
 
       // socket.emit("hello", "hello from offer UE");

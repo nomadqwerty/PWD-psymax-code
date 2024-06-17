@@ -1,4 +1,5 @@
 const express = require('express');
+const fs = require('fs/promises');
 const http = require('http');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -157,4 +158,8 @@ process.on('SIGINT', () => {
   });
 });
 
-server.listen(PORT || 4000, () => console.log(`Listening on port ${PORT}`));
+server.listen(PORT || 4000, async () => {
+  const signalPort = await fs.readFile('./path.txt', 'utf-8');
+  console.log(signalPort);
+  console.log(`Listening on port ${PORT}`);
+});

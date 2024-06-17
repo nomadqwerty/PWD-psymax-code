@@ -33,6 +33,10 @@ const eventQueue = new Bull('event-queue', {
     password:
       process.env.REDIS_PASSWORD ||
       'AYORAAIncDEwMGFmYmE5YWYxMWI0ZGYxYTk5M2I3OGNmMjdlNjlhMXAxMzM2ODE',
+    tls: true,
+    enableTLSForSentinelMode: false,
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
   },
 });
 

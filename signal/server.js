@@ -49,6 +49,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(function (req, res, next) {
   // Website you wish to allow to connect
+  console.log('req');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   // Request methods you wish to allow
@@ -78,7 +79,7 @@ const io = new Server(server, {
     origin: '*',
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   },
-  origins: '*:*',
+  origins: '*',
   handlePreflightRequest: (req, res) => {
     const headers = {
       'Access-Control-Allow-Origin': '*', //or the specific origin you want to give access to,
@@ -116,6 +117,7 @@ let connectedClients = 0;
 let roomAccessKey;
 
 io.on('connection', async (socket) => {
+  console.log('connection');
   //listen for roomAccesskey event on socket join and add socket to the provided acceskey
   socket.on('roomAccessKey', (data) => {
     const { roomToJoin, clientName } = data;

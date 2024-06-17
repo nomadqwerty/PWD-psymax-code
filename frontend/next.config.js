@@ -25,7 +25,11 @@ module.exports = {
     NEXT_PUBLIC_DUAL_KEY_ONE: '',
     NEXT_PUBLIC_DUAL_KEY_TWO: '',
     NEXT_PUBLIC_MAX_FILE_SIZE: '52428800',
-    NEXT_PUBLIC_CLIENT_HOST: 'http://localhost:3000',
+    NEXT_PUBLIC_CLIENT_HOST: 'https://pwd-psymax-code.vercel.app',
+    NEXT_PUBLIC_PRICING_GLOBAL: 69,
+    NEXT_PUBLIC_PRICING_GLOBAL_EXTENDED: 99,
+    NEXT_PUBLIC_PRICING_VAT_PERCENTAGE: 19,
+    NEXT_DAYS_PER_CYCLE: 28,
   },
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     config.module.rules.push({

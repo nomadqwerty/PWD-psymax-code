@@ -20,7 +20,7 @@ const ClientFileDownLoad = () => {
   useEffect(() => {
     (async () => {
       setStage('retrieving file details...');
-      toast('retrieving file details...');
+      toast('Dateidetails abrufen...');
       const response = await axiosInstance.post(`/file/download`, {
         userId: userId,
         name: fileName,
@@ -63,14 +63,14 @@ const ClientFileDownLoad = () => {
               iv,
               fileVaultUpdate
             );
-            toast('checking store for file');
+            toast('Speicher auf Datei prüfen');
           }
           if (dataDec.length > 0) {
             dataDec.forEach(async (e) => {
               if (e.fileName.includes(fileName)) {
                 const { fileKey, fileName } = e;
                 setStage('decrypting file...');
-                toast('decrypting file...');
+                toast('Datei entschlüsseln...');
                 let allKeys = await deriveAllKeys(
                   fileKey,
                   ePassword,
@@ -93,15 +93,15 @@ const ClientFileDownLoad = () => {
                     iv
                   );
                   setStage('downloading file...');
-                  toast.success('downloading file...');
+                  toast.success('Datei wird heruntergeladen...');
                   downloadFile(decFile, fileName);
                   setStage('file download successful...');
-                  toast.success('file download successful...');
+                  toast.success('Dateidownload erfolgreich...');
                 }
               }
             });
           } else {
-            toast.error('file not found');
+            toast.error('Datei nicht gefunden');
           }
         }
       }

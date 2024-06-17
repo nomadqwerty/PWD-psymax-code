@@ -34,7 +34,7 @@ const SubmitBtn = ({ isSubmitting, setValues, values }) => {
                 meetingDetails
               );
               if (meetingRes.status === 200) {
-                toast.success('meeting scheduled');
+                toast.success('Treffen geplant');
               }
             }
           }}

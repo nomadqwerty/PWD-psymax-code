@@ -39,13 +39,13 @@ const ConnectionChecker = ({
           networkStatus = true;
           if (isOffline === true) {
             setIsOffline(false);
-            toast.success('connection restored');
+            toast.success('Verbindung wiederhergestellt');
           }
         } else if (navigator.onLine === false) {
           networkStatus = false;
           if (isOffline === false) {
             setIsOffline(true);
-            toast('connection lost');
+            toast('Verbindung unterbrochen');
           }
         } else if (navigator.onLine === undefined) {
           axiosInstance
@@ -171,7 +171,9 @@ const ConnectionChecker = ({
                       );
 
                       readySw.sync.register('updateVaultRequest');
-                      toast.success('Directories queued for update');
+                      toast.success(
+                        'Verzeichnisse stehen zur Aktualisierung in der Warteschlange'
+                      );
                       // console.log('set bg task');
                     }
                   }

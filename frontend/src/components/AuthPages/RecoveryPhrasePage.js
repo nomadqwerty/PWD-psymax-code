@@ -28,7 +28,7 @@ const RecoveryPhrasePage = ({ id }) => {
     // TODO: verify phrase.
     (async () => {
       // console.log(data);
-      toast('verifying Recovery phrase');
+      toast('Überprüfung der Wiederherstellungsphrase');
       const recoveryRes = await axiosInstance.post(`/user/recoveryphrase`, {
         userId: id,
         phrase: data.phrase,
@@ -36,7 +36,7 @@ const RecoveryPhrasePage = ({ id }) => {
       });
       // console.log(recoveryRes);
       if (recoveryRes.status === 200) {
-        toast.success('verified Recovery phrase');
+        toast.success('verifizierter Wiederherstellungssatz');
         router.push(`/passwordreset/${recoveryRes.data.data.userId}`);
       } else {
         toast.error('Unverified Recovery phrase');

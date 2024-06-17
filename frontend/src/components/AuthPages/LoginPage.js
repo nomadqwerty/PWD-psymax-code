@@ -62,7 +62,7 @@ const LoginPage = () => {
         });
         setUserData(responseData);
         if (vaultRes?.status === 200) {
-          toast('Encrypting Client and Password Directories');
+          toast('Verschlüsseln von Client- und Passwortverzeichnissen');
           const vaultResData = vaultRes?.data?.data;
           const operations = window.crypto.subtle || window.crypto.webkitSubtle;
           let clientVault = vaultResData.clientVaults;
@@ -103,7 +103,7 @@ const LoginPage = () => {
                 setUpdateClientVault(decryptedData.setUpdateClientVault);
                 setUpdateFileVault(decryptedData.setUpdateFileVault);
                 toast.success(
-                  'successfully encrypted Client and Password directories'
+                  'erfolgreich verschlüsselte Client- und Passwortverzeichnisse'
                 );
               };
             }
@@ -120,7 +120,7 @@ const LoginPage = () => {
               const response = await axiosInstance.get(`/vault/server`, {
                 headers: { reqType: 'login' },
               });
-              toast('Loading Client and Password Directories');
+              toast('Laden von Client- und Passwortverzeichnissen');
               const psymaxToken = localStorage.getItem('psymax-token');
               authWorker.postMessage({
                 type: 'encryptOnLoginB',
@@ -141,7 +141,7 @@ const LoginPage = () => {
                 setUpdateClientVault(decryptedData.setUpdateClientVault);
                 setUpdateFileVault(decryptedData.setUpdateFileVault);
                 toast.success(
-                  'successfully loaded Client and Password directories'
+                  'Client- und Passwortverzeichnisse wurden erfolgreich geladen'
                 );
               };
             }

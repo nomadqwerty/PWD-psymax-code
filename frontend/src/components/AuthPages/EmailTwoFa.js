@@ -34,13 +34,13 @@ const TwoFactorEmailAuth = ({ id }) => {
       });
       // console.log(twoFaRes);
       if (twoFaRes.status === 200) {
-        toast.success('Email verification complete');
+        toast.success('E-Mail-Bestätigung abgeschlossen');
         // console.log(twoFaRes.data.data.userId);
         router.push(
           `/twofactorauthentication/${twoFaRes.data.data.userId}-recovery`
         );
       } else {
-        toast.error('Failed to verification Email');
+        toast.error('E-Mail-Bestätigung fehlgeschlagen');
         router.push(`/login`);
       }
     })();

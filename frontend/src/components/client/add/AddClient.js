@@ -207,7 +207,7 @@ const ClientAddEdit = React.memo(() => {
         const clientWorker = new Worker();
         const psymaxToken = localStorage.getItem('psymax-token');
         // console.log(data);
-        toast('Encrypting Patient Data');
+        toast('Patientendaten verschlüsseln');
         clientWorker.postMessage({
           type: 'encryptClient',
           data: JSON.stringify({
@@ -226,7 +226,7 @@ const ClientAddEdit = React.memo(() => {
           const encryptedData = JSON.parse(message.data);
 
           if (encryptedData.response?.status === 200) {
-            toast.success('Patient data has been Encrypted');
+            toast.success('Patientendaten wurden verschlüsselt');
             setUpdateClientVault(encryptedData.setUpdateClientVault);
             setClientVault(encryptedData.setClientVault);
 
@@ -282,7 +282,7 @@ const ClientAddEdit = React.memo(() => {
           }
           let userData = localStorage.getItem('psymax-user-data');
           const clientWorker = new Worker();
-          toast('Decrypting Patient Data');
+          toast('Patientendaten entschlüsseln');
           clientWorker.postMessage({
             type: 'decryptClient',
             data: JSON.stringify({
@@ -299,7 +299,7 @@ const ClientAddEdit = React.memo(() => {
             const decryptedData = JSON.parse(message.data);
             setDefaultValues(decryptedData.setDefaultValues);
             setEditData(decryptedData.setEditData);
-            toast.success('Patient data has been decrypted');
+            toast.success('Patientendaten wurden entschlüsselt');
           };
         } catch (error) {
           handleApiError(error, router);

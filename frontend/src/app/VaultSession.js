@@ -60,7 +60,7 @@ const VaultSession = ({ children }) => {
             setServerVault(serverVault);
             setUpdateFileVault(updateFileVault);
             setUpdateClientVault(updateClientVault);
-            toast.success('loaded state from session storage');
+            toast.success('geladener Zustand aus dem Sitzungsspeicher');
           }
         }
       }
@@ -102,7 +102,7 @@ const VaultSession = ({ children }) => {
       ) {
         if (vaultStatus === true) {
           setVaultStatus(false);
-          toast('vault is empty');
+          toast('Der Tresor ist leer');
         }
       }
     }, 15000);
@@ -181,7 +181,7 @@ const VaultSession = ({ children }) => {
           ) {
             const vaultStateJsonNew = JSON.stringify(vaultState);
             sessionStorage.setItem('vaultState', vaultStateJsonNew);
-            toast.success('updated session vault');
+            toast.success('aktualisierter Sitzungstresor');
           }
         }
       }

@@ -93,7 +93,7 @@ const MeetingList = ({ meetingsList, userName }) => {
                     );
 
                     if (meetingRes.status === 204) {
-                      toast.success('meeting deleted');
+                      toast.success('Treffen gelöscht');
                     }
                   }
                 } catch (error) {

@@ -108,7 +108,7 @@ const BriefPage = React.memo(() => {
           // console.log(pass);
           const briefWorker = new Worker();
           const psymaxToken = localStorage.getItem('psymax-token');
-          toast('Decrypting Patient Data');
+          toast('Patientendaten entschlüsseln');
           briefWorker.postMessage({
             type: 'decryptClient',
             data: JSON.stringify({
@@ -124,7 +124,7 @@ const BriefPage = React.memo(() => {
             const decryptedData = JSON.parse(message.data);
 
             setEmpfaenger(decryptedData.setEmpfaenger);
-            toast.success('Decrypted Patient Data successfully');
+            toast.success('Patientendaten erfolgreich entschlüsselt');
           };
         }
       }
@@ -299,7 +299,7 @@ const BriefPage = React.memo(() => {
 
         const briefWorker = new Worker();
         const psymaxToken = localStorage.getItem('psymax-token');
-        toast('Encrypting PDF, preparing to download.');
+        toast('PDF verschlüsseln, Download vorbereiten.');
         briefWorker.postMessage({
           type: 'encryptClientBrief',
           data: JSON.stringify({
@@ -321,7 +321,9 @@ const BriefPage = React.memo(() => {
           setFileVault(encryptedData.setFileVault);
           //  Trigger file download.
           // on return.
-          toast.success('Encrypted PDF file successfully, downloading now');
+          toast.success(
+            'Verschlüsselte PDF-Datei erfolgreich, jetzt herunterladen'
+          );
           let elem = window.document.createElement('a');
           elem.href = window.URL.createObjectURL(downloadFile);
           elem.download = encryptedData.fileName;

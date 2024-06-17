@@ -180,7 +180,7 @@ function SubscriptionDetails() {
         `/subscriptions/${kontoData._id}/cancel`
       );
       if (response?.status === 200) {
-        toast.success('Subscription cancelled successfully');
+        toast.success('Abonnement erfolgreich gekündigt');
         localStorage.setItem('psymax-account-restricted', 'true');
         router.push('/dashboard');
       } else {
@@ -619,7 +619,7 @@ function PaymentModal({ open, setOpen, userId, initialMethod, mutate }) {
       );
 
       if (response?.status === 200) {
-        toast.success('Payment method updated successfully');
+        toast.success('Zahlungsmethode erfolgreich aktualisiert');
         await mutate();
       } else {
         toast.error(SOMETHING_WRONG);

@@ -37,7 +37,7 @@ const PasswordResetPage = ({ id }) => {
         });
         console.log(resVault);
         if (resVault.status === 200) {
-          toast.success('Account Reset is Successful');
+          toast.success('Das Zurücksetzen des Kontos war erfolgreich');
           router.push(`/login`);
         }
       })();
@@ -48,7 +48,7 @@ const PasswordResetPage = ({ id }) => {
     // TODO: rest password.
     const psymaxToken = localStorage.getItem('psymax-token');
     const authWorker = new Worker();
-    toast('Account reset in progress');
+    toast('Zurücksetzen des Kontos wird ausgeführt');
 
     authWorker.postMessage({
       type: 'restoreAccountEncryption',
@@ -59,7 +59,7 @@ const PasswordResetPage = ({ id }) => {
       }),
     });
     authWorker.onmessage = (message) => {
-      toast.success('Account directories have been encrypted');
+      toast.success('Kontoverzeichnisse wurden verschlüsselt');
       const restoredData = JSON.parse(message.data);
       setNewRecoveryKey(restoredData.setNewRecoveryKey);
       setFileEncVault(restoredData.setFileEncVault);

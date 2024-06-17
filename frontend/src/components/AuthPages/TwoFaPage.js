@@ -38,7 +38,7 @@ const TwoFactorAuthPage = ({ id, type }) => {
       // console.log('submit');
       if (inputVal == code) {
         if (timeSent > Date.now()) {
-          toast.success('access key is valid');
+          toast.success('Der Zugangsschlüssel ist gültig');
           if (type === 'login') {
             router.push('/dashboard');
           }
@@ -48,11 +48,11 @@ const TwoFactorAuthPage = ({ id, type }) => {
           }
           // console.log('on time');
         } else {
-          toast.error('access key is invalid');
+          toast.error('Der Zugriffsschlüssel ist ungültig');
           router.push('/login');
         }
       } else {
-        toast.error('access key is invalid');
+        toast.error('Der Zugriffsschlüssel ist ungültig');
         sessionStorage.removeItem('vaultState');
         router.push('/login');
       }
@@ -75,7 +75,7 @@ const TwoFactorAuthPage = ({ id, type }) => {
             setCode(twoFaCode);
             setSent(true);
             setTimeSent(Date.now() + 900000);
-            toast('access key has been sent to your Email');
+            toast('Der Zugangsschlüssel wurde an Ihre E-Mail-Adresse gesendet');
           }
         }
       }, 5000);

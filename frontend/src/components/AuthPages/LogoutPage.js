@@ -24,7 +24,7 @@ const LogoutPage = () => {
     userData = JSON.parse(userData);
     const psymaxToken = localStorage.getItem('psymax-token');
     const authWorker = new Worker();
-    toast('updating account directories');
+    toast('Aktualisieren von Kontoverzeichnissen');
     authWorker.postMessage({
       type: 'encryptOnLogout',
       data: JSON.stringify({
@@ -40,7 +40,7 @@ const LogoutPage = () => {
     });
     authWorker.onmessage = (message) => {
       if (message.data === 'clearData') {
-        toast.success('Account directories have been updated');
+        toast.success('Die Kontoverzeichnisse wurden aktualisiert');
         localStorage.removeItem('psymax-token');
         localStorage.removeItem('psymax-user-data');
         localStorage.removeItem('psymax-is-admin');

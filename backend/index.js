@@ -48,9 +48,12 @@ app.use((err, req, res, next) => {
 
 async function connectToDatabase() {
   try {
-    await mongoose.connect(DB_URL, {
-      useNewUrlParser: true,
-    });
+    await mongoose.connect(
+      'mongodb+srv://topbuyDB:topbuymongodb@cluster0.0xlvjsg.mongodb.net/psymax',
+      {
+        useNewUrlParser: true,
+      }
+    );
     console.log(`Connected to ${DB_URL}`);
     // Run seeder after connecting to the database
     await seedBriefData();

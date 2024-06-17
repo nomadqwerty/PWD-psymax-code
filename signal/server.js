@@ -12,7 +12,7 @@ const { Server } = require('socket.io');
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const cors = require('cors'); // Import the cors middleware
-const PORT = 3050;
+const PORT = process.env.PORT || 3050;
 
 // async function main() {
 // open the database file

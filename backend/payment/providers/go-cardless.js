@@ -15,17 +15,24 @@ const {
 const { globalExtendedPricing } = require('../../config');
 const { InvoiceSchema } = require('../../models/invoiceModel');
 
-const Redis = require('ioredis');
+// const Redis = require('ioredis');
+const { Redis } = require('@upstash/redis');
 const Bull = require('bull');
 
 const redis = new Redis({
-  host: process.env.REDIS_HOST,
-  port: process.env.REDIS_PORT,
+  url: process.env.REDIS_HOST || 'https://grateful-viper-33681.upstash.io',
+  port: process.env.REDIS_PORT || '6379',
+  token:
+    process.env.REDIS_PASSWORD ||
+    'AYORAAIncDEwMGFmYmE5YWYxMWI0ZGYxYTk5M2I3OGNmMjdlNjlhMXAxMzM2ODE',
 });
 const eventQueue = new Bull('event-queue', {
   redis: {
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
+    host: process.env.REDIS_HOST || 'https://grateful-viper-33681.upstash.io',
+    port: process.env.REDIS_PORT || '6379',
+    password:
+      process.env.REDIS_PASSWORD ||
+      'AYORAAIncDEwMGFmYmE5YWYxMWI0ZGYxYTk5M2I3OGNmMjdlNjlhMXAxMzM2ODE',
   },
 });
 

@@ -375,7 +375,9 @@ const FullRtc = () => {
   //create socket connection & initialise events if !socketconn && stream
   useEffect(() => {
     if (!socketRef.current && stream) {
-      socketRef.current = io('http://localhost:3050'); //create socket instance if noRef and video stream avail
+      socketRef.current = io(
+        'https://pwd-psymax-code-production-f927.up.railway.app'
+      ); //create socket instance if noRef and video stream avail
 
       // socket.emit("hello", "hello from offer UE");
       socketRef.current.on('connect', handleSocketConnected);

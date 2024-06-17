@@ -156,5 +156,11 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
+process.on('uncaughtException', (error) => {
+  console.log(error.message);
+});
+process.on('unhandledRejection', (error) => {
+  console.log(error.message);
+});
 
 server.listen(PORT || 4000, () => console.log(`Listening on port ${PORT}`));

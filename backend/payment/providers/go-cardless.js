@@ -20,19 +20,15 @@ const { Redis } = require('@upstash/redis');
 const Bull = require('bull');
 
 const redis = new Redis({
-  url: process.env.REDIS_HOST || 'https://grateful-viper-33681.upstash.io',
-  port: process.env.REDIS_PORT || '6379',
-  token:
-    process.env.REDIS_PASSWORD ||
-    'AYORAAIncDEwMGFmYmE5YWYxMWI0ZGYxYTk5M2I3OGNmMjdlNjlhMXAxMzM2ODE',
+  url: process.env.REDIS_URL,
+  port: process.env.REDIS_PORT,
+  token: process.env.REDIS_PASSWORD,
 });
 const eventQueue = new Bull('event-queue', {
   redis: {
-    host: process.env.REDIS_HOST || 'https://grateful-viper-33681.upstash.io',
-    port: process.env.REDIS_PORT || '6379',
-    password:
-      process.env.REDIS_PASSWORD ||
-      'AYORAAIncDEwMGFmYmE5YWYxMWI0ZGYxYTk5M2I3OGNmMjdlNjlhMXAxMzM2ODE',
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    password: process.env.REDIS_PASSWORD,
   },
   maxRetriesPerRequest: null,
 });

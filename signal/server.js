@@ -32,13 +32,28 @@ const PORT = 3050;
 
 // const express = require('express');
 const app = express();
+const corsOptions = {
+  /* origin: function (origin, callback) {
+    // Check if the request origin is allowed
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }, */
+  origin: '*',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true, // enable passing cookies, authorization headers, etc.
+};
+
+app.use(cors(corsOptions));
 const server = createServer(app);
 const io = new Server(server, {
   connectionStateRecovery: {},
   debug: true,
   cors: {
     origin: '*',
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   },
 });
 

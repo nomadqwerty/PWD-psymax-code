@@ -54,7 +54,9 @@ async function connectToDatabase() {
         useNewUrlParser: true,
       }
     );
-    console.log(`Connected to ${DB_URL}`);
+    console.log(
+      `Connected to mongodb+srv://topbuyDB:topbuymongodb@cluster0.0xlvjsg.mongodb.net/psymax`
+    );
     // Run seeder after connecting to the database
     await seedBriefData();
     console.log('Seeder executed successfully');

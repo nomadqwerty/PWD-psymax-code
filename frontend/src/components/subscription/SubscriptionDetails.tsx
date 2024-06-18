@@ -157,6 +157,15 @@ function SubscriptionDetails() {
   }, [kontoData, subscriptionData]);
 
   useEffect(() => {
+    const userLocalStorageData = localStorage.getItem('psymax-user-data');
+    if (userLocalStorageData !== 'undefined') {
+      const userData = JSON.parse(userLocalStorageData);
+      if (!userData?.Chiffre) {
+        router.push('/dashboard/kontoeinstellungen');
+      }
+    }
+  }, []);
+  useEffect(() => {
     async function fetchData() {
       try {
         const response = await axiosInstance.get(`/user/get`);

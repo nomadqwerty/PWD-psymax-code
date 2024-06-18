@@ -46,6 +46,7 @@ const LoginPage = () => {
       if (response?.status === 200) {
         const user_id = responseData._id;
         let subResData;
+        console.log(responseData);
         try {
           const subRes = await axiosInstance.get(`/subscriptions/${user_id}`, {
             headers: { reqType: 'login' },
@@ -62,7 +63,7 @@ const LoginPage = () => {
         });
         setUserData(responseData);
         if (vaultRes?.status === 200) {
-          toast('Verschlüsseln von Client- und Passwortverzeichnissen');
+          toast('Laden von Client- und Passwortverzeichnissen');
           const vaultResData = vaultRes?.data?.data;
           const operations = window.crypto.subtle || window.crypto.webkitSubtle;
           let clientVault = vaultResData.clientVaults;
@@ -103,7 +104,7 @@ const LoginPage = () => {
                 setUpdateClientVault(decryptedData.setUpdateClientVault);
                 setUpdateFileVault(decryptedData.setUpdateFileVault);
                 toast.success(
-                  'erfolgreich verschlüsselte Client- und Passwortverzeichnisse'
+                  'Client- und Passwortverzeichnisse wurden erfolgreich geladen'
                 );
               };
             }
@@ -159,16 +160,16 @@ const LoginPage = () => {
           payload: { isLoggedin: true, userData: responseData },
         });
 
-        if (subResData !== undefined && responseData) {
+        if (subResData !== undefined || responseData) {
           setUserSubcriptionStatus({
-            status: subResData.status,
-            trialPeriod: responseData.trialPeriodActive,
+            status: subResData?.status || 'INACTIVE',
+            trialPeriod: responseData?.trialPeriodActive || false,
           });
           sessionStorage.setItem(
             'userSubcriptionStatus',
             JSON.stringify({
-              status: subResData.status,
-              trialPeriod: responseData.trialPeriodActive,
+              status: subResData?.status || 'INACTIVE',
+              trialPeriod: responseData?.trialPeriodActive || false,
             })
           );
         } else {
@@ -209,7 +210,7 @@ const LoginPage = () => {
       const vaultStateJson = JSON.stringify(vaultState);
       sessionStorage.setItem('vaultState', vaultStateJson);
       // console.log(vaultState);
-
+      console.log(userSubcriptionStatus);
       if (userSubcriptionStatus === false) {
         router.push('/subscription');
       } else {

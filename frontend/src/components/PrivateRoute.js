@@ -30,8 +30,8 @@ const PrivateRoute = (WrappedComponent) => {
               if (subRes.status === 200) {
                 subResData = subRes.data.data;
                 let subObj = {
-                  status: subResData.status,
-                  trialPeriod: responseData.trialPeriodActive,
+                  status: subResData?.status || 'INACTIVE',
+                  trialPeriod: responseData?.trialPeriodActive || false,
                 };
 
                 userSubStatus = { ...subObj };

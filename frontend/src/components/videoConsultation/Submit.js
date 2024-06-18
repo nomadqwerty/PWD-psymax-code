@@ -4,7 +4,7 @@ import axiosInstance from '../../utils/axios';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
-const SubmitBtn = ({ isSubmitting, setValues, values }) => {
+const SubmitBtn = ({ isSubmitting, setValues, values, setNewMeeting }) => {
   const [userId, setUserId] = useState(null);
   useEffect(() => {
     let userData = localStorage?.getItem('psymax-user-data');
@@ -35,6 +35,7 @@ const SubmitBtn = ({ isSubmitting, setValues, values }) => {
               );
               if (meetingRes.status === 200) {
                 toast.success('Treffen geplant');
+                setNewMeeting('true');
               }
             }
           }}

@@ -4,13 +4,35 @@ import { useRouter } from 'next/navigation';
 import axiosInstance from '@/utils/axios';
 import { handleApiError } from '@/utils/apiHelpers';
 import toast from 'react-hot-toast';
+import { useEffect, useState } from 'react';
 
-const MeetingList = ({ meetingsList, userName }) => {
+const MeetingList = ({ userName, newMeeting, setNewMeeting }) => {
   const router = useRouter();
-  if (!meetingsList) {
-    meetingsList = [];
-  }
-  console.log(userName);
+  const [meetingsState, setMeetingState] = useState();
+
+  useEffect(() => {
+    const getMeetings = async () => {
+      let userData = localStorage?.getItem('psymax-user-data');
+
+      if (userData) {
+        userData = JSON.parse(userData);
+        const meetingListRes = await axiosInstance.get(
+          `/meetings/all/${userData._id}`
+        );
+        console.log(meetingListRes);
+        if (meetingListRes.status === 200 && meetingListRes?.data?.data) {
+          console.log(meetingListRes.data.data.meetings);
+          setMeetingState(meetingListRes.data.data.meetings);
+        }
+      }
+    };
+    getMeetings().then(() => {
+      console.log('new list');
+    });
+    setNewMeeting(null);
+    console.log('setmeeting');
+  }, [newMeeting]);
+
   const formatDate = (inputDateString) => {
     const inputDate = new Date(inputDateString);
 
@@ -22,8 +44,8 @@ const MeetingList = ({ meetingsList, userName }) => {
 
     return formattedDate;
   };
-
-  let meetings = meetingsList?.map((meeting, index) => {
+  console.log(meetingsState);
+  let meetings = meetingsState?.map((meeting, index) => {
     return (
       <Grid key={index} item xs={12} sm={12} md={6} xl={6}>
         <div
@@ -94,6 +116,7 @@ const MeetingList = ({ meetingsList, userName }) => {
 
                     if (meetingRes.status === 204) {
                       toast.success('Treffen gelöscht');
+                      setNewMeeting(true);
                     }
                   }
                 } catch (error) {

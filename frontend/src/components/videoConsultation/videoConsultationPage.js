@@ -8,6 +8,7 @@ import AppLayout from '../AppLayout';
 import MeetingList from './meetingList';
 import { Typography, Grid } from '@mui/material';
 import axiosInstance from '../../utils/axios';
+import { useRouter } from 'next/navigation';
 
 const VideoConsultationPage = () => {
   const {
@@ -23,26 +24,24 @@ const VideoConsultationPage = () => {
   const [values, setValues] = useState();
   const [meetings, setMeetings] = useState(null);
   const [userName, setUserName] = useState(null);
-  const onScheduleCall = () => {};
+  const [newMeeting, setNewMeeting] = useState(null);
+  const router = useRouter();
   useEffect(() => {
-    (async () => {
-      let userData = localStorage?.getItem('psymax-user-data');
-
-      if (userData) {
-        userData = JSON.parse(userData);
-        const meetingListRes = await axiosInstance.get(
-          `/meetings/all/${userData._id}`
-        );
-        if (
-          meetingListRes.status === 200 &&
-          meetingListRes?.data?.data &&
-          meetings === null
-        ) {
-          setMeetings(meetingListRes.data.data.meetings);
-          setUserName(userData.Nachname);
-        }
+    const userLocalStorageData = localStorage.getItem('psymax-user-data');
+    if (userLocalStorageData !== 'undefined') {
+      const userData = JSON.parse(userLocalStorageData);
+      if (!userData?.Chiffre) {
+        router.push('/dashboard/kontoeinstellungen');
       }
-    })();
+    }
+  }, []);
+  useEffect(() => {
+    let userData = localStorage?.getItem('psymax-user-data');
+
+    if (userData) {
+      userData = JSON.parse(userData);
+      setUserName(userData.Nachname);
+    }
   });
   return (
     <AppLayout>
@@ -77,9 +76,9 @@ const VideoConsultationPage = () => {
             isSubmitting={isSubmitting}
             setValues={setValues}
             values={values}
+            setNewMeeting={setNewMeeting}
           ></SubmitBtn>
         </div>
-        <button onClick={onScheduleCall}></button>
       </div>
       <div>
         <div>
@@ -97,7 +96,11 @@ const VideoConsultationPage = () => {
             </Typography>
           </Grid>
         </div>
-        <MeetingList meetingsList={meetings} userName={userName}></MeetingList>
+        <MeetingList
+          userName={userName}
+          newMeeting={newMeeting}
+          setNewMeeting={setNewMeeting}
+        ></MeetingList>
       </div>
     </AppLayout>
   );

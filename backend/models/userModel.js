@@ -135,7 +135,6 @@ const userAppSchema = new Schema({
     trim: true,
   },
   inviteCode: {
-    required: true,
     type: String,
     trim: true,
   },
@@ -165,15 +164,15 @@ const userAppSchema = new Schema({
   referralBonusCycles: { type: Number },
   emergencyPassword: {
     type: String,
-    required:[true, 'emergency password required']
+    required: [true, 'emergency password required'],
   },
-  recoveryKey:{
-      type:Buffer,
-      default:''
+  recoveryKey: {
+    type: Buffer,
+    default: '',
   },
-  recoveryPhrase:{
-      type:String,
-  }
+  recoveryPhrase: {
+    type: String,
+  },
 });
 
 const UserSchema = mongoose.model('users', userAppSchema);

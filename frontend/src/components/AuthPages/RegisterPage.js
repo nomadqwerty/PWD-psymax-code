@@ -5,7 +5,7 @@ import CssTextField from '../../components/CssTextField';
 import toast from 'react-hot-toast';
 import axiosInstance from '../../utils/axios';
 import { SOMETHING_WRONG } from '../../utils/constants';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { AuthContext } from '../../context/auth.context';
 import { useRouter } from 'next/navigation';
 import zxcvbn from 'zxcvbn';
@@ -23,48 +23,61 @@ const Register = () => {
 
   const { dispatch } = useContext(AuthContext);
   const router = useRouter();
+  const [isRegistering, setIsRegistering] = useState(false);
 
   const onSubmit = async (data) => {
     try {
-      data.emergencyPassword = passwordGenerator();
-      // TODO:
-      // isEncrypted: false - pass
+      if (!isRegistering) {
+        setIsRegistering(true);
+        data.emergencyPassword = passwordGenerator();
+        // TODO:
+        // isEncrypted: false - pass
+        if (data.inviteCode.length === 0) {
+          data.inviteCode = undefined;
+        }
+        console.log(data);
+        const response = await axiosInstance.post(`/register`, data);
+        const responseData = response?.data;
+        console.log(responseData);
+        if (response?.status === 200) {
+          let user_id = responseData.data.userId;
+          let fileVault = JSON.stringify({
+            data: [{ fileName: '', fileReference: '', fileKey: '' }],
+          });
+          let clientVault = JSON.stringify({
+            data: [{ clientId: '', clientKey: '' }],
+          });
 
-      const response = await axiosInstance.post(`/register`, data);
-      const responseData = response?.data;
-      if (response?.status === 200) {
-        let user_id = responseData.data.userId;
-        let fileVault = JSON.stringify({
-          data: [{ fileName: '', fileReference: '', fileKey: '' }],
-        });
-        let clientVault = JSON.stringify({
-          data: [{ clientId: '', clientKey: '' }],
-        });
+          // create user file and client vaults.
+          const resVault = await axiosInstance.post(`/vault/user`, {
+            userId: user_id,
+            type: 'main',
+            isEncrypted: false,
 
-        // create user file and client vaults.
-        const resVault = await axiosInstance.post(`/vault/user`, {
-          userId: user_id,
-          type: 'main',
-          isEncrypted: false,
-
-          passwords: fileVault.data,
-          clients: clientVault.data,
-          reqType: 'register',
-        });
-        // create user file store.
-        const resFile = await axiosInstance.post(`/file/create`, {
-          userId: user_id,
-          reqType: 'register',
-        });
-        console.log(resVault, resFile);
-        dispatch({ type: 'INITIAL_STATE' });
-        router.push('/login');
-        toast.success(responseData?.message);
+            passwords: fileVault.data,
+            clients: clientVault.data,
+            reqType: 'register',
+          });
+          // create user file store.
+          const resFile = await axiosInstance.post(`/file/create`, {
+            userId: user_id,
+            reqType: 'register',
+          });
+          console.log(resVault, resFile);
+          dispatch({ type: 'INITIAL_STATE' });
+          router.push('/login');
+          toast.success(responseData?.message);
+          setIsRegistering(false);
+        } else {
+          toast.error(SOMETHING_WRONG);
+          setIsRegistering(false);
+        }
       } else {
-        toast.error(SOMETHING_WRONG);
+        toast('account setup is ongoing, please be patient');
       }
     } catch (error) {
       handleApiError(error, router);
+      setIsRegistering(false);
     }
   };
   return (
@@ -208,7 +221,7 @@ const Register = () => {
                   id="inviteCode"
                   label="Einladungscode"
                   variant="outlined"
-                  {...register('inviteCode', { required: true })}
+                  {...register('inviteCode')}
                   error={!!errors.inviteCode}
                   inputProps={{
                     className: 'interFonts',

@@ -9,12 +9,7 @@ import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
-let twoFaCode;
-
 // generate TwoFaCode
-(async () => {
-  twoFaCode = passwordGenerator();
-})();
 
 const TwoFactorAuthPage = ({ id, type }) => {
   const [sent, setSent] = useState(false);
@@ -22,6 +17,7 @@ const TwoFactorAuthPage = ({ id, type }) => {
   const [code, setCode] = useState(false);
   const [userInput, setUserInput] = useState('');
   const router = useRouter();
+  let twoFaCode;
 
   const {
     register,
@@ -30,6 +26,11 @@ const TwoFactorAuthPage = ({ id, type }) => {
     formState: { errors },
   } = useForm();
 
+  useEffect(() => {
+    (async () => {
+      twoFaCode = passwordGenerator();
+    })();
+  }, []);
   const onSubmit = (data) => {
     // console.log(data);
     if (sent && code) {

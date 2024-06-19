@@ -25,7 +25,7 @@ const register = async (req, res, next) => {
       req.body;
     const passwordStrength = zxcvbn(password);
 
-    if (passwordStrength?.score < 3) {
+    if (passwordStrength?.score < 3 || recoveryPhrase.length < 4) {
       let response = {
         status_code: 400,
         message: 'Das Passwort sollte sicher sein',
@@ -37,11 +37,12 @@ const register = async (req, res, next) => {
       email: Joi.string().email().required(),
       password: Joi.string().required(),
       confirmPassword: Joi.string().required().valid(Joi.ref('password')),
-      inviteCode: Joi.string().required(),
+      inviteCode: Joi.string().optional(),
       emergencyPassword: Joi.string(),
-      recoveryPhrase: Joi.string(),
+      recoveryPhrase: Joi.string().required(),
     });
     const { error } = registrationSchema.validate(req.body);
+    console.log(error);
     if (error) {
       let response = {
         status_code: 400,
@@ -54,6 +55,8 @@ const register = async (req, res, next) => {
       email: email,
       status: { $in: [0, 1, 2] },
     });
+
+    console.log(checkExist);
 
     if (checkExist) {
       let response = {
@@ -111,6 +114,7 @@ const register = async (req, res, next) => {
     };
     return res.status(200).send(response);
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };

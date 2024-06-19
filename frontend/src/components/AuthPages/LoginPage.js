@@ -21,6 +21,7 @@ const LoginPage = () => {
     formState: { errors },
   } = useForm();
   const [userData, setUserData] = useState();
+  const [userLogin, setUserLogin] = useState(false);
   const [userSubcriptionStatus, setUserSubcriptionStatus] = useState(undefined);
   const { dispatch } = useContext(AuthContext);
   const router = useRouter();
@@ -41,144 +42,160 @@ const LoginPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      const response = await axiosInstance.post(`/login`, data);
-      const responseData = response?.data?.data;
-      if (response?.status === 200) {
-        const user_id = responseData._id;
-        let subResData;
-        console.log(responseData);
-        try {
-          const subRes = await axiosInstance.get(`/subscriptions/${user_id}`, {
+      if (userLogin === false) {
+        const response = await axiosInstance.post(`/login`, data);
+        const responseData = response?.data?.data;
+        if (response?.status === 200) {
+          setUserLogin(true);
+          const user_id = responseData._id;
+          let subResData;
+          console.log(responseData);
+          try {
+            const subRes = await axiosInstance.get(
+              `/subscriptions/${user_id}`,
+              {
+                headers: { reqType: 'login' },
+              }
+            );
+            if (subRes.status === 200) {
+              subResData = subRes.data.data;
+            }
+          } catch (error) {
+            console.log('no subscription');
+          }
+
+          const vaultRes = await axiosInstance.get(`/vault/user/${user_id}`, {
             headers: { reqType: 'login' },
           });
-          if (subRes.status === 200) {
-            subResData = subRes.data.data;
-          }
-        } catch (error) {
-          console.log('no subscription');
-        }
+          setUserData(responseData);
+          if (vaultRes?.status === 200) {
+            toast('Laden von Client- und Passwortverzeichnissen');
+            const vaultResData = vaultRes?.data?.data;
+            const operations =
+              window.crypto.subtle || window.crypto.webkitSubtle;
+            let clientVault = vaultResData.clientVaults;
+            let fileVault = vaultResData.vaults;
 
-        const vaultRes = await axiosInstance.get(`/vault/user/${user_id}`, {
-          headers: { reqType: 'login' },
-        });
-        setUserData(responseData);
-        if (vaultRes?.status === 200) {
-          toast('Laden von Client- und Passwortverzeichnissen');
-          const vaultResData = vaultRes?.data?.data;
-          const operations = window.crypto.subtle || window.crypto.webkitSubtle;
-          let clientVault = vaultResData.clientVaults;
-          let fileVault = vaultResData.vaults;
+            let clientEncrypted = isEncrypted(clientVault);
+            let fileEncrypted = isEncrypted(fileVault);
+            //
+            // TODO: create user vault if none is found.
+            if (!clientEncrypted && !fileEncrypted) {
+              if (!operations) {
+                alert('Web Crypto is not supported on this browser');
+                console.warn('Web Crypto API not supported');
+              } else {
+                const authWorker = new Worker();
+                let userData = responseData;
+                const response = await axiosInstance.get(`/vault/server`, {
+                  headers: { reqType: 'login' },
+                });
+                const psymaxToken = localStorage.getItem('psymax-token');
 
-          let clientEncrypted = isEncrypted(clientVault);
-          let fileEncrypted = isEncrypted(fileVault);
-          //
-          // TODO: create user vault if none is found.
-          if (!clientEncrypted && !fileEncrypted) {
-            if (!operations) {
-              alert('Web Crypto is not supported on this browser');
-              console.warn('Web Crypto API not supported');
-            } else {
+                authWorker.postMessage({
+                  type: 'encryptOnLoginA',
+                  data: JSON.stringify({
+                    clientVault,
+                    fileVault,
+                    response,
+                    userData,
+                    psymaxToken,
+                  }),
+                });
+                authWorker.onmessage = (message) => {
+                  const decryptedData = JSON.parse(message.data);
+                  // console.log(decryptedData);
+                  setClientVault(decryptedData.setClientVault);
+                  setFileVault(decryptedData.setFileVault);
+                  setServerVault(decryptedData.setServerVault);
+                  setUpdateClientVault(decryptedData.setUpdateClientVault);
+                  setUpdateFileVault(decryptedData.setUpdateFileVault);
+                  toast.success(
+                    'Client- und Passwortverzeichnisse wurden erfolgreich geladen'
+                  );
+                };
+              }
+            }
+            //
+            else {
               const authWorker = new Worker();
-              let userData = responseData;
-              const response = await axiosInstance.get(`/vault/server`, {
-                headers: { reqType: 'login' },
-              });
-              const psymaxToken = localStorage.getItem('psymax-token');
 
-              authWorker.postMessage({
-                type: 'encryptOnLoginA',
-                data: JSON.stringify({
-                  clientVault,
-                  fileVault,
-                  response,
-                  userData,
-                  psymaxToken,
-                }),
-              });
-              authWorker.onmessage = (message) => {
-                const decryptedData = JSON.parse(message.data);
-                // console.log(decryptedData);
-                setClientVault(decryptedData.setClientVault);
-                setFileVault(decryptedData.setFileVault);
-                setServerVault(decryptedData.setServerVault);
-                setUpdateClientVault(decryptedData.setUpdateClientVault);
-                setUpdateFileVault(decryptedData.setUpdateFileVault);
-                toast.success(
-                  'Client- und Passwortverzeichnisse wurden erfolgreich geladen'
-                );
-              };
+              if (!operations) {
+                alert('Web Crypto is not supported on this browser');
+                console.warn('Web Crypto API not supported');
+              } else {
+                let userData = responseData;
+                const response = await axiosInstance.get(`/vault/server`, {
+                  headers: { reqType: 'login' },
+                });
+                toast('Laden von Client- und Passwortverzeichnissen');
+                const psymaxToken = localStorage.getItem('psymax-token');
+                authWorker.postMessage({
+                  type: 'encryptOnLoginB',
+                  data: JSON.stringify({
+                    clientVault,
+                    fileVault,
+                    response,
+                    userData,
+                    psymaxToken,
+                  }),
+                });
+                authWorker.onmessage = (message) => {
+                  const decryptedData = JSON.parse(message.data);
+
+                  setClientVault(decryptedData.setClientVault);
+                  setFileVault(decryptedData.setFileVault);
+                  setServerVault(decryptedData.setServerVault);
+                  setUpdateClientVault(decryptedData.setUpdateClientVault);
+                  setUpdateFileVault(decryptedData.setUpdateFileVault);
+                  toast.success(
+                    'Client- und Passwortverzeichnisse wurden erfolgreich geladen'
+                  );
+                };
+              }
             }
+            setUserLogin(true);
+            toast('login is ongoing, please be patient');
           }
-          //
-          else {
-            const authWorker = new Worker();
 
-            if (!operations) {
-              alert('Web Crypto is not supported on this browser');
-              console.warn('Web Crypto API not supported');
-            } else {
-              let userData = responseData;
-              const response = await axiosInstance.get(`/vault/server`, {
-                headers: { reqType: 'login' },
-              });
-              toast('Laden von Client- und Passwortverzeichnissen');
-              const psymaxToken = localStorage.getItem('psymax-token');
-              authWorker.postMessage({
-                type: 'encryptOnLoginB',
-                data: JSON.stringify({
-                  clientVault,
-                  fileVault,
-                  response,
-                  userData,
-                  psymaxToken,
-                }),
-              });
-              authWorker.onmessage = (message) => {
-                const decryptedData = JSON.parse(message.data);
+          localStorage.setItem('psymax-loggedin', true);
 
-                setClientVault(decryptedData.setClientVault);
-                setFileVault(decryptedData.setFileVault);
-                setServerVault(decryptedData.setServerVault);
-                setUpdateClientVault(decryptedData.setUpdateClientVault);
-                setUpdateFileVault(decryptedData.setUpdateFileVault);
-                toast.success(
-                  'Client- und Passwortverzeichnisse wurden erfolgreich geladen'
-                );
-              };
-            }
-          }
-        }
+          localStorage.setItem('psymax-token', responseData?.token);
+          localStorage.setItem(
+            'psymax-user-data',
+            JSON.stringify(responseData)
+          );
+          localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
 
-        localStorage.setItem('psymax-loggedin', true);
-
-        localStorage.setItem('psymax-token', responseData?.token);
-        localStorage.setItem('psymax-user-data', JSON.stringify(responseData));
-        localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
-
-        dispatch({
-          type: 'LOGIN',
-          payload: { isLoggedin: true, userData: responseData },
-        });
-
-        if (subResData !== undefined || responseData) {
-          setUserSubcriptionStatus({
-            status: subResData?.status || 'INACTIVE',
-            trialPeriod: responseData?.trialPeriodActive || false,
+          dispatch({
+            type: 'LOGIN',
+            payload: { isLoggedin: true, userData: responseData },
           });
-          sessionStorage.setItem(
-            'userSubcriptionStatus',
-            JSON.stringify({
+
+          if (subResData !== undefined || responseData) {
+            setUserSubcriptionStatus({
               status: subResData?.status || 'INACTIVE',
               trialPeriod: responseData?.trialPeriodActive || false,
-            })
-          );
+            });
+            sessionStorage.setItem(
+              'userSubcriptionStatus',
+              JSON.stringify({
+                status: subResData?.status || 'INACTIVE',
+                trialPeriod: responseData?.trialPeriodActive || false,
+              })
+            );
+          } else {
+            setUserSubcriptionStatus(false);
+          }
         } else {
-          setUserSubcriptionStatus(false);
+          toast.error(SOMETHING_WRONG);
+          setUserLogin(false);
         }
-      } else {
-        toast.error(SOMETHING_WRONG);
+        setUserLogin(true);
       }
     } catch (error) {
+      setUserLogin(false);
+
       // const resUrl = error.request.responseURL;
       // if (resUrl.includes('/api/subscriptions')) {
       // } else {

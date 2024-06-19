@@ -1,10 +1,7 @@
 import MyAppWrap from './AppWrap';
 //bootstrap imports
-import BootstrapClient from '../utils/bootstrap/BootstrapClient';
-import 'bootstrap-icons/font/bootstrap-icons.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 // import { SocketContext, socket } from "./context/SocketContext";
-import { Container } from 'react-bootstrap';
 import Script from 'next/script';
 
 export const metadata = {
@@ -19,12 +16,7 @@ export default function RootLayout({ children }) {
         <Script defer src="/idb.js"></Script>
       </head>
       <body>
-        <MyAppWrap>
-          <Container id="root" className="p-0 m-0" fluid>
-            {children}
-          </Container>
-          <BootstrapClient />
-        </MyAppWrap>
+        <MyAppWrap>{children}</MyAppWrap>
       </body>
     </html>
   );

@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { io } from 'socket.io-client';
 import { Row, Col } from 'react-bootstrap';
 import Settings from './Settings/Settings';
+import RtcLayout from './RtcPage';
 // import Link from "next/link";
 
 const FullRtc = () => {
@@ -55,7 +56,8 @@ const FullRtc = () => {
   const isCameraOnRef = useRef(null);
   const searchParams = useSearchParams();
   const accessKey = searchParams.get('accessKey');
-  const localClientName = searchParams.get('clientName');
+  let localClientName = searchParams.get('clientName');
+
   //VIDEO APP STATE CONTROLS
 
   //add video quality
@@ -72,13 +74,8 @@ const FullRtc = () => {
   // };
 
   const [constraints, setConstraints] = useState({
-    video: {
-      deviceId: '',
-      noiseSuppression: true,
-      width: { min: 640, ideal: 1920, max: 1920 },
-      height: { min: 640, ideal: 1920, max: 1920 },
-    },
-    audio: { deviceId: '', echoCancellation: true, noiseSuppression: true },
+    video: true,
+    audio: true,
   });
 
   const handleDeviceChange = (newStream) => {
@@ -94,10 +91,19 @@ const FullRtc = () => {
   };
   //useeffect to redirect user to lobby if no accesskey is found
   useEffect(() => {
+    if (!localClientName) {
+      const params = window.location;
+      const nameIndex = params.href.indexOf('clientName');
+      const url = params.href;
+      const clientName = url.slice(nameIndex, url.length).split('=')[1];
+      localClientName = clientName;
+    }
+  }, [localClientName]);
+  useEffect(() => {
     if (accessKey) {
       setRoomAccessKey(accessKey);
     } else {
-      router.push('/dashboard/videosprechstunde/lobby');
+      router.push('/lobby');
       // window.location = 'lobby'
     }
   }, [router, accessKey]);
@@ -203,10 +209,8 @@ const FullRtc = () => {
 
   //handler for when a remoteName event is emitted
   const handleRemoteName = async (data) => {
-    if (data) {
-      const { remoteName } = await data;
-      remoteName ? setremoteClientName(remoteName) : null;
-    }
+    const { remoteName } = await data;
+    remoteName ? setremoteClientName(remoteName) : null;
   };
 
   const handleChatMsg = async (data) => {
@@ -237,7 +241,7 @@ const FullRtc = () => {
 
     if (stream) {
       const videoTrack = stream
-        .getTracks()
+        ?.getTracks()
         .find((track) => track.kind === 'video');
       setVideoTrack(videoTrack);
       if (localVideoRef.current) {
@@ -378,7 +382,7 @@ const FullRtc = () => {
       socketRef.current = io(process.env.NEXT_PUBLIC_SIGNAL_HOST, {
         transports: ['websocket'],
       }); //create socket instance if noRef and video stream avail
-      console.log(socketRef.current);
+
       // socket.emit("hello", "hello from offer UE");
       socketRef.current.on('connect', handleSocketConnected);
 
@@ -464,7 +468,7 @@ const FullRtc = () => {
     }
 
     //emit camerastate of peer when peer connection is being established
-    if (socketRef.current) {
+    if (socketRef.current && stream) {
       let videoTrack = stream
         .getTracks()
         .find((track) => track.kind === 'video'); //get video tracks
@@ -494,7 +498,7 @@ const FullRtc = () => {
     peerConnection.ontrack = (event) => {
       console.log('a track has been found! adding to peerconnection ');
       console.log(event.streams[0]);
-      event.streams[0].getTracks().forEach((track) => {
+      event.streams[0]?.getTracks().forEach((track) => {
         if (track.kind === 'video') {
           remoteStream.addTrack(track, remoteStream);
         }
@@ -583,7 +587,9 @@ const FullRtc = () => {
   // user camera toggler
   let toggleCamera = async () => {
     const clientNameEl = document.getElementById('localClientName'); //get client name element
-    let videoTrack = stream.getTracks().find((track) => track.kind === 'video'); //get video tracks
+    let videoTrack = stream
+      ?.getTracks()
+      .find((track) => track.kind === 'video'); //get video tracks
     setVideoTrack(videoTrack);
 
     // disable videotrack if enabled and display clientName
@@ -625,7 +631,9 @@ const FullRtc = () => {
 
   //user mic toggler
   let toggleMic = async () => {
-    let audioTrack = stream.getTracks().find((track) => track.kind === 'audio');
+    let audioTrack = stream
+      ?.getTracks()
+      .find((track) => track.kind === 'audio');
 
     if (audioTrack && audioTrack.enabled) {
       audioTrack.enabled = false;
@@ -636,14 +644,13 @@ const FullRtc = () => {
     }
   };
 
+  //get localuser current time stamp
   let getTime = () => {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
   };
-
-  const setMembersContainer = () => {};
 
   let toggleSettings = async () => {
     // if(!isChatVisible){
@@ -657,6 +664,7 @@ const FullRtc = () => {
     const membersVideoContainer = document.getElementById('members_container');
     // const input = document.getElementById("msgInput");
     const settingsContainer = document.getElementById('settings-wrapper');
+    const chatContainer = document.getElementById('chat-container');
 
     if (!isSettingsVisible && !isChatVisible) {
       try {
@@ -673,15 +681,20 @@ const FullRtc = () => {
               settingsContainer.style.display = 'block';
               setIsSettingsVisible(true);
             }
-            // input.focus();
           },
           { once: true }
         ); // Ensure the event listener is removed after firing once
       } catch (e) {
         console.log('could not set settings visible', e);
       }
-    } else if (isChatVisible) {
-      toggleChat();
+    } else if (isChatVisible && !isSettingsVisible) {
+      setIsChatVisible(false);
+      chatContainer.style.display = 'none';
+
+      setIsSettingsVisible(true);
+      settingsContainer.style.display = 'block';
+
+      // toggleChat();
     } else {
       try {
         messagesContainer.style.width = '0%';
@@ -689,8 +702,13 @@ const FullRtc = () => {
         membersVideoContainer.style.width = '100%';
 
         setIsSettingsVisible(false);
+        setIsChatVisible(false);
         if (settingsContainer) {
           settingsContainer.style.display = 'none';
+        }
+
+        if (chatContainer) {
+          chatContainer.style.display = 'none';
         }
       } catch (e) {
         console.log('could not set settings not-visible', e);
@@ -702,7 +720,7 @@ const FullRtc = () => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop()); // Stop previous tracks
     }
-    router.push('/login');
+    router.push('/lobby');
   };
   const Message = ({ message, localClientName }) => {
     return (
@@ -765,6 +783,7 @@ const FullRtc = () => {
     const membersVideoContainer = document.getElementById('members_container');
     const input = document.getElementById('msgInput');
     const chatContainer = document.getElementById('chat-container');
+    const settingsContainer = document.getElementById('settings-wrapper');
 
     if (!isChatVisible && !isSettingsVisible) {
       try {
@@ -778,28 +797,42 @@ const FullRtc = () => {
             messagesContainer.style.width = '25%';
             messagesContainer.style.display = 'block';
             chatContainer.style.display = 'block';
+
+            setIsChatVisible(true);
             input.focus();
             if (messagesEndRef.current) {
               messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
             }
-            setIsChatVisible(true);
           },
           { once: true }
         ); // Ensure the event listener is removed after firing once
       } catch (e) {
         console.log('could not set chat visible', e);
       }
-    } else if (isSettingsVisible) {
-      toggleSettings();
+    } else if (isSettingsVisible && !isChatVisible) {
+      setIsSettingsVisible(false);
+      settingsContainer.style.display = 'none';
+
+      setIsChatVisible(true);
+
+      chatContainer.style.display = 'block';
+      input.focus();
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      // toggleSettings();
     } else {
       try {
         setIsChatVisible(false);
+        setIsSettingsVisible(false);
         chatContainer.style.display = 'none';
         messagesContainer.style.width = '0%';
         messagesContainer.style.display = 'none';
         membersVideoContainer.style.width = '100%';
-      } catch {
-        console.log('could not set chat not-visible');
+        settingsContainer.style.display = 'none';
+      } catch (e) {
+        console.log('could not set chat not-visible', e);
       }
     }
   };
@@ -882,212 +915,208 @@ const FullRtc = () => {
   }, [messages]);
 
   return (
-    <main className="containerr m-0 p-0">
-      <Row id="room_container" className="p-0 m-0">
-        <Col xs={12} id="members_container" className="p-0 m-0">
-          <Row id="videos" className="p-0 m-0">
-            <Col className="p-0 m-0 videoBg" id="user1_div">
-              {/* {stream && ( */}
-              <video
-                className="videoPlayer p-0"
-                id="user1"
-                autoPlay
-                playsInline
-                muted
-                ref={localVideoRef}
-              ></video>
+    <RtcLayout>
+      <main className="containerr m-0 p-0">
+        <Row id="room_container" className="p-0 m-0">
+          <Col xs={12} id="members_container" className="p-0 m-0">
+            <Row id="videos" className="p-0 m-0">
+              <Col className="p-0 m-0 videoBg" id="user1_div">
+                {/* {stream && ( */}
+                <video
+                  className="videoPlayer p-0"
+                  id="user1"
+                  autoPlay
+                  playsInline
+                  muted
+                  ref={localVideoRef}
+                ></video>
 
-              <h1 id="localClientName" className="clientDisplayName">
-                {localClientName}
-              </h1>
-            </Col>
+                <h1 id="localClientName" className="clientDisplayName">
+                  {localClientName}
+                </h1>
+              </Col>
 
-            <Col id="user2_div" className="p-0 m-0 videoBg">
-              <video
-                className="videoPlayer p-0"
-                id="user2"
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-              ></video>
+              <Col id="user2_div" className="p-0 m-0 videoBg">
+                <video
+                  className="videoPlayerRemote p-0"
+                  id="user2"
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                ></video>
 
-              <h1 id="remoteClientName" className="clientDisplayName">
-                {remoteClientName}
-              </h1>
-            </Col>
-          </Row>
-        </Col>
+                <h1 id="remoteClientName" className="clientDisplayName">
+                  {remoteClientName}
+                </h1>
+              </Col>
+            </Row>
+          </Col>
 
-        <Col xs={12} className="footer-container">
-          <Row className="footer p-3" style={{ backgroundColor: 'white' }}>
-            <Col title="Psymax Logo" className="logo_div logo">
-              <img className="logo_icon" src="/icons/logo.svg" alt="logo" />
-            </Col>
+          <Col xs={12} className="footer-container">
+            <Row className="footer p-3">
+              <Col title="Psymax Logo" className="logo_div logo">
+                <img className="logo_icon" src="/icons/logo.svg" alt="logo" />
+              </Col>
 
-            <Col id="controls" className="">
-              <div
-                className="control-container"
-                title="Mikrofon umschalten"
-                id="mic-btn"
-              >
-                <img
-                  className="icon"
-                  src={isMicOn ? '/icons/mic-on.svg' : '/icons/mic-off.svg'}
-                  alt="Mikrofontaste"
-                  onClick={toggleMic}
-                />
-              </div>
-
-              <div
-                className="control-container"
-                id="camera-btn"
-                title="Kamera umschalten"
-              >
-                <img
-                  id="cameraBtn"
-                  className="icon"
-                  src={
-                    isCameraOn
-                      ? '/icons/camera-on.svg'
-                      : '/icons/camera-off.svg'
-                  }
-                  alt="Kamerataste"
-                  onClick={toggleCamera}
-                />
-              </div>
-
-              <div
-                className="control-container"
-                id="pres-btn"
-                title="Bildschirm teilen"
-              >
-                <img
-                  className="icon"
-                  src={
-                    isScreenSharing
-                      ? '/icons/pres-on.svg'
-                      : '/icons/pres-off.svg'
-                  }
-                  alt="Bildschirm teilen"
-                  onClick={toggleScreenSharing}
-                />
-              </div>
-
-              <div
-                className="control-container"
-                id="settings-btn"
-                title="Einstellungen"
-              >
-                <img
-                  className="icon"
-                  src="/icons/settings.svg"
-                  alt="settings button"
-                  onClick={toggleSettings}
-                />
-              </div>
-
-              <div
-                title="Anruf beenden"
-                className="control-container"
-                id="leave-call-btn"
-              >
-                <img
-                  className="icon"
-                  src="/icons/leave-call.svg"
-                  alt="leave call button"
-                  onClick={leaveCall}
-                />
-              </div>
-            </Col>
-
-            <Col
-              className="chat_div control-container"
-              id="chat-btn"
-              title="Plaudern"
-            >
-              <img
-                className="icon"
-                src="/icons/chat.svg"
-                alt="Plaudern"
-                onClick={toggleChat}
-              />
-            </Col>
-          </Row>
-        </Col>
-
-        <Col id="component_wrapper" className="p-0">
-          <Row id="chat-container" className="">
-            <Col>
-              <h2 className="p-3 chat-title mb-0">Chat</h2>
-            </Col>
-            <Col className="p-0 m-0 chat-messages">
-              <ul id="messages" className="p-3 mb-0">
-                {messages.map((message) => (
-                  <Message
-                    key={message.id}
-                    message={message}
-                    localClientName={localClientName}
+              <Col id="controls" className="">
+                <div
+                  className="control-container"
+                  title="Mikrofon umschalten"
+                  id="mic-btn"
+                >
+                  <img
+                    className="icon"
+                    src={isMicOn ? '/icons/mic-on.svg' : '/icons/mic-off.svg'}
+                    alt="Mikrofontaste"
+                    onClick={toggleMic}
                   />
-                ))}
-                <li className="messagesEndRef" ref={messagesEndRef} />
-              </ul>
-            </Col>
+                </div>
 
-            <Col>
-              <form
-                id="form"
-                action=""
-                className=""
-                style={{ marginBottom: '10%' }}
-              >
-                <Row id="sendMsgRow" className="p-0 m-0">
-                  <Col xs={11} className="p-0">
-                    <input
-                      placeholder="Nachricht absenden"
-                      title="Nachrichtenbereich"
-                      id="msgInput"
-                      className="border-0 p-2"
-                      autoComplete="off"
+                <div
+                  className="control-container"
+                  id="camera-btn"
+                  title="Kamera umschalten"
+                >
+                  <img
+                    id="cameraBtn"
+                    className="icon"
+                    src={
+                      isCameraOn
+                        ? '/icons/camera-on.svg'
+                        : '/icons/camera-off.svg'
+                    }
+                    alt="Kamerataste"
+                    onClick={toggleCamera}
+                  />
+                </div>
+
+                <div
+                  className="control-container"
+                  id="pres-btn"
+                  title="Bildschirm teilen"
+                >
+                  <img
+                    className="icon"
+                    src={
+                      isScreenSharing
+                        ? '/icons/pres-on.svg'
+                        : '/icons/pres-off.svg'
+                    }
+                    alt="Bildschirm teilen"
+                    onClick={toggleScreenSharing}
+                  />
+                </div>
+
+                <div
+                  className="control-container"
+                  id="settings-btn"
+                  title="Einstellungen"
+                >
+                  <img
+                    className="icon"
+                    src="/icons/settings.svg"
+                    alt="settings button"
+                    onClick={toggleSettings}
+                  />
+                </div>
+
+                <div
+                  title="Anruf beenden"
+                  className="control-container"
+                  id="leave-call-btn"
+                >
+                  <img
+                    className="icon"
+                    src="/icons/leave-call.svg"
+                    alt="leave call button"
+                    onClick={leaveCall}
+                  />
+                </div>
+                <div
+                  className="chat_div control-container"
+                  id="chat-btn"
+                  title="Plaudern"
+                >
+                  <img
+                    className="icon"
+                    src="/icons/chat.svg"
+                    alt="Plaudern"
+                    onClick={toggleChat}
+                  />
+                </div>
+              </Col>
+            </Row>
+          </Col>
+
+          <Col id="component_wrapper" className="p-0">
+            <Row id="chat-container" className="">
+              <Col>
+                <h2 className="p-3 chat-title mb-0">Chat</h2>
+              </Col>
+              <Col className="p-0 m-0 chat-messages">
+                <ul id="messages" className="p-3 mb-0">
+                  {messages.map((message) => (
+                    <Message
+                      key={message.id}
+                      message={message}
+                      localClientName={localClientName}
                     />
-                  </Col>
+                  ))}
+                  <li className="messagesEndRef" ref={messagesEndRef} />
+                </ul>
+              </Col>
 
-                  <Col xs={1} className="p-0">
-                    <button
-                      type="submit"
-                      id="sendMsgBtn"
-                      title="Chat-Nachricht senden"
-                      className="sendMsgBtn btn"
-                    >
-                      <img
-                        alt="Chat-Nachricht senden"
-                        src="/icons/send-chat-msg.svg"
-                      ></img>
-                    </button>
-                  </Col>
-                </Row>
-              </form>
-            </Col>
-          </Row>
+              <Col>
+                <form id="form" action="" className="">
+                  <Row id="sendMsgRow" className="p-0 m-0">
+                    <Col xs={11} className="p-0">
+                      <input
+                        placeholder="Nachricht absenden"
+                        title="Nachrichtenbereich"
+                        id="msgInput"
+                        className="border-0 p-2"
+                        autoComplete="off"
+                      />
+                    </Col>
 
-          <Settings
-            isCameraTest={isCameraTest}
-            setIsCameraTest={setIsCameraTest}
-            isCameraOn={isCameraOn}
-            videoTestRef={videoTestRef}
-            isMicTest={isMicTest}
-            setIsMicTest={setIsMicTest}
-            micTestRef={micTestRef}
-            isMicOn={isMicOn}
-            isSpeakerTest={isSpeakerTest}
-            setIsSpeakerTest={setIsSpeakerTest}
-            setIsSpeakerOn={setIsSpeakerOn}
-            isSpeakerOn={isSpeakerOn}
-            onDeviceChange={handleDeviceChange}
-            stream={stream}
-          />
-        </Col>
-      </Row>
-    </main>
+                    <Col xs={1} className="p-0">
+                      <button
+                        type="submit"
+                        id="sendMsgBtn"
+                        title="Chat-Nachricht senden"
+                        className="sendMsgBtn btn"
+                      >
+                        <img
+                          alt="Chat-Nachricht senden"
+                          src="/icons/send-chat-msg.svg"
+                        ></img>
+                      </button>
+                    </Col>
+                  </Row>
+                </form>
+              </Col>
+            </Row>
+
+            <Settings
+              isCameraTest={isCameraTest}
+              setIsCameraTest={setIsCameraTest}
+              isCameraOn={isCameraOn}
+              videoTestRef={videoTestRef}
+              isMicTest={isMicTest}
+              setIsMicTest={setIsMicTest}
+              micTestRef={micTestRef}
+              isMicOn={isMicOn}
+              isSpeakerTest={isSpeakerTest}
+              setIsSpeakerTest={setIsSpeakerTest}
+              setIsSpeakerOn={setIsSpeakerOn}
+              isSpeakerOn={isSpeakerOn}
+              onDeviceChange={handleDeviceChange}
+              stream={stream}
+            />
+          </Col>
+        </Row>
+      </main>
+    </RtcLayout>
   );
 };
 

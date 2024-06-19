@@ -48,7 +48,7 @@
 .videoPlayer {
   background-color: white;
   /* border:1px solid red; */
-  width: 40%;
+  width: 50%;
   height: 80% !important;
   object-fit: cover;
   /* position: absolute; */

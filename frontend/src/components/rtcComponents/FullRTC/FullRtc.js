@@ -103,7 +103,7 @@ const FullRtc = () => {
     if (accessKey) {
       setRoomAccessKey(accessKey);
     } else {
-      router.push('/lobby');
+      router.push('/dashboard/videosprechstunde/lobby');
       // window.location = 'lobby'
     }
   }, [router, accessKey]);
@@ -720,7 +720,7 @@ const FullRtc = () => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop()); // Stop previous tracks
     }
-    router.push('/lobby');
+    router.push('/dashboard/videosprechstunde/lobby');
   };
   const Message = ({ message, localClientName }) => {
     return (
@@ -927,7 +927,6 @@ const FullRtc = () => {
                   id="user1"
                   autoPlay
                   playsInline
-                  muted
                   ref={localVideoRef}
                 ></video>
 

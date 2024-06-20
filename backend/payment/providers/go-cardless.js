@@ -98,7 +98,12 @@ class GoCardlessProvider extends PaymentProvider {
   constructor(apiKey) {
     super();
     this.baseCurrency = 'EUR';
-    this.client = new GoCardlessClient(apiKey, constants.Environments.Sandbox);
+    this.client = new GoCardlessClient(
+      apiKey,
+      process.env.NODE_ENV === 'production'
+        ? constants.Environments.Live
+        : constants.Environments.Sandbox
+    );
     this.eventQueue = eventQueue;
 
     // Set up the event queue
@@ -347,7 +352,8 @@ class GoCardlessProvider extends PaymentProvider {
           lastCreatedPaymentId: paymentId,
         });
 
-        if (!subscription) {
+        if (!subscriptionOld) {
+          console.log(`Payment ${paymentId} has not been created yet.\n`);
           return `Payment ${paymentId} has not been created yet.\n`;
         }
         // const subscriptionOld = await SubscriptionSchema.findOne({
@@ -358,7 +364,7 @@ class GoCardlessProvider extends PaymentProvider {
 
         const subscription = await SubscriptionSchema.findOneAndUpdate(
           {
-            subscriptionId: event.links.subscription,
+            subscriptionId: subscriptionOld.subscriptionId,
           },
           {
             $inc: { paidCyclesCount: 1 },
@@ -460,15 +466,19 @@ class GoCardlessProvider extends PaymentProvider {
     }
   }
 
-  storePaymentId = async (paymentId) => {
+  storePaymentId = async (subscriptionId, paymentId) => {
     // Perhaps store this a field in the subscription model?
-    await SubscriptionSchema.findOneAndUpdate(
-      { lastCreatedPaymentId: paymentId },
-      {
-        lastCreatedPaymentId: paymentId,
-      },
-      { new: true }
-    );
+    try {
+      await SubscriptionSchema.findOneAndUpdate(
+        { subscriptionId },
+        {
+          lastCreatedPaymentId: paymentId,
+        },
+        { new: true }
+      );
+    } catch (err) {
+      console.log('Error storing payment id', err);
+    }
   };
   /**
    *
@@ -494,7 +504,8 @@ class GoCardlessProvider extends PaymentProvider {
       case 'payment_created': {
         // Store the payment id, then wait for next event of payment_confirmed to get the payment status
         const paymentId = event.links.payment;
-        await this.storePaymentId(paymentId);
+        const subscriptionId = event.links.subscription;
+        await this.storePaymentId(subscriptionId, paymentId);
         return `Payment ${paymentId} has been created.\n`;
       }
       default:

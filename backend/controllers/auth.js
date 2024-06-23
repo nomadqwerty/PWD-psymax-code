@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { UserSchema } = require('../models/userModel');
 const Joi = require('joi');
+const speakeasy = require('speakeasy');
 const UserVault = require('../models/UserVault');
 const ClientVault = require('../models/ClientVault');
 const {
@@ -96,6 +97,7 @@ const register = async (req, res, next) => {
       trialDays: numberOfTrialDays,
       emergencyPassword: encryptedEmergencyPassword,
       recoveryPhrase: encryptedRecoveryPhrase,
+      TwoFA: { secret: speakeasy.generateSecret(), permission: false },
     });
     await user.save();
 
@@ -434,6 +436,11 @@ const save = async (req, res, next) => {
       // user.password = encryptedPassword;
       user.Authentifizierungscode = requestBody?.Authentifizierungscode;
       user.isAdmin = 0;
+
+      // 2fa setup
+      if (true) {
+        user.TwoFA = {};
+      }
       // user.isFirst = 0;
       user.save();
 
@@ -656,6 +663,38 @@ const resetPassword = async (req, res, next) => {
     next(error);
   }
 };
+
+const verifySecret = async (req, res) => {
+  try {
+    const { token, userId } = req.body;
+    const user = await UserSchema.findOne({ _id: userId });
+
+    if (user) {
+      const { base32: secret } = user.TwoFA?.secret;
+      console.log(secret);
+      console.log(token);
+      const verified = speakeasy.totp.verify({
+        secret,
+        encoding: 'base32',
+        token,
+      });
+      console.log(verified);
+      return res.status(200).json({
+        status: 'sucess',
+        message: 'TwoFa verification sucessful',
+        token,
+        verified,
+      });
+    }
+
+    throw new Error('failed to verify');
+  } catch (error) {
+    console.log(error.message);
+    return res
+      .status(500)
+      .json({ status: 'failed', message: 'TwoFa verification failed' });
+  }
+};
 module.exports = {
   register,
   login,
@@ -667,4 +706,5 @@ module.exports = {
   TwoFaAuth,
   validateRecoveryPhrase,
   resetPassword,
+  verifySecret,
 };

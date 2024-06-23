@@ -130,9 +130,8 @@ const userAppSchema = new Schema({
     type: Number,
     default: 1,
   }, */
-  '2FA': {
-    type: String,
-    trim: true,
+  TwoFA: {
+    type: Schema.Types.Mixed,
   },
   inviteCode: {
     type: String,

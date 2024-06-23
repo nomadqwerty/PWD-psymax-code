@@ -15,20 +15,22 @@ const {
 const { globalExtendedPricing } = require('../../config');
 const { InvoiceSchema } = require('../../models/invoiceModel');
 
-// const Redis = require('ioredis');
-const { Redis } = require('@upstash/redis');
+const Redis = require('ioredis');
+// const { Redis } = require('@upstash/redis');
 const Bull = require('bull');
 
 const redis = new Redis({
-  url: process.env.REDIS_URL,
+  host: process.env.REDIS_HOST,
   port: process.env.REDIS_PORT,
-  token: process.env.REDIS_PASSWORD,
+  password: process.env.REDIS_PASSWORD,
+  tls: {},
 });
 const eventQueue = new Bull('event-queue', {
   redis: {
     host: process.env.REDIS_HOST,
     port: process.env.REDIS_PORT,
     password: process.env.REDIS_PASSWORD,
+    tls: {},
   },
   maxRetriesPerRequest: null,
 });
@@ -90,7 +92,6 @@ class GoCardlessProvider extends PaymentProvider {
    * @type {GoCardlessClient}
    */
   client;
-
   /**
    *
    * @param {string} apiKey
@@ -105,14 +106,12 @@ class GoCardlessProvider extends PaymentProvider {
         : constants.Environments.Sandbox
     );
     this.eventQueue = eventQueue;
-
     // Set up the event queue
     eventQueue.process(async (job) => {
       const event = job.data;
       await this.processEvent(event);
     });
   }
-
   /**
    *
    * @param {number} amount
@@ -125,7 +124,6 @@ class GoCardlessProvider extends PaymentProvider {
   async createPayment(amount, cardToken, currency) {
     throw new Error('createPayment method has not been implemented');
   }
-
   /**
    *
    * @param {string} amount
@@ -184,7 +182,6 @@ class GoCardlessProvider extends PaymentProvider {
     console.log('Subscript', subscription);
     return subscription;
   }
-
   /**
    *
    * @param {string} id
@@ -200,7 +197,6 @@ class GoCardlessProvider extends PaymentProvider {
     // });
     // return subscription;
   }
-
   /**
    *
    * @param {string} id
@@ -211,7 +207,6 @@ class GoCardlessProvider extends PaymentProvider {
     const subscription = await this.client.subscriptions.cancel(id);
     return subscription;
   }
-
   /**
    *
    * @param {string} id
@@ -224,7 +219,6 @@ class GoCardlessProvider extends PaymentProvider {
       nextChargeDate: subscription.upcoming_payments?.[0]?.charge_date,
     };
   }
-
   #removeNonPermittedKeysFromSubscriptionResponse(response) {
     // Remove non-permitted keys
     delete response.__response__;
@@ -234,24 +228,20 @@ class GoCardlessProvider extends PaymentProvider {
     delete response.upcoming_payments;
     delete response.id;
   }
-
   async extendSubscription(id, newStartDate) {
     try {
       // Cancel existing subscription
       const oldSubscriptionParams = await this.client.subscriptions.cancel(id);
-
       // Remove non-permitted keys
       this.#removeNonPermittedKeysFromSubscriptionResponse(
         oldSubscriptionParams
       );
-
       // Create a new subscription
       const newSubscription = await this.client.subscriptions.create({
         // Subscription parameters, including the new end date
         ...oldSubscriptionParams,
         start_date: newStartDate.toISOString(),
       });
-
       console.log('Subscription extended successfully');
       return newSubscription;
     } catch (error) {
@@ -259,7 +249,6 @@ class GoCardlessProvider extends PaymentProvider {
       // Handle error
     }
   }
-
   /**
    *
    * @param {string} id
@@ -269,7 +258,6 @@ class GoCardlessProvider extends PaymentProvider {
     const payment = await this.client.payments.find(id);
     return payment;
   }
-
   /**
    *
    * @param {string} referrerId
@@ -279,7 +267,6 @@ class GoCardlessProvider extends PaymentProvider {
     const subscriptionOld = await SubscriptionSchema.findById(
       referrerSubscriptionId
     );
-
     const cyclesNew = subscriptionOld.paidCyclesCount + 1;
     // the existing user (referrer) gets 1 cycle(s) for free
     const user = await UserSchema.findByIdAndUpdate(
@@ -289,21 +276,17 @@ class GoCardlessProvider extends PaymentProvider {
       },
       { new: true }
     );
-
     // cancel current subscription, set renewal date to 45 days ahead, (also set trial end date to 45 days ahead)
     const oldSubscriptionParams = await this.client.subscriptions.cancel(
       subscriptionOld.subscriptionId
     );
-
     // new date is: current end date + {referralBonusCycles} days
     // {referralBonusCycles} days from now
     const newStartDate = dayjs(oldSubscriptionParams.start_date)
       .add(cyclesToDays(user.referralBonusCycles + 1 ?? 1), 'day')
       .format('YYYY-MM-DD');
-
     // Remove non-permitted keys
     this.#removeNonPermittedKeysFromSubscriptionResponse(oldSubscriptionParams);
-
     const newSubscriptionParams = await this.client.subscriptions.create(
       {
         ...oldSubscriptionParams,
@@ -311,7 +294,6 @@ class GoCardlessProvider extends PaymentProvider {
       }
       // '0uuid-for-idempotency-key-seems-optional?-prolly-not'
     );
-
     await SubscriptionSchema.findOneAndUpdate(
       { userId: referrerId },
       {
@@ -322,7 +304,6 @@ class GoCardlessProvider extends PaymentProvider {
       }
     );
   }
-
   /**
    *
    * @param {WebhookEvent} event
@@ -333,25 +314,20 @@ class GoCardlessProvider extends PaymentProvider {
      You should keep some kind of record of what events have been processed
      to avoid double-processing, checking if the event already exists
      before processing it.
-  
      You should perform processing steps asynchronously to avoid timing out
      if you receive many events at once. To do this, you could use a
      queueing system like
      # Bull https://github.com/OptimalBits/bull
-  
      Once you've performed the actions you want to perform for an event, you
      should make a record to avoid accidentally processing the same one twice
    */
-
     switch (event.action) {
       case 'confirmed': {
         // TODO: Move non gocardless logic out of here for ..reusability?
         const paymentId = event.links.payment;
-
         const subscriptionOld = await SubscriptionSchema.findOne({
           lastCreatedPaymentId: paymentId,
         });
-
         if (!subscriptionOld) {
           console.log(`Payment ${paymentId} has not been created yet.\n`);
           return `Payment ${paymentId} has not been created yet.\n`;
@@ -359,9 +335,7 @@ class GoCardlessProvider extends PaymentProvider {
         // const subscriptionOld = await SubscriptionSchema.findOne({
         //   subscriptionId: event.links.subscription,
         // });
-
         const cyclesNew = subscriptionOld.paidCyclesCount + 1;
-
         const subscription = await SubscriptionSchema.findOneAndUpdate(
           {
             subscriptionId: subscriptionOld.subscriptionId,
@@ -373,19 +347,16 @@ class GoCardlessProvider extends PaymentProvider {
           },
           { new: true }
         );
-
         if (!subscription) {
           // weird
           return;
         }
-
         const invoice = new InvoiceSchema({
           userId: subscription.userId,
           referenceId: event.links.payment,
           plan: subscription.plan,
         });
         await invoice.save();
-
         // if user has paid >= 12, move to extended plan
         if (
           subscription.paidCyclesCount >= 12 &&
@@ -398,50 +369,36 @@ class GoCardlessProvider extends PaymentProvider {
             plan: SubscriptionPlans.GLOBAL_EXTENDED,
           });
         }
-
         // THE WAY BONUS REWARDING WORKS RN IS BY CANCELLING CURRENT SUBSCRIPTION - WHICH STILL COLLECTS PAYMENT FOR THIS CYCLE.
         // AFTER THAT, WE CREATE NEW SUBSCRIPTION WITH DATE IN THE FUTURE.
-
         // WHAT'S NEEDED RN IS TO KNOW WHEN THAT NEW SUBSCRIPTION STARTS, THEN RESET THE BONUS COUNT
         // 1. COULD SET "CRONJOB" THAT RUNS AT THAT DATE, THEN RESET
-
         // 2. BETTER YET, COULD SET A "CRONJOB" THAT RUNS END OF EVERYDAY, AND RESETS EVERYONE'S BONUS COUNT
         // IF THE BONUS COUNT EXP DATE HAS BEEN REACHED. WE CAN KNOW THAT BY QUERYING THE SUBSCRIPTION,
         // THEN GETTING THE START DATE. IF THE START DATE IS THE NEXT DAY, RESET
         // possible tip: QUERY FOR SUBSCRIPTIONS THAT START THE NEXT DAY, THEN FETCH THOSE USERS AND RESET
-
         // OR WE COULD SAY, EVERY TIME THE USER GETS A REFERRAL PLUS, SIMPLY UPDATE COUNT.
         // THEN END OF DAY, RENEW SUBSCRIPTIONS
-
         const user = await UserSchema.findById(subscription.userId);
         if (!user) {
           // TODO: weird...
           return;
         }
-
         // THIS CODE BLOCK SHOULD ONLY TRIGGER ONCE PER USER, ONLY IF TRIAL PHASE IS OVER AND 3 CYCLES PAID
-
         // THIS ENDPOINT ONLY GETS TRIGGERED WHEN TRIAL PERIOD IS OVER
-
         // CHECK IF 3 CYCLES PAID
         // IF COUNT IS ABOVE 3, IT IS ASSUMED THIS ENDPOINT HAS BEEN CALLED ALREADY.
-
         if (subscription.paidCyclesCount !== 3) return;
-
         const referrer = await UserSchema.findById(user.invitedUserId);
-
         if (!referrer) {
           // TODO: weird...
           return;
         }
-
         // IF REFERRER IS ADMIN, NO BONUS
         if (referrer.isAdmin) return;
-
         const referrerSubscription = await SubscriptionSchema.findOne({
           userId: referrer._id,
         });
-
         if (!referrerSubscription) {
           // TODO: weird...
           return;
@@ -455,9 +412,7 @@ class GoCardlessProvider extends PaymentProvider {
           // check if referrer has paid up to 3 cycles(90 days)
           return;
         }
-
         await this.rewardReferrer(referrer._id, referrerSubscription._id);
-
         return `Subscription ${event.links.subscription} has new payment ${event.links.payment} created.\n`;
         // return `Payment ${event.links.payment} has been confirmed.\n`;
       }
@@ -465,7 +420,6 @@ class GoCardlessProvider extends PaymentProvider {
         return `Do not know how to process an event with action ${event.action}`;
     }
   }
-
   storePaymentId = async (subscriptionId, paymentId) => {
     // Perhaps store this a field in the subscription model?
     try {
@@ -490,29 +444,27 @@ class GoCardlessProvider extends PaymentProvider {
      You should keep some kind of record of what events have been processed
      to avoid double-processing, checking if the event already exists
      before processing it.
-  
      You should perform processing steps asynchronously to avoid timing out
      if you receive many events at once. To do this, you could use a
      queueing system like
      # Bull https://github.com/OptimalBits/bull
-  
      Once you've performed the actions you want to perform for an event, you
      should make a record to avoid accidentally processing the same one twice
    */
-
     switch (event.action) {
       case 'payment_created': {
         // Store the payment id, then wait for next event of payment_confirmed to get the payment status
         const paymentId = event.links.payment;
         const subscriptionId = event.links.subscription;
+        console.log('here');
         await this.storePaymentId(subscriptionId, paymentId);
+        console.log('here pt2');
         return `Payment ${paymentId} has been created.\n`;
       }
       default:
         return `Do not know how to process an event with action ${event.action}`;
     }
   }
-
   /**
    *
    * @param {WebhookEvent} event
@@ -523,16 +475,13 @@ class GoCardlessProvider extends PaymentProvider {
      You should keep some kind of record of what events have been processed
      to avoid double-processing, checking if the event already exists
      before processing it.
-  
      You should perform processing steps asynchronously to avoid timing out
      if you receive many events at once. To do this, you could use a
      queueing system like
      # Bull https://github.com/OptimalBits/bull
-  
      Once you've performed the actions you want to perform for an event, you
      should make a record to avoid accidentally processing the same one twice
    */
-
     switch (event.action) {
       case 'cancelled':
         return `Mandate ${event.links.mandate} has been cancelled.\n`;
@@ -540,7 +489,6 @@ class GoCardlessProvider extends PaymentProvider {
         return `Do not know how to process an event with action ${event.action}`;
     }
   };
-
   /**
    *
    * @param {WebhookEvent} event
@@ -566,26 +514,21 @@ class GoCardlessProvider extends PaymentProvider {
         );
     }
   }
-
   // Function to check if an event has already been processed
   async isEventProcessed(eventId) {
     return await redis.exists(eventId);
   }
-
   // Function to mark an event as processed
   async markEventAsProcessed(eventId) {
     await redis.set(eventId, 'processed');
   }
-
   /**
    * @param  {import('express').Request} request
    */
   async handleCallback(request) {
     const body = request.body;
-
     const webhookEndpointSecret = process.env.WEBHOOK_ENDPOINT_SECRET;
     const signatureHeader = request.headers['webhook-signature'];
-
     /**
      * @param {string} eventRequestBody
      * @param {string} webhookEndpointSecret
@@ -613,19 +556,22 @@ class GoCardlessProvider extends PaymentProvider {
         throw Error('An odd error occurred when parsing event: ' + error);
       }
     };
-
     const events = parseEvents(body, webhookEndpointSecret, signatureHeader);
+    console.log(events);
     try {
       for (const event of events) {
         // Check if event has already been processed
         if (await this.isEventProcessed(event.id)) {
           continue;
         }
+        console.log('queuing event: ' + event.id);
         // Add the event to the queue for processing
         await eventQueue.add(event);
-
+        console.log('queued event: ' + event.id);
         // Mark the event as processed
+        console.log('marking event as processed: ' + event.id);
         await this.markEventAsProcessed(event.id);
+        console.log('marked event as processed: ' + event.id);
       }
     } catch (error) {
       console.log('Error occurred handling webhook event', error);

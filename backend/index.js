@@ -18,6 +18,7 @@ const {
   requestLogger,
   errorMiddleware,
 } = require('./utils/logger');
+
 // const {
 //   dailyQueue,
 //   processBonusCycleReset,
@@ -48,15 +49,13 @@ app.use((err, req, res, next) => {
 
 async function connectToDatabase() {
   try {
-    await mongoose.connect(
-      'mongodb+srv://topbuyDB:topbuymongodb@cluster0.0xlvjsg.mongodb.net/psymax',
-      {
-        useNewUrlParser: true,
-      }
-    );
-    console.log(
-      `Connected to mongodb+srv://topbuyDB:topbuymongodb@cluster0.0xlvjsg.mongodb.net/psymax`
-    );
+    await mongoose.connect('mongodb://localhost:27017/psymax', {
+      useNewUrlParser: true,
+    });
+    console.log(`mongodb://localhost:27017/psymax`);
+    // console.log(
+    //   `Connected to mongodb+srv://topbuyDB:topbuymongodb@cluster0.0xlvjsg.mongodb.net/psymax`
+    // );
     // Run seeder after connecting to the database
     await seedBriefData();
     console.log('Seeder executed successfully');
@@ -113,10 +112,11 @@ app.use(express.json({ limit: '5000kb' }));
 app.use((req, res, next) => {
   const reqType = req?.body?.reqType;
   const reqTypeHeader = req.get('reqType');
-
+  // TODO: turn of in prod
   if (reqType || reqTypeHeader) {
     console.log(reqType);
     console.log(reqTypeHeader);
+    delete req?.body?.reqType;
     next();
   } else {
     authenticateJWT(req, res, next);

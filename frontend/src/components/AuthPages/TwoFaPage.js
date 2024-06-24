@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 
 // generate TwoFaCode
 
-const TwoFactorAuthPage = ({ id, type }) => {
+const TwoFactorAuthPage = ({ id, type, TwoFA }) => {
   const [sent, setSent] = useState(false);
   const [timeSent, setTimeSent] = useState(false);
   const [code, setCode] = useState(false);
@@ -41,7 +41,12 @@ const TwoFactorAuthPage = ({ id, type }) => {
         if (timeSent > Date.now()) {
           toast.success('Der Zugangsschlüssel ist gültig');
           if (type === 'login') {
-            router.push('/dashboard');
+            console.log(TwoFA);
+            if (TwoFA?.permission === 'true') {
+              router.push(`/twofactorauthentication/${id}`);
+            } else {
+              router.push('/dashboard');
+            }
           }
           if (type === 'recovery') {
             // TODO: navigate to recovery question page
@@ -100,7 +105,7 @@ const TwoFactorAuthPage = ({ id, type }) => {
                 className="text-center mt-16 interFonts text-2xl font-semibold text[#0e0e0e]"
                 style={{ marginTop: '150px' }}
               >
-                Two Factor Authentication
+                Enter Verification Key.
               </p>
             </Grid>
             <Grid container>
@@ -119,7 +124,7 @@ const TwoFactorAuthPage = ({ id, type }) => {
                   type="password"
                   focusColor="#3C3C3C"
                   id="code"
-                  label="code"
+                  label="key"
                   variant="outlined"
                   {...register('code', { required: true })}
                   error={!!errors.code}

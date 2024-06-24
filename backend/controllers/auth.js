@@ -142,9 +142,11 @@ const login = async (req, res, next) => {
     }
 
     // Validate if user exist in our database
+    // TODO: Exclude twoFA fields
     const user = await UserSchema.findOne({
       email: email,
     }).select(' -__v');
+
     if (!user) {
       let response = {
         status_code: 400,
@@ -191,12 +193,17 @@ const login = async (req, res, next) => {
       const token = jwt.sign(payload, process.env.TOKEN_KEY);
 
       user.token = token;
+
       user.save();
+
+      let resUser = { ...user._doc };
+
+      resUser.TwoFA = { permission: user?.TwoFA?.permission };
 
       let response = {
         status_code: 200,
         message: 'Anmeldung erfolgreich',
-        data: user,
+        data: resUser,
         subscription_status,
       };
       return res.status(200).send(response);
@@ -289,6 +296,8 @@ const get = async (req, res, next) => {
     const data = await UserSchema.findById(decodedToken?.user_id).select(
       ' -__v -token'
     );
+    data.TwoFA = { permission: data.TwoFA.permission };
+    console.log(data.TwoFA);
     if (data) {
       let response = {
         status_code: 200,
@@ -351,6 +360,7 @@ const save = async (req, res, next) => {
       confirmPassword: Joi.string().allow(''),
       // password: Joi.string().allow(''),
       Authentifizierungscode: Joi.string().allow(''),
+      TwoFaPermission: Joi.string().allow(''),
     });
 
     const { error } = userDetailsSchema.validate(req.body);
@@ -438,16 +448,28 @@ const save = async (req, res, next) => {
       user.isAdmin = 0;
 
       // 2fa setup
-      if (true) {
-        user.TwoFA = {};
+      if (user.TwoFA) {
+        if (requestBody?.TwoFaPermission === 'Yes') {
+          user.TwoFA.permission = true;
+          await UserSchema.findByIdAndUpdate(decodedToken?.user_id, {
+            TwoFA: user.TwoFA,
+          });
+        } else {
+          user.TwoFA.permission = false;
+          await UserSchema.findByIdAndUpdate(decodedToken?.user_id, {
+            TwoFA: user.TwoFA,
+          });
+        }
       }
       // user.isFirst = 0;
-      user.save();
+      await user.save();
+      let resUser = { ...user._doc };
+      delete resUser.TwoFA;
 
       let response = {
         status_code: 200,
         message: 'Daten aktualisiert',
-        data: user,
+        data: resUser,
       };
       return res.status(200).send(response);
     } else {
@@ -550,7 +572,7 @@ const TwoFaAuth = async (req, res, next) => {
         name: 'psymax',
       };
 
-      const subject = 'Your account has been deleted';
+      const subject = 'two factor authentication';
       let sent;
       try {
         sent = await sendSMTPMail(user.email, subject, code);
@@ -671,20 +693,24 @@ const verifySecret = async (req, res) => {
 
     if (user) {
       const { base32: secret } = user.TwoFA?.secret;
-      console.log(secret);
-      console.log(token);
+
       const verified = speakeasy.totp.verify({
         secret,
         encoding: 'base32',
         token,
       });
       console.log(verified);
-      return res.status(200).json({
-        status: 'sucess',
-        message: 'TwoFa verification sucessful',
-        token,
-        verified,
-      });
+      console.log(secret);
+      if (verified) {
+        return res.status(200).json({
+          status: 'sucess',
+          message: 'TwoFa verification sucessful',
+          token,
+          verified,
+        });
+      } else {
+        throw new Error('failed to verify');
+      }
     }
 
     throw new Error('failed to verify');
@@ -693,6 +719,85 @@ const verifySecret = async (req, res) => {
     return res
       .status(500)
       .json({ status: 'failed', message: 'TwoFa verification failed' });
+  }
+};
+
+const getSecret = async (req, res) => {
+  try {
+    const token = req.headers['x-access-token'];
+    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+
+    console.log(decodedToken.user_id);
+    const user = await UserSchema.findOne({ _id: decodedToken.user_id });
+
+    if (user) {
+      const { base32: secret } = user.TwoFA?.secret;
+      console.log(secret);
+
+      return res.status(200).json({
+        status: 'sucess',
+        message: 'Found text',
+        data: { text: secret },
+      });
+    }
+
+    throw new Error('failed to find text');
+  } catch (error) {
+    console.log(error.message);
+    return res
+      .status(500)
+      .json({ status: 'failed', message: 'error occured.' });
+  }
+};
+const emailSecret = async (req, res) => {
+  try {
+    const token = req.headers['x-access-token'];
+    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+
+    console.log(decodedToken.user_id);
+    const user = await UserSchema.findOne({ _id: decodedToken.user_id });
+
+    if (user) {
+      console.log(user.email);
+      const { base32: secret } = user.TwoFA?.secret;
+      let contactObject = {
+        email: user.email,
+        name: 'psymax',
+      };
+      const code = secret;
+      console.log('email ', code);
+      const subject = 'two factor authentication';
+      let sent;
+      try {
+        sent = await sendSMTPMail(user.email, subject, code);
+      } catch (error) {
+        const mailer = new Email(contactObject);
+        sent = await mailer.send('two factor authentication', code);
+      }
+
+      // send target email
+      // console.log(sent);
+
+      if (sent?.status === 'success' || sent?.response.startsWith('250')) {
+        console.log('sent');
+        return res.status(200).json({
+          status: 'success',
+          message: 'sent',
+          data: {
+            userId: user._id,
+          },
+        });
+      } else {
+        throw new Error('failed');
+      }
+    } else {
+      throw new Error('no user found.');
+    }
+  } catch (error) {
+    console.log(error.message);
+    return res
+      .status(500)
+      .json({ status: 'failed', message: 'error occured.' });
   }
 };
 module.exports = {
@@ -707,4 +812,6 @@ module.exports = {
   validateRecoveryPhrase,
   resetPassword,
   verifySecret,
+  getSecret,
+  emailSecret,
 };

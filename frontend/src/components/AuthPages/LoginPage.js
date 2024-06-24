@@ -244,7 +244,9 @@ const LoginPage = () => {
         router.push('/admin');
       } else if (userData?.isAdmin === 0 && userSubcriptionStatus) {
         localStorage.setItem('psymax-account-restricted', false);
-        router.push(`/twofactorauthentication/${userData._id}-login`);
+        router.push(
+          `/emailverification/${userData._id}-login-${userData.TwoFA?.permission ? userData.TwoFA?.permission : false}`
+        );
       }
     }
   }, [fileVault, clientVault, serverVault, updateFileVault, updateClientVault]);

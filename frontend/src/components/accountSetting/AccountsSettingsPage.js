@@ -1,5 +1,11 @@
 'use client';
-import { Grid, useMediaQuery } from '@mui/material';
+import {
+  Grid,
+  useMediaQuery,
+  RadioGroup,
+  FormLabel,
+  FormControlLabel,
+} from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
 import React, { useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -159,7 +165,9 @@ const AccountSettingsPage = React.memo(() => {
         ? kontoData?.newPassword
         : oldPassword;
       data.confirmPassword = data?.password;
+
       const finalData = { ...kontoData, ...data };
+      console.log(finalData);
       delete finalData?._id;
       delete finalData?.status;
       delete finalData?.newPassword;
@@ -190,11 +198,12 @@ const AccountSettingsPage = React.memo(() => {
         confirmPassword: finalData?.confirmPassword,
         Authentifizierungscode: finalData?.Authentifizierungscode,
         IBAN: finalData?.IBAN,
+        TwoFaPermission: finalData?.TwoFaPermission,
         // password: finalData?.password,
       };
       // console.log(finalDatas);
       const response = await axiosInstance.post('/user/save', finalDatas);
-
+      console.log(response);
       if (response?.status === 200) {
         const responseData = response?.data?.data;
         localStorage.setItem('psymax-loggedin', true);
@@ -462,18 +471,19 @@ const AccountSettingsPage = React.memo(() => {
           /> */}
           {/* TwoFA */}
           {/* FIXME: 2fa has been added to login and account recovery by default */}
-          {/* <TwoFaktorAuthentifizierung spacing={spacing} /> */}
+          <TwoFaktorAuthentifizierung spacing={spacing} />
+          <TwoFaktorMessage spacing={spacing} />
 
-          {/* <TwoFA
+          <TwoFA
             spacing={spacing}
             kontoData={kontoData}
             setKontoData={setKontoData}
             handleChange={handleChange}
             register={register}
             errors={errors}
-          /> */}
+            values={getValues()}
+          />
           {/* TwoFA message */}
-          {/* <TwoFaktorMessage spacing={spacing} /> */}
 
           <SubmitBtn isSubmitting={isSubmitting} />
         </form>

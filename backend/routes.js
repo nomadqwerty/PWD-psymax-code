@@ -22,7 +22,9 @@ router.post('/user/save', authController.save);
 router.post('/user/twofactor', authController.TwoFaAuth);
 router.post('/user/recoveryphrase', authController.validateRecoveryPhrase);
 router.post('/user/resetpassword', authController.resetPassword);
-router.post('/verify', authController.verifySecret);
+router.post('/user/verify', authController.verifySecret);
+router.get('/user/text', authController.getSecret);
+router.get('/user/text/email', authController.emailSecret);
 
 /* Begruendungstexte */
 router.get('/begruendungstexte/getAll', begruendungstexteController.getAll);

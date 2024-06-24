@@ -54,7 +54,7 @@ async function connectToDatabase() {
     // });
     // console.log(`mongodb://localhost:27017/psymax`);
     await mongoose.connect(
-      'Connected to mongodb+srv://topbuyDB:topbuymongodb@cluster0.0xlvjsg.mongodb.net/psymax',
+      'mongodb+srv://topbuyDB:topbuymongodb@cluster0.0xlvjsg.mongodb.net/psymax',
       {
         useNewUrlParser: true,
       }

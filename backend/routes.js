@@ -25,6 +25,7 @@ router.post('/user/resetpassword', authController.resetPassword);
 router.post('/user/verify', authController.verifySecret);
 router.get('/user/text', authController.getSecret);
 router.get('/user/text/email', authController.emailSecret);
+router.get('/user/twofa/status/:id', authController.getTwoFaStatus);
 
 /* Begruendungstexte */
 router.get('/begruendungstexte/getAll', begruendungstexteController.getAll);

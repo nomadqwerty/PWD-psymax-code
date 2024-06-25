@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 
 // generate TwoFaCode
 
-const TwoFactorAuthPage = ({ id, type }) => {
+const SpeakEasyPage = ({ id, type }) => {
   const [sent, setSent] = useState(false);
   const [timeSent, setTimeSent] = useState(false);
   const [code, setCode] = useState(false);
@@ -27,7 +27,7 @@ const TwoFactorAuthPage = ({ id, type }) => {
 
   const onSubmit = (data) => {
     (async () => {
-      console.log(data);
+      // console.log(data);
       if (data?.code) {
         let reqObj = {
           token: data.code,
@@ -38,10 +38,15 @@ const TwoFactorAuthPage = ({ id, type }) => {
         }
         try {
           const twoFaRes = await axiosInstance.post(`/user/verify`, reqObj);
-          console.log(twoFaRes);
+          // console.log(twoFaRes);
           if (twoFaRes.status === 200) {
             toast.success('code is Valid');
-            router.push('/dashboard');
+            if (type === 'login') {
+              router.push('/dashboard');
+            }
+            if (type === 'recovery') {
+              router.push(`/recoveryphrase/${id}`);
+            }
           }
         } catch (error) {
           toast.error('code is Invalid');
@@ -136,4 +141,4 @@ const TwoFactorAuthPage = ({ id, type }) => {
   );
 };
 
-export default TwoFactorAuthPage;
+export default SpeakEasyPage;

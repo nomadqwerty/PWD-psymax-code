@@ -52,6 +52,7 @@ import {
   DoctorStreetAndHouseNumber,
   DoctorTitle,
   Remove,
+  KlientAction,
 } from '../../../components/client/add/InputsAndButtonsB';
 
 import vaultContext from '../../../context/vault.context';
@@ -556,6 +557,12 @@ const ClientAddEdit = React.memo(() => {
           {/* artz email telefone */}
         </Grid>
 
+        <Grid container sx={{ mt: 4 }}>
+          <Grid container>
+            <Grid item sm={2.5} md={4.25} xl={4.25} />
+            <KlientAction params={params} router={router} />
+          </Grid>
+        </Grid>
         <Grid container sx={{ mt: 4 }}>
           <Remove isEdit={isEdit} setOpen={setOpen} />
           <Confirm isSubmitting={isSubmitting} />

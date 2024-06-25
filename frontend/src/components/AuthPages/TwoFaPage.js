@@ -31,7 +31,7 @@ const TwoFactorAuthPage = ({ id, type, TwoFA }) => {
       twoFaCode = passwordGenerator();
     })();
   }, []);
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     // console.log(data);
     if (sent && code) {
       const inputVal = data.code;
@@ -43,14 +43,30 @@ const TwoFactorAuthPage = ({ id, type, TwoFA }) => {
           if (type === 'login') {
             console.log(TwoFA);
             if (TwoFA?.permission === 'true') {
-              router.push(`/twofactorauthentication/${id}`);
+              router.push(`/twofactorauthentication/${id}/${type}`);
             } else {
               router.push('/dashboard');
             }
           }
           if (type === 'recovery') {
-            // TODO: navigate to recovery question page
-            router.push(`/recoveryphrase/${id}`);
+            console.log(TwoFA);
+            // TODO: get 2FA status.
+            // twoFaStatus
+            const twoFaStatusRes = await axiosInstance.get(
+              `/user/twofa/status/${id}`,
+              {
+                headers: { reqType: 'accountReset' },
+              }
+            );
+            console.log(twoFaStatusRes);
+            if (twoFaStatusRes.status === 200) {
+              let TwoFaPermission = twoFaStatusRes.data?.data?.twoFaStatus;
+              if (TwoFaPermission === true) {
+                router.push(`/twofactorauthentication/${id}/${type}`);
+              } else {
+                router.push(`/recoveryphrase/${id}`);
+              }
+            }
           }
           // console.log('on time');
         } else {

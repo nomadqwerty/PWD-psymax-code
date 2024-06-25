@@ -454,7 +454,22 @@ const save = async (req, res, next) => {
           await UserSchema.findByIdAndUpdate(decodedToken?.user_id, {
             TwoFA: user.TwoFA,
           });
-        } else {
+          const { base32: secret } = user.TwoFA?.secret;
+          let contactObject = {
+            email: user.email,
+            name: 'psymax',
+          };
+          const code = secret;
+          console.log('email ', code);
+          const subject = 'two factor authentication';
+          let sent;
+          try {
+            sent = await sendSMTPMail(user.email, subject, code);
+          } catch (error) {
+            const mailer = new Email(contactObject);
+            sent = await mailer.send('two factor authentication', code);
+          }
+        } else if (requestBody?.TwoFaPermission === 'No') {
           user.TwoFA.permission = false;
           await UserSchema.findByIdAndUpdate(decodedToken?.user_id, {
             TwoFA: user.TwoFA,
@@ -800,6 +815,31 @@ const emailSecret = async (req, res) => {
       .json({ status: 'failed', message: 'error occured.' });
   }
 };
+
+const getTwoFaStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(id);
+    const user = await UserSchema.findOne({ _id: id });
+    if (user) {
+      const { permission } = user?.TwoFA;
+      return res.status(200).json({
+        status: 'success',
+        message: 'sent',
+        data: {
+          twoFaStatus: permission,
+        },
+      });
+    } else {
+      throw new Error('no user found');
+    }
+  } catch (error) {
+    console.log(error.message);
+    return res
+      .status(500)
+      .json({ status: 'failed', message: 'error occured.' });
+  }
+};
 module.exports = {
   register,
   login,
@@ -814,4 +854,5 @@ module.exports = {
   verifySecret,
   getSecret,
   emailSecret,
+  getTwoFaStatus,
 };

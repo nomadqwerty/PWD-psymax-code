@@ -710,7 +710,7 @@ const verifySecret = async (req, res) => {
       const { base32: secret } = user.TwoFA?.secret;
 
        console.log(token);
-      const verified = speakeasy.totp.verify({
+      const verified = speakeasy.totp.verifyDelta({
         secret,
         encoding: 'base32',
         token,

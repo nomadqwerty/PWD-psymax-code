@@ -709,14 +709,21 @@ const verifySecret = async (req, res) => {
     if (user) {
       const { base32: secret } = user.TwoFA?.secret;
 
-       console.log(token);
+      const time = Date.now() + 60000;
+      console.log(time);
+      let token2 = speakeasy.totp({
+        secret: secret,
+        encoding: 'base32',
+      });
+      console.log(token,' recieved');
+      console.log(token2,' expected');
+      console.log(secret);
       const verified = speakeasy.totp.verify({
         secret,
         encoding: 'base32',
         token,
       });
       console.log(verified);
-      console.log(secret);
       if (verified) {
         return res.status(200).json({
           status: 'sucess',

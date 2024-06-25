@@ -703,25 +703,34 @@ const resetPassword = async (req, res, next) => {
 
 const verifySecret = async (req, res) => {
   try {
-    const { token, userId } = req.body;
+    let { token, userId, time } = req.body;
     const user = await UserSchema.findOne({ _id: userId });
+    time = Date.now();
 
     if (user) {
       const { base32: secret } = user.TwoFA?.secret;
-
-      const time = Date.now() + 60000;
       console.log(time);
+      const timSent = speakeasy.time({
+        secret,
+        encoding: 'base32',
+        token,
+        window: 60,
+      });
       let token2 = speakeasy.totp({
         secret: secret,
         encoding: 'base32',
+        token,
+        window: 60,
       });
-      console.log(token,' recieved');
-      console.log(token2,' expected');
+      console.log(timSent);
+      console.log(token, ' recieved');
+      console.log(token2, ' expected');
       console.log(secret);
       const verified = speakeasy.totp.verify({
         secret,
         encoding: 'base32',
         token,
+        window: 60,
       });
       console.log(verified);
       if (verified) {

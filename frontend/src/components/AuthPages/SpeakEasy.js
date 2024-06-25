@@ -32,6 +32,7 @@ const SpeakEasyPage = ({ id, type }) => {
         let reqObj = {
           token: data.code,
           userId: id,
+          reqType: 'twoFA',
         };
         if (type === 'recovery') {
           reqObj.reqType = 'accountReset';

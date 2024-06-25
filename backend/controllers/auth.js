@@ -709,11 +709,11 @@ const verifySecret = async (req, res) => {
     if (user) {
       const { base32: secret } = user.TwoFA?.secret;
 
+       console.log(token);
       const verified = speakeasy.totp.verify({
         secret,
         encoding: 'base32',
         token,
-        window: 2
       });
       console.log(verified);
       console.log(secret);

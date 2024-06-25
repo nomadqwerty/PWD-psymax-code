@@ -713,6 +713,7 @@ const verifySecret = async (req, res) => {
         secret,
         encoding: 'base32',
         token,
+        window: 2
       });
       console.log(verified);
       console.log(secret);

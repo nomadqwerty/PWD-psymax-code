@@ -33,12 +33,8 @@ const FullRtc = () => {
   const [isMicTest, setIsMicTest] = useState(false); // is audio test on?
   const micTestRef = useRef(null); // microphone child test ref?
 
-
   const [isSpeakerOn, setIsSpeakerOn] = useState(null); //audio
   const [isSpeakerTest, setIsSpeakerTest] = useState(false); // is audio test on?
-
-
-  
 
   const [screenStream, setScreenStream] = useState(null); // State to store screen stream
   const [isScreenSharing, setIsScreenSharing] = useState(false); // State to track screen sharing status
@@ -76,13 +72,8 @@ const FullRtc = () => {
   // };
 
   const [constraints, setConstraints] = useState({
-    video: {
-      deviceId: "",
-      noiseSuppression: true,
-      width: { min: 640, ideal: 1920, max: 1920 },
-      height: { min: 640, ideal: 1920, max: 1920 },
-    },
-    audio: { deviceId: "", echoCancellation: true, noiseSuppression: true },
+    video: true,
+    audio: true,
   });
 
   const handleDeviceChange = (newStream) => {
@@ -241,6 +232,7 @@ const FullRtc = () => {
       const videoTrack = stream
         .getTracks()
         .find((track) => track.kind === "video");
+
       setVideoTrack(videoTrack);
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
@@ -289,7 +281,7 @@ const FullRtc = () => {
 
     return () => {
       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       }
     };
     // })
@@ -378,7 +370,9 @@ const FullRtc = () => {
   //create socket connection & initialise events if !socketconn && stream
   useEffect(() => {
     if (!socketRef.current && stream) {
-      socketRef.current = io("http://localhost:3050"); //create socket instance if noRef and video stream avail
+      socketRef.current = io(process.env.NEXT_PUBLIC_SIGNAL_HOST, {
+        transports: ["websocket"],
+      }); //create socket instance if noRef and video stream avail
 
       // socket.emit("hello", "hello from offer UE");
       socketRef.current.on("connect", handleSocketConnected);
@@ -442,6 +436,7 @@ const FullRtc = () => {
     peerConnection = new RTCPeerConnection(servers); //passed ice servers into connection
     const remoteStream = new MediaStream();
     remoteVideoRef.current.srcObject = remoteStream; //set remote elemt srcobject to remotestream
+    console.log(remoteVideoRef.current.srcObject.getAudioTracks());
     setRemoteStream(remoteStream);
 
     document.getElementById("user2_div").style.display = "block"; //set user2 element display to true when the user connects
@@ -497,6 +492,9 @@ const FullRtc = () => {
       console.log(event.streams[0]);
       event.streams[0].getTracks().forEach((track) => {
         if (track.kind === "video") {
+          remoteStream.addTrack(track, remoteStream);
+        }
+        if (track.kind === "audio") {
           remoteStream.addTrack(track, remoteStream);
         }
 
@@ -618,12 +616,12 @@ const FullRtc = () => {
         });
       }
     }
-     // Call the getVideoTestOutput method from the child component
-   if (videoTestRef.current && isCameraTest) {
-    videoTestRef.current.getVideoTestOutput();
-  }
+    // Call the getVideoTestOutput method from the child component
+    if (videoTestRef.current && isCameraTest) {
+      videoTestRef.current.getVideoTestOutput();
+    }
   };
-  
+
   //user mic toggler
   let toggleMic = async () => {
     let audioTrack = stream.getTracks().find((track) => track.kind === "audio");
@@ -684,10 +682,8 @@ const FullRtc = () => {
       setIsChatVisible(false);
       chatContainer.style.display = "none";
 
-
       setIsSettingsVisible(true);
       settingsContainer.style.display = "block";
-
 
       // toggleChat();
     } else {
@@ -705,19 +701,18 @@ const FullRtc = () => {
         if (chatContainer) {
           chatContainer.style.display = "none";
         }
-
       } catch (e) {
         console.log("could not set settings not-visible", e);
       }
     }
   };
 
-  let leaveCall = async () =>{
+  let leaveCall = async () => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop()); // Stop previous tracks
     }
-    router.push("/lobby")
-  }
+    router.push("/lobby");
+  };
   const Message = ({ message, localClientName }) => {
     return (
       <li
@@ -793,7 +788,7 @@ const FullRtc = () => {
             messagesContainer.style.width = "25%";
             messagesContainer.style.display = "block";
             chatContainer.style.display = "block";
-            
+
             setIsChatVisible(true);
             input.focus();
             if (messagesEndRef.current) {
@@ -813,9 +808,9 @@ const FullRtc = () => {
 
       chatContainer.style.display = "block";
       input.focus();
-            if (messagesEndRef.current) {
-              messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-            }
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
 
       // toggleSettings();
     } else {
@@ -892,17 +887,17 @@ const FullRtc = () => {
 
   //listen for end of stream from outside screen toggle button
 
- if (screenStream){
-  (screenStream.getVideoTracks().onended = function () {
-        // setIsScreenSharing(false);
-        // toggleScreenSharing();
-        // doWhatYouNeedToDo();
-        setIsScreenSharing(false);
-          screenStream.getTracks().forEach((track) => track.stop());
-          setScreenStream(null);
-          setScreenSharingId("");
-      })
-    }
+  if (screenStream) {
+    screenStream.getVideoTracks().onended = function () {
+      // setIsScreenSharing(false);
+      // toggleScreenSharing();
+      // doWhatYouNeedToDo();
+      setIsScreenSharing(false);
+      screenStream.getTracks().forEach((track) => track.stop());
+      setScreenStream(null);
+      setScreenSharingId("");
+    };
+  }
   // Scroll to the bottom of the chat when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -915,17 +910,16 @@ const FullRtc = () => {
       <Row id="room_container" className="p-0 m-0">
         <Col xs={12} id="members_container" className="p-0 m-0">
           <Row id="videos" className="p-0 m-0">
-
             <Col className="p-0 m-0 videoBg" id="user1_div">
               {/* {stream && ( */}
-                <video
-                  className="videoPlayer p-0"
-                  id="user1"
-                  autoPlay
-                  playsInline
-                  muted
-                  ref={localVideoRef} 
-                ></video>
+              <video
+                className="videoPlayer p-0"
+                id="user1"
+                autoPlay
+                playsInline
+                muted
+                ref={localVideoRef}
+              ></video>
 
               <h1 id="localClientName" className="clientDisplayName">
                 {localClientName}
@@ -1016,16 +1010,18 @@ const FullRtc = () => {
                 />
               </div>
 
-                <div 
+              <div
                 title="Anruf beenden"
-                className="control-container" id="leave-call-btn">
-                  <img
-                    className="icon"
-                    src="/icons/leave-call.svg"
-                    alt="leave call button"
-                    onClick={leaveCall}
-                  />
-                </div>
+                className="control-container"
+                id="leave-call-btn"
+              >
+                <img
+                  className="icon"
+                  src="/icons/leave-call.svg"
+                  alt="leave call button"
+                  onClick={leaveCall}
+                />
+              </div>
             </Col>
 
             <Col
@@ -1046,70 +1042,68 @@ const FullRtc = () => {
         <Col id="component_wrapper" className="p-0">
           <Row id="chat-container" className="">
             <Col>
-            <h2 className="p-3 chat-title mb-0">Chat</h2>
+              <h2 className="p-3 chat-title mb-0">Chat</h2>
             </Col>
-            <Col className="p-0 m-0 chat-messages"> 
-            <ul id="messages" className="p-3 mb-0">
-              {messages.map((message) => (
-                <Message
-                  key={message.id}
-                  message={message}
-                  localClientName={localClientName}
-                />
-              ))}
-              <li className="messagesEndRef" ref={messagesEndRef} />
-            </ul>
-            </Col>
-           
-           <Col>
-            <form id="form" action="" className="">
-              <Row id="sendMsgRow" className="p-0 m-0">
-                <Col xs={11} className="p-0">
-                  <input
-                    placeholder="Nachricht absenden"
-                    title="Nachrichtenbereich"
-                    id="msgInput"
-                    className="border-0 p-2"
-                    autoComplete="off"
+            <Col className="p-0 m-0 chat-messages">
+              <ul id="messages" className="p-3 mb-0">
+                {messages.map((message) => (
+                  <Message
+                    key={message.id}
+                    message={message}
+                    localClientName={localClientName}
                   />
-                </Col>
+                ))}
+                <li className="messagesEndRef" ref={messagesEndRef} />
+              </ul>
+            </Col>
 
-                <Col xs={1} className="p-0">
-                  <button
-                    type="submit"
-                    id="sendMsgBtn"
-                    title="Chat-Nachricht senden"
-                    className="sendMsgBtn btn"
-                  >
-                    <img alt="Chat-Nachricht senden" src="/icons/send-chat-msg.svg"></img>
-                  </button>
-                </Col>
-              </Row>
-            </form>
-           </Col>
+            <Col>
+              <form id="form" action="" className="">
+                <Row id="sendMsgRow" className="p-0 m-0">
+                  <Col xs={11} className="p-0">
+                    <input
+                      placeholder="Nachricht absenden"
+                      title="Nachrichtenbereich"
+                      id="msgInput"
+                      className="border-0 p-2"
+                      autoComplete="off"
+                    />
+                  </Col>
+
+                  <Col xs={1} className="p-0">
+                    <button
+                      type="submit"
+                      id="sendMsgBtn"
+                      title="Chat-Nachricht senden"
+                      className="sendMsgBtn btn"
+                    >
+                      <img
+                        alt="Chat-Nachricht senden"
+                        src="/icons/send-chat-msg.svg"
+                      ></img>
+                    </button>
+                  </Col>
+                </Row>
+              </form>
+            </Col>
           </Row>
 
-          <Settings 
-          isCameraTest={isCameraTest} 
-          setIsCameraTest={setIsCameraTest}
-          isCameraOn={isCameraOn} 
-          videoTestRef={videoTestRef} 
-
-          isMicTest = {isMicTest}
-          setIsMicTest = {setIsMicTest}
-          micTestRef={micTestRef} 
-          isMicOn = {isMicOn}
-
-
-          isSpeakerTest = {isSpeakerTest}
-          setIsSpeakerTest = {setIsSpeakerTest}
-          setIsSpeakerOn = {setIsSpeakerOn}
-          isSpeakerOn = {isSpeakerOn}
-
-
-           onDeviceChange={handleDeviceChange} 
-           stream={stream} 
-           />
+          <Settings
+            isCameraTest={isCameraTest}
+            setIsCameraTest={setIsCameraTest}
+            isCameraOn={isCameraOn}
+            videoTestRef={videoTestRef}
+            isMicTest={isMicTest}
+            setIsMicTest={setIsMicTest}
+            micTestRef={micTestRef}
+            isMicOn={isMicOn}
+            isSpeakerTest={isSpeakerTest}
+            setIsSpeakerTest={setIsSpeakerTest}
+            setIsSpeakerOn={setIsSpeakerOn}
+            isSpeakerOn={isSpeakerOn}
+            onDeviceChange={handleDeviceChange}
+            stream={stream}
+          />
         </Col>
       </Row>
     </main>

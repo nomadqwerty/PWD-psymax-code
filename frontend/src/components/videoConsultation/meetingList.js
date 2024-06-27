@@ -94,7 +94,7 @@ const MeetingList = ({ userName, newMeeting, setNewMeeting }) => {
                 const user = userName;
                 if (accessKey && user) {
                   router.push(
-                    `/dashboard/videosprechstunde/rtc?accessKey=${accessKey}&clientName=${user}`
+                    `${process.env.NEXT_PUBLIC_RTC_HOST}/rtc?accessKey=${accessKey}&clientName=${user}`
                   );
                 }
               }}

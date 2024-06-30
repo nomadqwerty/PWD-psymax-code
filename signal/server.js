@@ -13,6 +13,8 @@ const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const cors = require('cors'); // Import the cors middleware
 const PORT = process.env.PORT || 3050;
+const offersScreen = [];
+const connectedSockets = [];
 
 // async function main() {
 // open the database file

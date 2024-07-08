@@ -49,19 +49,19 @@ app.use((err, req, res, next) => {
 
 async function connectToDatabase() {
   try {
-    // await mongoose.connect('mongodb://localhost:27017/psymax', {
-    //   useNewUrlParser: true,
-    // });
-    // console.log(`mongodb://localhost:27017/psymax`);
-    await mongoose.connect(
-      'mongodb+srv://topbuyDB:topbuymongodb@cluster0.0xlvjsg.mongodb.net/psymax',
-      {
-        useNewUrlParser: true,
-      }
-    );
-    console.log(
-      `Connected to mongodb+srv://topbuyDB:topbuymongodb@cluster0.0xlvjsg.mongodb.net/psymax`
-    );
+    await mongoose.connect('mongodb://localhost:27017/psymax', {
+      useNewUrlParser: true,
+    });
+    console.log(`mongodb://localhost:27017/psymax`);
+    // await mongoose.connect(
+    //   'mongodb://mongodb:27017/psymax',
+    //   {
+    //     useNewUrlParser: true,
+    //   }
+    // );
+    // console.log(
+    //   `Connected to mongodb://mongodb:27017/psymax`
+    // );
     // Run seeder after connecting to the database
     await seedBriefData();
     console.log('Seeder executed successfully');

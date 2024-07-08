@@ -7,11 +7,14 @@ import { Grid, useMediaQuery } from '@mui/material';
 import { handleApiError } from '../../utils/apiHelpers';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '../../utils/axios';
-
 import FileUpload from '../../components/FileUpload';
 import { KlientContext } from '../../context/klient.context';
 import PrivateRoute from '../../components/PrivateRoute';
 import { EmailHeader } from '../../components/email/HeadersAndInfo';
+import vaultContext from '../../context/vault.context';
+import Worker from 'worker-loader!../brief/briefUtils/briefWorker';
+import toast from 'react-hot-toast';
+
 import {
   Cancel,
   EmailEditor,
@@ -41,6 +44,17 @@ const EmailPage = React.memo(() => {
   const editor = useRef(null);
   const { state: klientState, dispatch: klientDispatch } =
     useContext(KlientContext);
+  const { vaultState } = useContext(vaultContext);
+  const {
+    fileVault,
+    clientVault,
+    updateClientVault,
+    setFileVault,
+    serverVault,
+    setUpdateFileVault,
+    storeFile,
+    setStoreFile,
+  } = vaultState;
 
   const getTemplates = async () => {
     try {
@@ -56,7 +70,66 @@ const EmailPage = React.memo(() => {
     try {
       const response = await axiosInstance.get('/klient/getById/' + params?.id);
       const responseData = response?.data?.data;
-      setKlient(responseData);
+      if (responseData?._id) {
+        // // console.log(responseData);
+        const operations = window.crypto.subtle || window.crypto.webkitSubtle;
+        let serverVaultLength = Object.keys(serverVault).length;
+        let userData = localStorage.getItem('psymax-user-data');
+        if (serverVaultLength > 0 && userData) {
+          userData = JSON.parse(userData);
+          // // console.log(userData);
+          let ePass = userData.emergencyPassword;
+          let pass;
+          let dualKeySalt = serverVault.dualKeySalt;
+          let masterKeySalt = serverVault.masterKeySalt;
+          // // console.log(updateClientVault);
+          // // console.log(clientVault);
+          if (params?.id) {
+            if (clientVault?.data?.length > 0) {
+              clientVault.data.forEach((vault) => {
+                // console.log('main vault');
+                let clientId = vault.clientId;
+                let clientKey = vault.clientKey;
+                if (params.id === clientId) {
+                  pass = clientKey;
+                }
+              });
+            }
+            if (updateClientVault?.data?.length > 0 && !pass) {
+              updateClientVault.data.forEach((vault) => {
+                // console.log('update vault');
+                let clientId = vault.clientId;
+                let clientKey = vault.clientKey;
+                if (params.id === clientId) {
+                  pass = clientKey;
+                }
+              });
+            }
+          }
+          // // console.log(pass);
+          const briefWorker = new Worker();
+          const psymaxToken = localStorage.getItem('psymax-token');
+          toast('Patientendaten entschlüsseln');
+          briefWorker.postMessage({
+            type: 'decryptClient',
+            data: JSON.stringify({
+              responseData,
+              pass,
+              ePass,
+              dualKeySalt,
+              masterKeySalt,
+            }),
+          });
+
+          briefWorker.onmessage = (message) => {
+            const decryptedData = JSON.parse(message.data);
+
+            setKlient(decryptedData.setEmpfaenger);
+            toast.success('Patientendaten erfolgreich entschlüsselt');
+          };
+        }
+      }
+      // setKlient(responseData);
     } catch (error) {
       handleApiError(error, router);
     }

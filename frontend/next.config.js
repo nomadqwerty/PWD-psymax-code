@@ -19,19 +19,20 @@ module.exports = {
   env: {
     NEXT_PUBLIC_PAGINATION_LIMIT: '10',
     // NEXT_PUBLIC_SIGNAL_HOST: 'http://localhost:3050',
-    NEXT_PUBLIC_SIGNAL_HOST:
-      'wss://[pwd-psymax-code-production-f927.up.railway.app]',
-    // NEXT_PUBLIC_API_HOST: 'http://localhost:4000/api',
-    NEXT_PUBLIC_API_HOST:
-      'https://pwd-psymax-code-production.up.railway.app/api',
+    // NEXT_PUBLIC_SIGNAL_HOST:
+    //   'wss://[pwd-psymax-code-production-f927.up.railway.app]',
+    NEXT_PUBLIC_API_HOST: 'http://localhost:4000/api',
+    // NEXT_PUBLIC_API_HOST:
+    //   'https://pwd-psymax-code-production.up.railway.app/api',
     // NEXT_PUBLIC_API_HOST: '/api',
     NEXT_PUBLIC_LOGOUT_TIMER: '10',
     NEXT_PUBLIC_DUAL_KEY_ONE: '',
     NEXT_PUBLIC_DUAL_KEY_TWO: '',
     NEXT_PUBLIC_MAX_FILE_SIZE: '52428800',
-    // NEXT_PUBLIC_CLIENT_HOST: 'http://localhost:3000',
-    NEXT_PUBLIC_CLIENT_HOST: 'https://pwd-psymax-code.vercel.app',
-    NEXT_PUBLIC_RTC_HOST: 'https://video-call-app-chi-ten.vercel.app',
+    NEXT_PUBLIC_CLIENT_HOST: 'http://localhost:3000',
+    // NEXT_PUBLIC_CLIENT_HOST: 'https://pwd-psymax-code.vercel.app',
+    NEXT_PUBLIC_RTC_HOST: 'http://localhost:3001',
+    // NEXT_PUBLIC_RTC_HOST: 'https://video-call-app-chi-ten.vercel.app',
     NEXT_PUBLIC_PRICING_GLOBAL: '69',
     NEXT_PUBLIC_PRICING_GLOBAL_EXTENDED: '99',
     NEXT_PUBLIC_PRICING_VAT_PERCENTAGE: '19',

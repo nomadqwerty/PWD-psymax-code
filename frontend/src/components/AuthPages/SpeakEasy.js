@@ -7,12 +7,15 @@ import { useEffect, useState } from 'react';
 import { passwordGenerator } from '../../utils/utilityFn';
 import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
+import styles from './authStyles/speakeasy.module.css';
+import { birdSvg } from './AuthSvg/2faBird';
 import toast from 'react-hot-toast';
-
+import { isNumber } from '@mui/x-data-grid/internals';
 // generate TwoFaCode
 
 const SpeakEasyPage = ({ id, type }) => {
   const [sent, setSent] = useState(false);
+  const [twoFaCode, setTwoFaCode] = useState([]);
   const [timeSent, setTimeSent] = useState(false);
   const [code, setCode] = useState(false);
   const [userInput, setUserInput] = useState('');
@@ -26,6 +29,8 @@ const SpeakEasyPage = ({ id, type }) => {
   } = useForm();
 
   const onSubmit = (data) => {
+    console.log(data);
+    console.log('submit');
     (async () => {
       // console.log(data);
       if (data?.code) {
@@ -56,25 +61,85 @@ const SpeakEasyPage = ({ id, type }) => {
     })();
   };
 
+  const handleTwoInput = (e, i) => {
+    console.log(e.target.value, ' ', i);
+
+    twoFaCode[i] = e.target.value[0];
+    e.target.value = twoFaCode[i] || '';
+    setTwoFaCode(twoFaCode);
+  };
+  useEffect(() => {
+    function logKey(e) {
+      const text = `${e.code}`;
+      if (text === 'Enter') {
+        if (twoFaCode.length !== 6) {
+          toast.error('incomplete input');
+        } else if (twoFaCode.length === 6) {
+          let hasUndefined = false;
+          twoFaCode.forEach((i) => {
+            if (i === undefined) {
+              hasUndefined = true;
+              toast.error('incomplete input');
+            }
+          });
+          if (!hasUndefined) {
+            let keys = twoFaCode.join('');
+            keys = Number(keys);
+            if (isNumber(keys)) {
+              console.log(keys);
+              onSubmit({ code: keys });
+            }
+          }
+        }
+      }
+    }
+    const formBtn = document.getElementById('login-two');
+    formBtn.addEventListener('keypress', logKey);
+
+    return () => {
+      formBtn.removeEventListener('keypress', logKey);
+    };
+  });
   return (
     <>
       <Layout>
         <form
           id="login-form"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            await onSubmit(getValues());
-            // console.log('here');
+          onSubmit={() => {
+            console.log('object');
           }}
         >
-          <div className="main-content" style={{ height: '40vh' }}>
+          <div className="main-content" style={{ height: 'auto' }}>
             <Grid item xs={12}>
-              <p
-                className="text-center mt-16 interFonts text-2xl font-semibold text[#0e0e0e]"
+              <div
+                className="text-center mt-16 interFonts text-3xl font-semibold text[#0e0e0e]"
                 style={{ marginTop: '150px' }}
               >
-                Two Factor Authentication
-              </p>
+                <p
+                  style={{
+                    margin: 'auto',
+                    width: '30%',
+                  }}
+                >
+                  Wir warten noch kurz auf die Bestätigung.
+                </p>
+              </div>
+            </Grid>
+            <Grid item xs={12}>
+              <div
+                className="text-center mt-16 interFonts text-2ml font-light text[#0e0e0e]"
+                style={{ marginTop: '20px', textAlign: 'center' }}
+              >
+                <p
+                  style={{
+                    margin: 'auto',
+                    width: '25%',
+                  }}
+                >
+                  Authentifizierungscode an, den wir Ihnen an Ihre Emailadresse
+                  gesendet haben.
+                </p>
+              </div>
             </Grid>
             <Grid container>
               <Grid item sm={2.5} md={4.25} xl={4.25} />
@@ -85,32 +150,43 @@ const SpeakEasyPage = ({ id, type }) => {
                 sm={7}
                 xl={3.5}
                 sx={{ textAlign: 'center', mt: 3 }}
-              >
-                <CssTextField
-                  fullWidth
-                  name="code"
-                  type="password"
-                  focusColor="#3C3C3C"
-                  id="code"
-                  label="code"
-                  variant="outlined"
-                  {...register('code', { required: true })}
-                  error={!!errors.code}
-                  inputProps={{
-                    className: 'interFonts',
-                  }}
-                />
-                {errors?.code && (
-                  <p className="validationErr">
-                    Dieses Feld ist ein Pflichtfeld
-                  </p>
-                )}
-              </Grid>
+              ></Grid>
               <Grid item sm={2.5} md={4.25} xl={4.25} />
             </Grid>
             <Grid container>
               <Grid item sm={2.5} md={4.25} xl={4.25} />
-              <Grid
+              <div className={styles.formTwoFa}>
+                <form id="login-two" className={styles.formWrap}>
+                  {[1, 2, 3, 4, , 5, 6].map((i) => {
+                    return (
+                      <input
+                        key={i}
+                        onChange={(e) => {
+                          handleTwoInput(e, i - 1);
+                        }}
+                        className={styles.formInput}
+                      />
+                    );
+                  })}
+                </form>
+                <Grid
+                  item
+                  xs={12}
+                  md={3.5}
+                  sm={7}
+                  xl={3.5}
+                  sx={{
+                    textAlign: 'center',
+                    mt: 3,
+                    paddingTop: '100px',
+                    paddingBottom: '100px',
+                  }}
+                >
+                  {birdSvg}
+                </Grid>
+              </div>
+
+              {/* <Grid
                 item
                 xs={12}
                 md={3.5}
@@ -132,7 +208,7 @@ const SpeakEasyPage = ({ id, type }) => {
                 >
                   <span style={{ color: '#0E0E0E' }}>Submit</span>
                 </button>
-              </Grid>
+              </Grid> */}
               <Grid item sm={2.5} md={4.25} xl={4.25} />
             </Grid>
           </div>

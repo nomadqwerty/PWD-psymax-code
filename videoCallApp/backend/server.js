@@ -2,7 +2,6 @@
 // import express from 'express';
 // import { createServer } from 'node:http';
 const express = require('express');
-const fs = require('fs/promises');
 const { createServer } = require('node:http');
 const { join } = require('node:path');
 const { Server } = require('socket.io');
@@ -12,7 +11,7 @@ const { Server } = require('socket.io');
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const cors = require('cors'); // Import the cors middleware
-const PORT = process.env.PORT || 3050;
+const PORT = 3050;
 
 // async function main() {
 // open the database file
@@ -32,60 +31,13 @@ const PORT = process.env.PORT || 3050;
 
 // const express = require('express');
 const app = express();
-const corsOptions = {
-  /* origin: function (origin, callback) {
-    // Check if the request origin is allowed
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }, */
-  origin: '*',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true, // enable passing cookies, authorization headers, etc.
-};
-
-app.use(cors(corsOptions));
-app.use(function (req, res, next) {
-  // Website you wish to allow to connect
-  console.log('req');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
-  // Request methods you wish to allow
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET, POST, OPTIONS, PUT, PATCH, DELETE'
-  );
-
-  // Request headers you wish to allow
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-Requested-With,content-type'
-  );
-
-  // Set to true if you need the website to include cookies in the requests sent
-  // to the API (e.g. in case you use sessions)
-  res.setHeader('Access-Control-Allow-Credentials', true);
-
-  // Pass to next layer of middleware
-  next();
-});
 const server = createServer(app);
 const io = new Server(server, {
   connectionStateRecovery: {},
   debug: true,
   cors: {
     origin: '*',
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  },
-  origins: '*',
-  handlePreflightRequest: (req, res) => {
-    const headers = {
-      'Access-Control-Allow-Origin': '*', //or the specific origin you want to give access to,
-    };
-    res.writeHead(200, headers);
-    res.end();
+    methods: ['GET', 'POST'],
   },
 });
 
@@ -115,9 +67,7 @@ app.use(cors()); // Use cors middleware for all routes
 // Initialize a counter for connected clients
 let connectedClients = 0;
 let roomAccessKey;
-
 io.on('connection', async (socket) => {
-  console.log('connection');
   //listen for roomAccesskey event on socket join and add socket to the provided acceskey
   socket.on('roomAccessKey', (data) => {
     const { roomToJoin, clientName } = data;
@@ -125,11 +75,13 @@ io.on('connection', async (socket) => {
       roomAccessKey = roomToJoin;
       socket.join(roomToJoin);
       // console.log("joined room",roomToJoin)
-      socket.broadcast.to(roomToJoin).emit('newUserJoined', {
-        userSocketID: socket.id,
-        room: roomToJoin,
-        remoteName: clientName,
-      });
+      socket.broadcast
+        .to(roomToJoin)
+        .emit('newUserJoined', {
+          userSocketID: socket.id,
+          room: roomToJoin,
+          remoteName: clientName,
+        });
     } catch (e) {
       console.log('could not join roomAccessKey', e);
     }
@@ -219,10 +171,9 @@ io.on('connection', async (socket) => {
 
 // io.compress(true);
 
-server.listen(PORT, async () => {
-  await fs.writeFile('path.txt', String(PORT));
-  console.log(`My server is actively running on port ${PORT}`);
-});
+server.listen(PORT, () =>
+  console.log(`My server is actively running on port ${PORT}`)
+);
 // }
 
 // main();

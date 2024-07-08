@@ -25,9 +25,8 @@ services:
       - ./backend/config.env
     environment:
       - DB_URL=mongodb://mongodb:27017/psymax
-      - REDIS_HOST=https://grateful-viper-33681.upstash.io
+      - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=AYORAAIncDEwMGFmYmE5YWYxMWI0ZGYxYTk5M2I3OGNmMjdlNjlhMXAxMzM2ODE
 
   redis:
     image: 'redis:latest'

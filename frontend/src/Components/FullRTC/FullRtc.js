@@ -43,6 +43,7 @@ const FullRtc = () => {
   const [isSettingsVisible, setIsSettingsVisible] = useState(false); // State to track settings page status
 
   const [isChatVisible, setIsChatVisible] = useState(false); // State to track chat view status
+  const [remoteId, setRemoteId] = useState(false); // State to track chat view status
 
   const [messages, setMessages] = useState([]); //track messages
   const messagesEndRef = useRef(null); // Ref to track the end of the messages list
@@ -157,6 +158,7 @@ const FullRtc = () => {
       } else if (message.type == "answer") {
         await addAnswer(message.answer);
       } else if (message.type == "candidate") {
+        setRemoteId(userID);
         if (peerConnection) {
           await peerConnection.addIceCandidate(message.candidate);
         }
@@ -389,6 +391,10 @@ const FullRtc = () => {
       socketRef.current.on("chat message", handleChatMsg);
 
       socketRef.current.on("remote-camera", handleRemoteCamera);
+      socketRef.current.on("reloadPage", () => {
+        console.log("page reload request");
+        window.location.reload();
+      });
 
       let leaveChannel = async () => {
         if (socketRef.current) {
@@ -713,6 +719,15 @@ const FullRtc = () => {
     }
     router.push("/lobby");
   };
+
+  // TODO: imporove this
+  const restartCall = async () => {
+    console.log("retrying connection");
+    socketRef.current.emit("retryRtcConnection", {
+      from: socketID,
+      to: remoteId,
+    });
+  };
   const Message = ({ message, localClientName }) => {
     return (
       <li
@@ -1020,6 +1035,18 @@ const FullRtc = () => {
                   src="/icons/leave-call.svg"
                   alt="leave call button"
                   onClick={leaveCall}
+                />
+              </div>
+              <div
+                title="Anruf beenden"
+                className="control-container"
+                id="leave-call-btn"
+              >
+                <img
+                  className="icon"
+                  src="/icons/refresh.svg"
+                  alt="refresh connection"
+                  onClick={restartCall}
                 />
               </div>
             </Col>

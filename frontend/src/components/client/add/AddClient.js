@@ -12,12 +12,7 @@ import ModelDialogue from '../../../components/Dialog/ModelDialogue';
 import { handleApiError } from '../../../utils/apiHelpers';
 import PrivateRoute from '../../../components/PrivateRoute';
 import clientContext from '../../../context/client.context';
-import {
-  deriveAllKeys,
-  encryptData,
-  passwordGenerator,
-  decryptData,
-} from '../../../utils/utilityFn';
+import { passwordGenerator } from '../../../utils/utilityFn';
 import {
   CipherHeader,
   PersonalData,

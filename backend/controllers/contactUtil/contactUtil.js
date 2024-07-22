@@ -1,5 +1,6 @@
 const nodeMailer = require('nodemailer');
 const path = require('path');
+const { htmlToText } = require('html-to-text');
 
 // manually set env TODO: please change this.
 
@@ -43,6 +44,21 @@ class Email {
       to: this.email,
       subject,
       text: code,
+    };
+
+    let transporter = this.newTransport();
+    let sent = await transporter.sendMail(mailOptions);
+
+    return sent;
+  }
+  async sendHtml(subject, html) {
+    // mail options
+    const mailOptions = {
+      from: this.from,
+      to: this.email,
+      subject,
+      html,
+      text: htmlToText.toString(html),
     };
 
     let transporter = this.newTransport();

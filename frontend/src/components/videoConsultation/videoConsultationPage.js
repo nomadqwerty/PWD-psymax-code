@@ -9,6 +9,15 @@ import MeetingList from './meetingList';
 import { Typography, Grid } from '@mui/material';
 import axiosInstance from '../../utils/axios';
 import { useRouter } from 'next/navigation';
+import {
+  MeetingHeader,
+  SessionsHeader,
+  AddMeeting,
+  FilterMeetings,
+  SearchMeetings,
+  Cipher,
+  ClickToAddNew,
+} from './headers';
 
 const VideoConsultationPage = () => {
   const {
@@ -22,7 +31,7 @@ const VideoConsultationPage = () => {
     formState: { errors, isSubmitting },
   } = useForm();
   const [values, setValues] = useState();
-  const [meetings, setMeetings] = useState(null);
+  const [meetings, setMeetings] = useState([]);
   const [userName, setUserName] = useState(null);
   const [newMeeting, setNewMeeting] = useState(null);
   const router = useRouter();
@@ -35,6 +44,25 @@ const VideoConsultationPage = () => {
       }
     }
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      let userData = localStorage?.getItem('psymax-user-data');
+
+      if (userData) {
+        userData = JSON.parse(userData);
+
+        const meetingRes = await axiosInstance.get(
+          `/meetings/all/${userData._id}`
+        );
+        if (meetingRes.status === 200) {
+          if (meetingRes.data.data) {
+            setMeetings(meetingRes.data.data.meetings);
+          }
+        }
+      }
+    })();
+  }, []);
   useEffect(() => {
     let userData = localStorage?.getItem('psymax-user-data');
 
@@ -45,63 +73,27 @@ const VideoConsultationPage = () => {
   });
   return (
     <AppLayout>
-      <div>
-        <Grid item xs={12} sm={12} md={12} lg={6}>
-          <Typography
-            sx={{
-              fontWeight: 700,
-              fontSize: 36,
-              lineHeight: 1.6,
-              color: '#3C3C3C',
-              fontFamily: 'inter Tight',
-            }}
-          >
-            Schedule Meeting
-          </Typography>
-        </Grid>
-        <div>
-          <DatePicker
-            register={register}
-            errors={errors}
-            setValues={setValues}
-            values={values}
-          ></DatePicker>
-          <TitleInput
-            register={register}
-            errors={errors}
-            setValues={setValues}
-            values={values}
-          ></TitleInput>
-          <SubmitBtn
-            isSubmitting={isSubmitting}
-            setValues={setValues}
-            values={values}
-            setNewMeeting={setNewMeeting}
-          ></SubmitBtn>
-        </div>
-      </div>
-      <div>
-        <div>
-          <Grid item xs={12} sm={12} md={12} lg={6}>
-            <Typography
-              sx={{
-                fontWeight: 700,
-                fontSize: 36,
-                lineHeight: 1.6,
-                color: '#3C3C3C',
-                fontFamily: 'inter Tight',
-              }}
-            >
-              Scheduled Meetings
-            </Typography>
-          </Grid>
-        </div>
+      <Grid container sx={{ mb: 4, alignItems: 'center' }} spacing={2}>
+        <MeetingHeader />
+        {/* neue client */}
+        <AddMeeting router={router} />
+
+        {/* suche */}
+        <SearchMeetings />
+      </Grid>
+      <Grid container sx={{ mb: 4, alignItems: 'center' }} spacing={2}>
+        <SessionsHeader />
+        {/* neue client */}
+        <Cipher />
+
         <MeetingList
           userName={userName}
-          newMeeting={newMeeting}
-          setNewMeeting={setNewMeeting}
+          meetingsList={meetings}
+          router={router}
         ></MeetingList>
-      </div>
+
+        <ClickToAddNew router={router} />
+      </Grid>
     </AppLayout>
   );
 };

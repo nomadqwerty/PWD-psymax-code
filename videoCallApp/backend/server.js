@@ -75,13 +75,11 @@ io.on('connection', async (socket) => {
       roomAccessKey = roomToJoin;
       socket.join(roomToJoin);
       // console.log("joined room",roomToJoin)
-      socket.broadcast
-        .to(roomToJoin)
-        .emit('newUserJoined', {
-          userSocketID: socket.id,
-          room: roomToJoin,
-          remoteName: clientName,
-        });
+      socket.broadcast.to(roomToJoin).emit('newUserJoined', {
+        userSocketID: socket.id,
+        room: roomToJoin,
+        remoteName: clientName,
+      });
     } catch (e) {
       console.log('could not join roomAccessKey', e);
     }

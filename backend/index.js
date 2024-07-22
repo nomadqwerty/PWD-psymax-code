@@ -49,19 +49,11 @@ app.use((err, req, res, next) => {
 
 async function connectToDatabase() {
   try {
-    await mongoose.connect('mongodb://localhost:27017/psymax', {
+    await mongoose.connect(process.env.DB_URL, {
       useNewUrlParser: true,
     });
-    console.log(`mongodb://localhost:27017/psymax`);
-    // await mongoose.connect(
-    //   'mongodb://mongodb:27017/psymax',
-    //   {
-    //     useNewUrlParser: true,
-    //   }
-    // );
-    // console.log(
-    //   `Connected to mongodb://mongodb:27017/psymax`
-    // );
+    console.log(DB_URL);
+
     // Run seeder after connecting to the database
     await seedBriefData();
     console.log('Seeder executed successfully');

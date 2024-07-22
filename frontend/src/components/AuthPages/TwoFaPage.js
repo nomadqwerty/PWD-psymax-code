@@ -83,24 +83,22 @@ const TwoFactorAuthPage = ({ id, type, TwoFA }) => {
 
   useEffect(() => {
     (async () => {
-      setTimeout(async () => {
-        if (twoFaCode) {
-          let reqObj = {
-            code: twoFaCode,
-            userId: id,
-          };
-          if (type === 'recovery') {
-            reqObj.reqType = 'accountReset';
-          }
-          const twoFaRes = await axiosInstance.post(`/user/twofactor`, reqObj);
-          if (twoFaRes.status === 200) {
-            setCode(twoFaCode);
-            setSent(true);
-            setTimeSent(Date.now() + 900000);
-            toast('Der Zugangsschlüssel wurde an Ihre E-Mail-Adresse gesendet');
-          }
+      if (twoFaCode) {
+        let reqObj = {
+          code: twoFaCode,
+          userId: id,
+        };
+        if (type === 'recovery') {
+          reqObj.reqType = 'accountReset';
         }
-      }, 5000);
+        const twoFaRes = await axiosInstance.post(`/user/twofactor`, reqObj);
+        if (twoFaRes.status === 200) {
+          setCode(twoFaCode);
+          setSent(true);
+          setTimeSent(Date.now() + 900000);
+          toast('Der Zugangsschlüssel wurde an Ihre E-Mail-Adresse gesendet');
+        }
+      }
     })();
   }, []);
 

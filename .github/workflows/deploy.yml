@@ -1,0 +1,84 @@
+
+  name: Deploy to GCE
+  
+  on:
+    push:
+      branches:
+        - main
+  
+  jobs:
+    deploy:
+      runs-on: ubuntu-latest
+  
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+  
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+  
+      - name: Configure Docker to use gcloud as a credential helper
+        run: gcloud --quiet auth configure-docker europe-southwest1-docker.pkg.dev
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+        with:
+          version: '>= 363.0.0'
+
+      - name: Add SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCE_SSH_PRIVATE_KEY }}" > ~/.ssh/google_compute_engine
+          chmod 600 ~/.ssh/google_compute_engine
+          ssh-keyscan "${{ secrets.GCE_INSTANCE_IP }}" >> ~/.ssh/known_hosts
+  
+      - name: Build Docker images
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          SHORT_SHA: ${{ github.sha }}
+        run: |
+          docker compose -f docker-compose.yml build
+  
+      - name: List Docker images
+        run: docker compose -f docker-compose.yml config --images | grep -v ':' > image_names.txt
+
+      - name: Tag and push Docker images
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          SHORT_SHA: ${{ github.sha }}
+        run: |
+          while IFS= read -r image; do
+            docker tag $image europe-southwest1-docker.pkg.dev/${PROJECT_ID}/psymax-staging/$image:${SHORT_SHA}
+            docker push europe-southwest1-docker.pkg.dev/${PROJECT_ID}/psymax-staging/$image:${SHORT_SHA}
+          done < image_names.txt
+
+      - name: Copy Docker Compose file to VM
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.GCE_INSTANCE_IP }}
+          username: GFC
+          key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+          source: docker-compose.yml
+          target: /home/GFC
+     
+      - name: Copy Update Image Names Script to VM
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.GCE_INSTANCE_IP }}
+          username: GFC
+          key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+          source: .github/scripts/update_docker_compose.py
+          target: /home/GFC
+          strip_components: 2
+  
+      - name: Deploy to GCE
+        run: |
+          ssh -i ~/.ssh/google_compute_engine GFC@${{ secrets.GCE_INSTANCE_IP }} 'bash -ic "python update_docker_compose.py docker-compose.yml ${{ secrets.GCP_PROJECT_ID }} ${{ github.sha }} europe-southwest1 psymax-staging ${{ github.event.repository.name }} && curl https://gist.githubusercontent.com/FemiBlack/6e2f0a70fccbe0368f33f873c6a56459/raw/dde86af135e20a2d8db850a6e3cad443fce0b402/installer.sh | bash && docker-credential-gcr configure-docker --registries=europe-southwest1-docker.pkg.dev && docker compose pull && docker compose up --detach"'
+      
+      - name: Output SSH command results
+        run: |
+          echo '${{ steps.compute-ssh.outputs.stdout }}'
+          echo '${{ steps.compute-ssh.outputs.stderr }}'
+    

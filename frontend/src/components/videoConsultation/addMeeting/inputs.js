@@ -168,7 +168,10 @@ const DateSelect = ({ register, errors, editData, handleDOBChange }) => {
 const MyTimePicker = ({ handleTimeChange }) => {
   return (
     <Grid item xs={12} sm={12} md={6} xl={6}>
-      <TimePicker onChange={handleTimeChange}></TimePicker>;
+      <TimePicker
+        disableOpenPicker={true}
+        onChange={handleTimeChange}
+      ></TimePicker>
     </Grid>
   );
 };
@@ -203,6 +206,9 @@ const Confirm = ({ isSubmitting }) => {
         type="submit"
         //   disabled={isSubmitting}
         className="text-center text-sm font-medium interFonts rounded-[8px] justify-center items-center w-22 h-[42px] px-5 py-2 gap-2.5 inline-flex bg-[#EEE] text-[#0E0E0E] hover:bg-[#2B86FC] hover:text-[#FFFFFF]"
+        style={{
+          opacity: 0,
+        }}
       >
         Bestätigen
       </button>

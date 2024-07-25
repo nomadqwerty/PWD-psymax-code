@@ -72,12 +72,16 @@ const MeetingAdd = React.memo(() => {
         minute,
       },
     };
+    console.log(newTime);
+    console.log(selectedTimeObj);
     setTimeData(selectedTimeObj);
   };
 
   const onSubmit = async (data) => {
     try {
+      console.log(data);
       if (data && timeData?.time?.hour) {
+        toast('scheduling email');
         const accessCode = passwordGenerator();
         const url =
           process.env.NEXT_PUBLIC_CLIENT_HOST +
@@ -97,6 +101,7 @@ const MeetingAdd = React.memo(() => {
           console.log(data);
           const meetingRes = await axiosInstance.post(`/meetings/create`, data);
           if (meetingRes.status === 200) {
+            toast.success('meeting has been scheduled');
             router.push('/dashboard/videosprechstunde');
           }
         }

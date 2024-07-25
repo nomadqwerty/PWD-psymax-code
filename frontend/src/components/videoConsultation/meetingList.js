@@ -57,13 +57,13 @@ const MeetingList = ({ meetingsList, router }) => {
             varient="primary"
             className="radius4 xs:mr-1 sm:mr-5 xs:my-2 md:mb-1 sm:mb-0"
             onClick={() => {
-              const accessKey = meeting?.accessKey;
-              const user = userName;
-              if (accessKey && user) {
-                // router.push(
-                //   `${process.env.NEXT_PUBLIC_RTC_HOST}/rtc?accessKey=${accessKey}&clientName=${user}`
-                // );
-              }
+              // const accessKey = meeting?.accessKey;
+              // const user = userName;
+              // if (accessKey && user) {
+              //   // router.push(
+              //   //   `${process.env.NEXT_PUBLIC_RTC_HOST}/rtc?accessKey=${accessKey}&clientName=${user}`
+              //   // );
+              // }
             }}
           >
             einleiten

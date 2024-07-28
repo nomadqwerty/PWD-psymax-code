@@ -63,19 +63,19 @@
           source: docker-compose.yml
           target: /home/GFC
      
-      - name: Copy Update Image Names Script to VM
+      - name: Copy Update Image Names, SSL Certificate and Nginx Config Script to VM
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.GCE_INSTANCE_IP }}
           username: GFC
           key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
-          source: .github/scripts/update_docker_compose.py
+          source: .github/scripts/update_docker_compose.py,.github/scripts/create_ssl_certificate.sh,.github/scripts/nginx.conf
           target: /home/GFC
           strip_components: 2
   
-      - name: Deploy to GCE
+      - name: Deploy to GCE 
         run: |
-          ssh -i ~/.ssh/google_compute_engine GFC@${{ secrets.GCE_INSTANCE_IP }} 'bash -ic "python update_docker_compose.py docker-compose.yml ${{ secrets.GCP_PROJECT_ID }} ${{ github.sha }} europe-southwest1 psymax-staging ${{ github.event.repository.name }} && curl https://gist.githubusercontent.com/FemiBlack/6e2f0a70fccbe0368f33f873c6a56459/raw/dde86af135e20a2d8db850a6e3cad443fce0b402/installer.sh | bash && docker-credential-gcr configure-docker --registries=europe-southwest1-docker.pkg.dev && docker compose pull && docker compose up --detach"'
+          ssh -i ~/.ssh/google_compute_engine GFC@${{ secrets.GCE_INSTANCE_IP }} 'bash -ic "rm -f ./server.key ./server.crt && chmod +x create_ssl_certificate.sh && bash create_ssl_certificate.sh ${{ secrets.GCE_INSTANCE_IP }} ./server.key ./server.crt && python update_docker_compose.py docker-compose.yml ${{ secrets.GCP_PROJECT_ID }} ${{ github.sha }} europe-southwest1 psymax-staging ${{ github.event.repository.name }} ./nginx.conf ./server.crt ./server.key VARS__DELIM__FRONTEND__DELIM__NEXT_PUBLIC_MOLLIE_PROFILE_ID=\"${{ secrets.VARS__DELIM__FRONTEND__DELIM__NEXT_PUBLIC_MOLLIE_PROFILE_ID }}\" VARS__DELIM__FRONTEND__DELIM__NEXT_PUBLIC_PRICING_GLOBAL=\"${{ secrets.VARS__DELIM__FRONTEND__DELIM__NEXT_PUBLIC_PRICING_GLOBAL }}\" VARS__DELIM__FRONTEND__DELIM__NEXT_PUBLIC_PRICING_GLOBAL_EXTENDED=\"${{ secrets.VARS__DELIM__FRONTEND__DELIM__NEXT_PUBLIC_PRICING_GLOBAL_EXTENDED }}\" VARS__DELIM__FRONTEND__DELIM__NEXT_PUBLIC_PRICING_VAT_PERCENTAGE=\"${{ secrets.VARS__DELIM__FRONTEND__DELIM__NEXT_PUBLIC_PRICING_VAT_PERCENTAGE }}\" VARS__DELIM__FRONTEND__DELIM__NEXT_DAYS_PER_CYCLE=\"${{ secrets.VARS__DELIM__FRONTEND__DELIM__NEXT_DAYS_PER_CYCLE }}\" VARS__DELIM__BACKEND__DELIM__NODE_ENV=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__NODE_ENV }}\" VARS__DELIM__BACKEND__DELIM__APPNAME=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__APPNAME }}\" VARS__DELIM__BACKEND__DELIM__PORT=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__PORT }}\" VARS__DELIM__BACKEND__DELIM__DB_URL=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__DB_URL }}\" VARS__DELIM__BACKEND__DELIM__FRONTEND_URL=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__FRONTEND_URL }}\" VARS__DELIM__BACKEND__DELIM__API_HOST_DEV=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__API_HOST_DEV }}\" VARS__DELIM__BACKEND__DELIM__API_HOST_PROD=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__API_HOST_PROD }}\" VARS__DELIM__BACKEND__DELIM__REDIS_HOST=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__REDIS_HOST }}\" VARS__DELIM__BACKEND__DELIM__REDIS_URL=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__REDIS_URL }}\" VARS__DELIM__BACKEND__DELIM__REDIS_PORT=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__REDIS_PORT }}\" VARS__DELIM__BACKEND__DELIM__REDIS_PASSWORD=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__REDIS_PASSWORD }}\" VARS__DELIM__BACKEND__DELIM__appLogin=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__appLogin }}\" VARS__DELIM__BACKEND__DELIM__pass=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__pass }}\" VARS__DELIM__BACKEND__DELIM__GC_API_KEY=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__GC_API_KEY }}\" VARS__DELIM__BACKEND__DELIM__WEBHOOK_ENDPOINT_SECRET=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__WEBHOOK_ENDPOINT_SECRET }}\" VARS__DELIM__BACKEND__DELIM__PRICING_GLOBAL=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__PRICING_GLOBAL }}\" VARS__DELIM__BACKEND__DELIM__PRICING_GLOBAL_EXTENDED=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__PRICING_GLOBAL_EXTENDED }}\" VARS__DELIM__BACKEND__DELIM__PRICING_VAT_PERCENTAGE=\"${{ secrets.VARS__DELIM__BACKEND__DELIM__PRICING_VAT_PERCENTAGE }}\" && curl https://gist.githubusercontent.com/FemiBlack/6e2f0a70fccbe0368f33f873c6a56459/raw/dde86af135e20a2d8db850a6e3cad443fce0b402/installer.sh | bash && docker-credential-gcr configure-docker --registries=europe-southwest1-docker.pkg.dev && docker compose pull && docker compose up --detach"'
       
       - name: Output SSH command results
         run: |

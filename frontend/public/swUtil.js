@@ -1,5 +1,6 @@
 // let serverUrl = 'https://pwd-psymax-code-production.up.railway.app/api';
-let serverUrl = 'http://localhost:4000/api';
+// let serverUrl = 'http://localhost:4000/api';
+let serverUrl = 'https://34.175.225.136/api';
 
 let addToIdb = async (storeName, key, data, type, idb) => {
   if (idb) {

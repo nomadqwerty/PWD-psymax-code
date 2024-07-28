@@ -72,6 +72,7 @@ const allowedOrigins = [
   'http://localhost:4000',
   'https://psymax.de',
   'https://psymax.de/api/',
+  'https://34.175.225.136/',
 ];
 
 const corsOptions = {

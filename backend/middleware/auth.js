@@ -25,7 +25,10 @@ const verifyToken = (req, res, next) => {
     return res.status(403).send(response);
   }
   try {
-    const decoded = jwt.verify(token, config.TOKEN_KEY);
+    const decoded = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const currentTime = Math.floor(Date.now() / 1000); // Current timestamp in seconds
 

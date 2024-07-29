@@ -190,7 +190,10 @@ const login = async (req, res, next) => {
       };
 
       // Sign the token with the payload and your secret key
-      const token = jwt.sign(payload, process.env.TOKEN_KEY);
+      const token = jwt.sign(
+        payload,
+        '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+      );
 
       user.token = token;
 
@@ -222,14 +225,20 @@ const login = async (req, res, next) => {
 const refreshToken = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedOldToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedOldToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const newClaims = {
       ...decodedOldToken,
       exp: Math.floor(Date.now() / 1000) + TimeForTokenExpire, // 1 hour from now
     };
 
-    const newToken = jwt.sign(newClaims, process.env.TOKEN_KEY);
+    const newToken = jwt.sign(
+      newClaims,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     if (newToken) {
       const user = await UserSchema.findOne({ _id: decodedOldToken?.user_id });
@@ -267,7 +276,7 @@ const logout = async (req, res, next) => {
   try {
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
     const user_id = decodedToken?.user_id;
     const user = await UserSchema.findOne({ _id: user_id });
@@ -292,7 +301,10 @@ const logout = async (req, res, next) => {
 const get = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
     const data = await UserSchema.findById(decodedToken?.user_id).select(
       ' -__v -token'
     );
@@ -374,7 +386,10 @@ const save = async (req, res, next) => {
     }
 
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
     const user = await UserSchema.findById(decodedToken?.user_id).select(
       ' -__v'
     );
@@ -757,7 +772,10 @@ const verifySecret = async (req, res) => {
 const getSecret = async (req, res) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     console.log(decodedToken.user_id);
     const user = await UserSchema.findOne({ _id: decodedToken.user_id });
@@ -784,7 +802,10 @@ const getSecret = async (req, res) => {
 const emailSecret = async (req, res) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     console.log(decodedToken.user_id);
     const user = await UserSchema.findOne({ _id: decodedToken.user_id });

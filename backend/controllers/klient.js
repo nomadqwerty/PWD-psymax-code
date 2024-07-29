@@ -9,7 +9,10 @@ const { UserSchema } = require('../models/userModel');
 const getActive = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     // Extract page and pageSize from query parameters, default to 1 and 10 if not provided
     const page = parseInt(req.query.page, PAGINATION_LIMIT) || 1;
@@ -57,7 +60,10 @@ const getActive = async (req, res, next) => {
 const getArchived = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     // Extract page and pageSize from query parameters, default to 1 and 10 if not provided
     const page = parseInt(req.query.page, PAGINATION_LIMIT) || 1;
@@ -105,7 +111,10 @@ const getArchived = async (req, res, next) => {
 const getNew = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     // Extract page and pageSize from query parameters, default to 1 and 10 if not provided
     const page = parseInt(req.query.page, PAGINATION_LIMIT) || 1;
@@ -153,7 +162,10 @@ const getNew = async (req, res, next) => {
 const getAll = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const list = await KlientSchema.find({
       userId: decodedToken?.user_id,
@@ -223,7 +235,10 @@ const save = async (req, res, next) => {
     }
 
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const CheckKlientExist = await KlientSchema.findOne({
       email: requestBody?.email,
@@ -298,7 +313,7 @@ const save = async (req, res, next) => {
             Diagnose: requestBody?.Diagnose,
             Geburtsdatum: requestBody?.Geburtsdatum,
             ArztId: doctorData?._id,
-            isEncrypted:requestBody?.isEncrypted
+            isEncrypted: requestBody?.isEncrypted,
           });
           await newKlient.save();
 
@@ -459,7 +474,10 @@ const update = async (req, res, next) => {
     } */
 
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const CheckKlientExist = await KlientSchema.findOne({
       _id: requestBody?.id,
@@ -607,7 +625,7 @@ const remove = async (req, res, next) => {
 
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
 
     const klient = await KlientSchema.findOne({
@@ -659,7 +677,10 @@ const getChiffre = async (req, res, next) => {
     }
 
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const requestBody = req.body;
 

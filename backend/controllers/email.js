@@ -43,7 +43,7 @@ const send = async (req, res, next) => {
 
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
 
     const user = await UserSchema.findById(decodedToken?.user_id).select(

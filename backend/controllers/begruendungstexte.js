@@ -8,7 +8,10 @@ const { UserSchema } = require('../models/userModel');
 const getAll = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     // Extract page, pageSize, and search from query parameters, default to 1, 10, and null if not provided
     const page = parseInt(req.query.page, PAGINATION_LIMIT) || 1;
@@ -76,7 +79,7 @@ const save = async (req, res, next) => {
 
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
 
     const userData = await UserSchema.findById(decodedToken?.user_id);
@@ -134,7 +137,7 @@ const update = async (req, res, next) => {
 
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
 
     await Promise.all(
@@ -184,7 +187,7 @@ const remove = async (req, res, next) => {
 
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
 
     const begruendungstexte = await BegruendungstexteSchema.findOne({

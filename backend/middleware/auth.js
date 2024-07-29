@@ -10,6 +10,20 @@ const verifyToken = (req, res, next) => {
     '/api/register',
     '/api/login',
     '/api/webhooks/checkout',
+    '/api/user/verify',
+    '/api/user/text',
+    '/api/user/text/email',
+    '/api/user/twofa/status/:id',
+    '/api/user/recoveryphrase',
+    '/api/user/resetpassword',
+    '/api/user/twofactor',
+    '/api/vault/server',
+    '/api/vault/user/:userId',
+    '/api/vault/user',
+    '/api/vault/user/update',
+    '/api/vault/user/update/main',
+    '/api/vault/user/update/archive',
+    '/api/vault/user/status',
   ];
 
   if (excludeRoutes.includes(req.path)) {

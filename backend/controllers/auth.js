@@ -198,7 +198,7 @@ const login = async (req, res, next) => {
 
       let resUser = { ...user._doc };
 
-      resUser.TwoFA = { permission: user?.TwoFA?.permission };
+      resUser.TwoFAPerm = { permission: user?.TwoFA?.permission };
 
       let response = {
         status_code: 200,

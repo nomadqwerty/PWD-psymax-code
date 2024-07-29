@@ -112,15 +112,8 @@ app.use((req, res, next) => {
   const reqType = req?.body?.reqType;
   const reqTypeHeader = req.get('reqType');
   // TODO: turn of in prod
-  if (reqType || reqTypeHeader) {
-    console.log(reqType);
-    console.log(reqTypeHeader);
-    delete req?.body?.reqType;
-    next();
-  } else {
-    next();
-    // authenticateJWT(req, res, next);
-  }
+
+  authenticateJWT(req, res, next);
 });
 
 // Use the setupLogoStorage function to set up multer for logo uploads

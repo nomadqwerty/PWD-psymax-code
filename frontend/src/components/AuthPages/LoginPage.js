@@ -46,6 +46,14 @@ const LoginPage = () => {
         const response = await axiosInstance.post(`/login`, data);
         const responseData = response?.data?.data;
         if (response?.status === 200) {
+          localStorage.setItem('psymax-loggedin', true);
+
+          localStorage.setItem('psymax-token', responseData?.token);
+          localStorage.setItem(
+            'psymax-user-data',
+            JSON.stringify(responseData)
+          );
+          localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
           setUserLogin(true);
           const user_id = responseData._id;
           let subResData;
@@ -245,7 +253,7 @@ const LoginPage = () => {
       } else if (userData?.isAdmin === 0 && userSubcriptionStatus) {
         localStorage.setItem('psymax-account-restricted', false);
         router.push(
-          `/emailverification/${userData._id}-login-${userData.TwoFA?.permission ? userData.TwoFA?.permission : false}`
+          `/emailverification/${userData._id}-login-${userData.TwoFAPerm?.permission ? userData.TwoFAPerm?.permission : false}`
         );
       }
     }

@@ -26,7 +26,11 @@ const verifyToken = (req, res, next) => {
     '/api/vault/user/status',
   ];
 
-  if (excludeRoutes.includes(req.path)) {
+  if (
+    excludeRoutes.includes(req.path) ||
+    req.path.includes('/user/twofa/status') ||
+    req.path.includes('/vault/user/')
+  ) {
     // Skip authentication for these routes
     return next();
   }

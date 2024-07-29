@@ -118,7 +118,8 @@ app.use((req, res, next) => {
     delete req?.body?.reqType;
     next();
   } else {
-    authenticateJWT(req, res, next);
+    next();
+    // authenticateJWT(req, res, next);
   }
 });
 

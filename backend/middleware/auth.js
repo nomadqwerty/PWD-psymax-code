@@ -24,8 +24,8 @@ const verifyToken = (req, res, next) => {
     '/api/vault/user/update/main',
     '/api/vault/user/update/archive',
     '/api/vault/user/status',
+    '/socket.io/',
   ];
-
   if (
     excludeRoutes.includes(req.path) ||
     req.path.includes('/user/twofa/status') ||

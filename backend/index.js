@@ -18,6 +18,8 @@ const {
   requestLogger,
   errorMiddleware,
 } = require('./utils/logger');
+const { Server } = require('socket.io');
+const { rtcHandler } = require('./server');
 
 // const {
 //   dailyQueue,
@@ -41,6 +43,18 @@ const app = express();
 // dailyQueue.process(processNonCommittedUserDelete);
 
 // Error handling middleware
+const server = http.createServer(app);
+const io = new Server(server, {
+  connectionStateRecovery: {},
+  debug: true,
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+});
+
+io.on('connection', rtcHandler());
+
 app.use((err, req, res, next) => {
   // Log error details using the requestLogger
   requestLogger.error(`[${req.method}] ${req.url} - Error: ${err.message}`);
@@ -109,10 +123,6 @@ app.use('/uploads', express.static(publicUploadsDirectory));
 
 app.use(express.json({ limit: '5000kb' }));
 app.use((req, res, next) => {
-  const reqType = req?.body?.reqType;
-  const reqTypeHeader = req.get('reqType');
-  // TODO: turn of in prod
-
   authenticateJWT(req, res, next);
 });
 
@@ -133,7 +143,7 @@ app.use('/api', meetingScheduleRoutes);
 // Use the request error logger middleware globally
 app.use(errorMiddleware);
 
-const server = http.createServer(app);
+// const server = http.createServer(app);
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
@@ -157,3 +167,5 @@ process.on('unhandledRejection', (error) => {
 });
 
 server.listen(PORT || 4000, () => console.log(`Listening on port ${PORT}`));
+
+module.exports = { server };

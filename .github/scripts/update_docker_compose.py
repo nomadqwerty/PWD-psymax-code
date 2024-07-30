@@ -1,6 +1,6 @@
 import yaml
 import sys
-from typing import List
+import json
 
 ENV_SECRET_DELIMITER = "__DELIM__"
 
@@ -15,7 +15,7 @@ def update_docker_compose(
     nginx_config_path: str,
     nginx_certificate_path: str,
     nginx_certificate_key_path: str,
-    env_vars: List[str],
+    env_vars: str,
 ):
     with open(compose_file, "r") as f:
         data = yaml.safe_load(f)
@@ -34,9 +34,9 @@ def update_docker_compose(
             del service["env_file"]
 
     # Add environment variables to services
-    for var in env_vars:
-        key, *_value = var.split("=")
-        value = "=".join(_value)
+    for key, value in json.loads(env_vars).items():
+        if not key.startswith(f"VARS{ENV_SECRET_DELIMITER}"):
+            continue
         services = data["services"]
         _, env_var_service, env_key = key.split(ENV_SECRET_DELIMITER)
         if "environment" not in services[env_var_service.lower()]:
@@ -48,6 +48,7 @@ def update_docker_compose(
     data["services"]["nginx"] = {
         "image": "nginx",
         "ports": ["80:80", "443:443"],
+        "restart": "always",
         "volumes": [
             f"{nginx_config_path}:/etc/nginx/conf.d/default.conf",
             f"{nginx_certificate_path}:/etc/nginx/ssl/server.crt",
@@ -63,7 +64,7 @@ def update_docker_compose(
 
 
 if __name__ == "__main__":
-    if not len(sys.argv) >= 10:
+    if not len(sys.argv) == 11:
         print(
             "Usage: update_docker_compose.py <compose_file> <project_id> <short_sha> <region> <repo_name> <gh_repo_name> <nginx_config_path> <nginx_certificate_path> <nginx_certificate_key_path> [<*env_vars>]"
         )
@@ -78,7 +79,7 @@ if __name__ == "__main__":
     nginx_config_path = sys.argv[7]
     nginx_certificate_path = sys.argv[8]
     nginx_certificate_key_path = sys.argv[9]
-    env_vars = sys.argv[10:]
+    env_vars = sys.argv[10]
 
     update_docker_compose(
         compose_file,

@@ -20,7 +20,7 @@
         font-family: 'Inter Tight', sans-serif;
       }
 
-      .rotated-text {
+      .iv-rotated-text {
         color: #2b86fc;
         font-family: 'Inter Tight';
         font-size: 9px;
@@ -95,7 +95,7 @@
   <body>
     <div class="pagewrap" style="display: flex; gap: 1rem">
       <aside style="align-self: flex-end">
-        <div class="rotated-text">
+        <div class="iv-rotated-text">
           <p>
             {{Praxistitel}} {{Praxisbezeichnung}} ∙ {{Titel}} {{Vorname}}
             {{Nachname}} ∙ {{Strasse_und_Hausnummer}} ∙ {{Ort}} {{Postleitzahl}}
@@ -161,7 +161,7 @@
               <p>{{PLZ}} {{Ort}}</p>
             </div>
           </div>
-          <!-- <div class="address-right">
+          <div class="address-right">
             <div>
               <p style="color: #2b86fc; font-weight: 500">{{Praxistitel}}</p>
               <p>{{Praxisbeschreibung}}</p>
@@ -171,7 +171,7 @@
               <p>{{Ort}}</p>
               <p>{{Postleitzahl}}</p>
             </div>
-            <div>
+            <div style="margin: 1.5rem 0 1.5rem 0">
               <p><span style="color: #3c3c3c">Telefon</span> {{Telefon}}</p>
               <p>{{Email}}</p>
               <p>{{Website}}</p>
@@ -180,7 +180,7 @@
               <span style="color: #3c3c3c">USt-ID/St-Nr.</span>
               {{Umsatzsteuer-ID/Steuernummer}}
             </p>
-          </div> -->
+          </div>
         </div>
         <div class="content">
           <h3 style="color: #0e0e0e">
@@ -189,14 +189,72 @@
           </h3>
 
           <div style="width: 60%">
-            <div
+            <!-- <div
               style="gap: 10px; display: grid; grid-template-columns: 0.5fr 1fr"
             >
               <p style="color: #3c3c3c">Rechnungsdatum</p>
               <p>{{InvoiceDate}}</p>
               <p style="color: #3c3c3c">Betrifft</p>
               <p>{{Vorname}} {{Nachname}}</p>
+            </div> -->
+
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 0.5fr 1fr 0.5fr 0.1fr;
+                gap: 0px 10px;
+              "
+            >
+              <p style="color: #3c3c3c">Rechnungsdatum</p>
+              <p>{{InvoiceDate}}</p>
+
+              <p>&nbsp;</p>
+              <p>&nbsp;</p>
+              <p style="color: #3c3c3c">Betrifft</p>
+              <p>{{Vorname}} {{Nachname}}</p>
+
+              <p style="color: #3c3c3c">Diagnose(n)</p>
+              <p>{{Diagnosen}}</p>
+
+              <p style="color: #3c3c3c">Geburtsdatum</p>
+              <p>{{Geburtsdatum}}</p>
             </div>
+            <!-- 
+          <div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 0.1fr 0.5fr;
+                gap: 10px 30px;
+              "
+            >
+              <p>Rechnungsdatum</p>
+              <p>{{Invoice date}}</p>
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 0.1fr 0.3fr 0.1fr 0.5fr;
+                gap: 10px 30px;
+              "
+            >
+              <p>Betrifft</p>
+              <p>{{Vorname}} {{Nachname}}</p>
+              <p>Diagnose(n)</p>
+              <p>{{Diagnosen}}</p>
+            </div>
+
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 0.1fr 0.5fr;
+                gap: 10px 30px;
+              "
+            >
+              <p>Geburtsdatum</p>
+              <p>{{Geburtsdatum}}</p>
+            </div>
+          </div> -->
           </div>
 
           <p>
@@ -208,25 +266,34 @@
           <thead>
             <tr>
               <th>Datum</th>
-              <th>Description</th>
+              <th>Nummer</th>
+              <th>Leistung</th>
+              <th>Faktor</th>
+              <th>Anzahl</th>
+              <th>Begründung</th>
               <th style="text-align: right">Betrag €</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td>{{Datum}}</td>
+              <td>{{Nummer}}</td>
+              <td>{{Leistung}}</td>
+              <td>{{Faktor}}</td>
+              <td>{{Anzahl}}</td>
+              <!-- <td>{{Begründung}}</td> -->
               <td>{{Description}}</td>
               <td style="text-align: right">{{Betrag}}</td>
             </tr>
-            <tr>
+            <!-- <tr>
               <td>{{Datum}}</td>
               <td>V.A.T</td>
               <td style="text-align: right">{{VAT}}</td>
-            </tr>
+            </tr> -->
           </tbody>
           <tfoot>
             <tr>
-              <td class="table-footer" colspan="3">
+              <td class="table-footer" colspan="7">
                 <div>
                   <p>
                     <span class="superscript">1</span> Die Leistung enthält gem.

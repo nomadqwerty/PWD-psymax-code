@@ -317,7 +317,12 @@ async function downloadReceiptPDF(req, res) {
 
     // add user details as rotated text to the pdf
     htmlTemplate = htmlTemplate
-      .replace(/{{Praxistitel}}/g, user?.Praxistitel || '')
+      .replace(
+        /{{Praxistitel}}/g,
+        user?.Praxistitel ||
+          `${user?.Titel ?? ''} ${user?.Nachname ?? ''}` ||
+          ''
+      )
       .replace(/{{Praxisbezeichnung}}/g, user?.Praxisbezeichnung || '')
       .replace(/{{Titel}}/g, user?.Titel)
       .replace(/{{Vorname}}/g, user?.Vorname)

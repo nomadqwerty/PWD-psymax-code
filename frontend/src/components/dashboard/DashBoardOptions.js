@@ -94,11 +94,16 @@ const VideoConsultation = ({ router }) => {
           borderRadius: '4px',
           wordWrap: 'anywhere',
         }}
+        onClick={() => router.push('/dashboard/videosprechstunde')}
       >
         <button
           type="button"
           className="db-button text-white-700 border-none text-white font-medium rounded-[4px] text-sm p-2.5 text-center inline-flex items-center justify-center m-4"
           style={{ width: 40, height: 40 }}
+          onClick={() => {
+            console.log('object');
+            router.push('/videoconsultation');
+          }}
         >
           {VideoConsultationSvg}
           <span className="sr-only">Icon description</span>

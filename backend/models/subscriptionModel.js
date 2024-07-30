@@ -42,6 +42,7 @@ const subscriptionAppSchema = new Schema({
     type: Number,
     default: 0,
   },
+  lastCreatedPaymentId: String,
 });
 
 const SubscriptionSchema = mongoose.model(

@@ -1,0 +1,31 @@
+.formTwoFa {
+  margin: auto;
+  width: 20%;
+  height: auto;
+}
+.formWrap {
+  display: flex;
+}
+.formInput {
+  border-bottom: 2px solid black;
+  margin: auto;
+  width: 2vw;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+}
+
+@media only screen and (min-width: 600px) and (max-width: 900px) {
+  .formTwoFa {
+    margin: auto;
+    width: 20%;
+    height: auto;
+  }
+  .formWrap {
+    display: flex;
+  }
+  .formInput {
+    margin: auto;
+    width: 3vw;
+    margin-right: 10px;
+  }
+}

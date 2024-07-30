@@ -59,7 +59,9 @@ class PaymentProviderFactory {
     try {
       let subscription;
       if (method === PaymentMethods.WIRE_TRANSFER) {
-        subscription = await this.wireTransferProvider.getSubscription(args[0]);
+        subscription = await this.wireTransferProvider.getUserSubscription(
+          args[0]
+        );
       } else {
         subscription = await this.paymentProvider.getSubscription(...args);
       }

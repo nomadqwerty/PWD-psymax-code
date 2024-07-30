@@ -130,12 +130,10 @@ const userAppSchema = new Schema({
     type: Number,
     default: 1,
   }, */
-  '2FA': {
-    type: String,
-    trim: true,
+  TwoFA: {
+    type: Schema.Types.Mixed,
   },
   inviteCode: {
-    required: true,
     type: String,
     trim: true,
   },
@@ -163,6 +161,17 @@ const userAppSchema = new Schema({
   },
   trialPeriodActive: { type: Boolean },
   referralBonusCycles: { type: Number },
+  emergencyPassword: {
+    type: String,
+    required: [true, 'emergency password required'],
+  },
+  recoveryKey: {
+    type: Buffer,
+    default: '',
+  },
+  recoveryPhrase: {
+    type: String,
+  },
 });
 
 const UserSchema = mongoose.model('users', userAppSchema);

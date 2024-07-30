@@ -489,12 +489,14 @@ const QuestionnaireEditDetail: React.FC = () => {
 
     // user cannot have rating questions and not provide any scale
     if (hasRatingQuestions && questionnaireState.scale.length < 2) {
-      return toast.error('You must provide at least 2 rating options!');
+      return toast.error(
+        'Sie müssen mindestens 2 Bewertungsmöglichkeiten angeben!'
+      );
     }
 
     // questionnaire name must be provided
     if (questionnaireState.name === '')
-      return toast.error('You must provide a name for the questionnaire!');
+      return toast.error('Sie müssen einen Namen für den Fragebogen angeben!');
 
     // questions cannot be empty
     if (questionnaireState.questions.length < 1) return;
@@ -506,7 +508,7 @@ const QuestionnaireEditDetail: React.FC = () => {
 
     // scale values have to be unique
     if (scaleValueSet.size !== scaleValues.length)
-      return toast.error('You muts have unique scale values!');
+      return toast.error('Sie müssen eindeutige Skalenwerte haben!');
 
     // select only questions with text
     const filledQuestions = questionnaireState.questions.filter(

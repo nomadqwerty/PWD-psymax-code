@@ -2,6 +2,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { UserSchema } = require('../models/userModel');
 const Joi = require('joi');
+const speakeasy = require('speakeasy');
+const UserVault = require('../models/UserVault');
+const ClientVault = require('../models/ClientVault');
 const {
   TimeForTokenExpire,
   GLOBAL_POINT_VALUE,
@@ -13,13 +16,17 @@ const zxcvbn = require('zxcvbn');
 const { GlobalPointsSchema } = require('../models/globalPointsModel');
 const dayjs = require('dayjs');
 const { SubscriptionSchema } = require('../models/subscriptionModel');
+const Email = require('./contactUtil/contactUtil');
+const ServerVault = require('../models/ServerVault');
+const { sendSMTPMail } = require('../utils/common');
 
 const register = async (req, res, next) => {
   try {
-    const { email, password, inviteCode } = req.body;
+    const { email, password, inviteCode, emergencyPassword, recoveryPhrase } =
+      req.body;
     const passwordStrength = zxcvbn(password);
 
-    if (passwordStrength?.score < 3) {
+    if (passwordStrength?.score < 3 || recoveryPhrase.length < 4) {
       let response = {
         status_code: 400,
         message: 'Das Passwort sollte sicher sein',
@@ -31,10 +38,12 @@ const register = async (req, res, next) => {
       email: Joi.string().email().required(),
       password: Joi.string().required(),
       confirmPassword: Joi.string().required().valid(Joi.ref('password')),
-      inviteCode: Joi.string().required(),
+      inviteCode: Joi.string().optional(),
+      emergencyPassword: Joi.string(),
+      recoveryPhrase: Joi.string().required(),
     });
     const { error } = registrationSchema.validate(req.body);
-
+    console.log(error);
     if (error) {
       let response = {
         status_code: 400,
@@ -48,6 +57,8 @@ const register = async (req, res, next) => {
       status: { $in: [0, 1, 2] },
     });
 
+    console.log(checkExist);
+
     if (checkExist) {
       let response = {
         status_code: 400,
@@ -57,6 +68,8 @@ const register = async (req, res, next) => {
     }
 
     const encryptedPassword = await bcrypt.hash(password, 10);
+    const encryptedEmergencyPassword = await bcrypt.hash(emergencyPassword, 10);
+    const encryptedRecoveryPhrase = await bcrypt.hash(recoveryPhrase, 10);
 
     const getInvitedUser = await UserSchema.findOne({ inviteCode: inviteCode });
 
@@ -82,6 +95,9 @@ const register = async (req, res, next) => {
       trialEnd,
       trialPeriodActive: true,
       trialDays: numberOfTrialDays,
+      emergencyPassword: encryptedEmergencyPassword,
+      recoveryPhrase: encryptedRecoveryPhrase,
+      TwoFA: { secret: speakeasy.generateSecret(), permission: false },
     });
     await user.save();
 
@@ -92,13 +108,15 @@ const register = async (req, res, next) => {
       });
       await globalPointsSchema.save();
     }
-
+    console.log(user);
     let response = {
       status_code: 200,
       message: 'Registrierung erfolgreich.',
+      data: { userId: user?._id },
     };
     return res.status(200).send(response);
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };
@@ -124,9 +142,11 @@ const login = async (req, res, next) => {
     }
 
     // Validate if user exist in our database
+    // TODO: Exclude twoFA fields
     const user = await UserSchema.findOne({
       email: email,
     }).select(' -__v');
+
     if (!user) {
       let response = {
         status_code: 400,
@@ -174,15 +194,23 @@ const login = async (req, res, next) => {
       };
 
       // Sign the token with the payload and your secret key
-      const token = jwt.sign(payload, process.env.TOKEN_KEY);
+      const token = jwt.sign(
+        payload,
+        '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+      );
 
       user.token = token;
+
       user.save();
+
+      let resUser = { ...user._doc };
+
+      resUser.TwoFAPerm = { permission: user?.TwoFA?.permission };
 
       let response = {
         status_code: 200,
         message: 'Anmeldung erfolgreich',
-        data: user,
+        data: resUser,
         subscription_status,
       };
       return res.status(200).send(response);
@@ -201,14 +229,20 @@ const login = async (req, res, next) => {
 const refreshToken = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedOldToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedOldToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const newClaims = {
       ...decodedOldToken,
       exp: Math.floor(Date.now() / 1000) + TimeForTokenExpire, // 1 hour from now
     };
 
-    const newToken = jwt.sign(newClaims, process.env.TOKEN_KEY);
+    const newToken = jwt.sign(
+      newClaims,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     if (newToken) {
       const user = await UserSchema.findOne({ _id: decodedOldToken?.user_id });
@@ -250,7 +284,7 @@ const logout = async (req, res, next) => {
   try {
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
     const user_id = decodedToken?.user_id;
     const user = await UserSchema.findOne({ _id: user_id });
@@ -275,10 +309,15 @@ const logout = async (req, res, next) => {
 const get = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
     const data = await UserSchema.findById(decodedToken?.user_id).select(
       ' -__v -token'
     );
+    data.TwoFA = { permission: data.TwoFA.permission };
+    console.log(data.TwoFA);
     if (data) {
       let response = {
         status_code: 200,
@@ -339,8 +378,9 @@ const save = async (req, res, next) => {
       invoiceEmail: Joi.string().email().allow(''),
       StandardSalesTax: Joi.string().allow(''),
       confirmPassword: Joi.string().allow(''),
-      password: Joi.string().allow(''),
+      // password: Joi.string().allow(''),
       Authentifizierungscode: Joi.string().allow(''),
+      TwoFaPermission: Joi.string().allow(''),
     });
 
     const { error } = userDetailsSchema.validate(req.body);
@@ -354,7 +394,10 @@ const save = async (req, res, next) => {
     }
 
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
     const user = await UserSchema.findById(decodedToken?.user_id).select(
       ' -__v'
     );
@@ -397,7 +440,7 @@ const save = async (req, res, next) => {
         }
         finalChiffre = chiffre + nextChar;
       }
-      const encryptedPassword = await bcrypt.hash(requestBody?.password, 10);
+      // const encryptedPassword = await bcrypt.hash(requestBody?.password, 10);
       user.Anrede = requestBody?.Anrede;
       user.Titel = requestBody?.Titel;
       user.Vorname = requestBody?.Vorname;
@@ -423,16 +466,48 @@ const save = async (req, res, next) => {
       user.invoiceEmail = requestBody?.invoiceEmail;
       user.StandardSalesTax = requestBody?.StandardSalesTax;
       user.confirmPassword = requestBody?.confirmPassword;
-      user.password = encryptedPassword;
+      // user.password = encryptedPassword;
       user.Authentifizierungscode = requestBody?.Authentifizierungscode;
       user.isAdmin = 0;
+
+      // 2fa setup
+      if (user.TwoFA) {
+        if (requestBody?.TwoFaPermission === 'Yes') {
+          user.TwoFA.permission = true;
+          await UserSchema.findByIdAndUpdate(decodedToken?.user_id, {
+            TwoFA: user.TwoFA,
+          });
+          const { base32: secret } = user.TwoFA?.secret;
+          let contactObject = {
+            email: user.email,
+            name: 'psymax',
+          };
+          const code = secret;
+          console.log('email ', code);
+          const subject = 'two factor authentication';
+          let sent;
+          try {
+            sent = await sendSMTPMail(user.email, subject, code);
+          } catch (error) {
+            const mailer = new Email(contactObject);
+            sent = await mailer.send('two factor authentication', code);
+          }
+        } else if (requestBody?.TwoFaPermission === 'No') {
+          user.TwoFA.permission = false;
+          await UserSchema.findByIdAndUpdate(decodedToken?.user_id, {
+            TwoFA: user.TwoFA,
+          });
+        }
+      }
       // user.isFirst = 0;
-      user.save();
+      await user.save();
+      let resUser = { ...user._doc };
+      delete resUser.TwoFA;
 
       let response = {
         status_code: 200,
         message: 'Daten aktualisiert',
-        data: user,
+        data: resUser,
       };
       return res.status(200).send(response);
     } else {
@@ -512,7 +587,305 @@ const saveLogo = async (req, res, next) => {
     next(error);
   }
 };
+const TwoFaAuth = async (req, res, next) => {
+  try {
+    const code = req.body?.code;
+    const userId = req.body?.userId;
+    const userEmail = req.body?.email;
 
+    let user;
+    console.log(userId);
+
+    if (userId !== undefined) {
+      user = await UserSchema.findOne({ _id: userId });
+    }
+
+    if (userEmail) {
+      user = await UserSchema.findOne({ email: userEmail });
+    }
+    if (user) {
+      console.log(user.email);
+      let contactObject = {
+        email: user.email,
+        name: 'psymax',
+      };
+
+      const subject = 'two factor authentication';
+      let sent;
+      try {
+        sent = await sendSMTPMail(user.email, subject, code);
+      } catch (error) {
+        const mailer = new Email(contactObject);
+        sent = await mailer.send('two factor authentication', code);
+      }
+
+      // send target email
+      // console.log(sent);
+
+      if (sent?.status === 'success' || sent?.response.startsWith('250')) {
+        console.log('sent');
+        return res.status(200).json({
+          status: 'success',
+          message: 'sent',
+          data: {
+            userId: user._id,
+          },
+        });
+      } else {
+        throw new Error('failed');
+      }
+    } else {
+      throw new Error('no user found.');
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({
+      status: 'failed',
+      message: error.message,
+    });
+  }
+};
+
+const validateRecoveryPhrase = async (req, res, next) => {
+  try {
+    const userId = req.body.userId;
+    const recoveryPhrase = req.body.phrase;
+    const user = await UserSchema.findOne({ _id: userId });
+    if (user) {
+      let phrase = user.recoveryPhrase;
+      const isMatch = await bcrypt.compare(recoveryPhrase, phrase);
+      if (isMatch) {
+        return res.status(200).json({
+          status: 'success',
+          data: { userId },
+        });
+      } else {
+        throw new Error('not a match');
+      }
+    } else {
+      throw new Error('no user found');
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  try {
+    const userId = req.body.userId;
+    const newPassword = req.body.password;
+
+    const passwordStrength = zxcvbn(newPassword);
+
+    if (passwordStrength?.score < 3) {
+      let response = {
+        status_code: 400,
+        message: 'Das Passwort sollte sicher sein',
+      };
+      return res.status(400).send(response);
+    }
+
+    const user = await UserSchema.findOne({ _id: userId });
+
+    if (user && newPassword) {
+      const newPassHash = await bcrypt.hash(newPassword, 10);
+      const oldPasswordHash = user.password;
+      const emergencyPasswordHash = user.emergencyPassword;
+
+      if (oldPasswordHash && emergencyPasswordHash && newPassHash) {
+        let vault = await UserVault.find({ userId: userId });
+        let clientVault = await ClientVault.find({ userId: userId });
+        let serverVault = await ServerVault.find();
+
+        if (vault.length === 3 && clientVault.length === 3 && serverVault[0]) {
+          user.password = newPassHash;
+          await user.save();
+
+          return res.status(200).json({
+            status: 'success',
+            data: {
+              fileVaults: vault,
+              clientVaults: clientVault,
+              serverVault: serverVault,
+              oldPasswordHash: oldPasswordHash,
+              emergencyPassword: user.emergencyPassword,
+              newPassword: newPassHash,
+            },
+          });
+        }
+      } else {
+        throw new Error('failed to update password');
+      }
+    } else {
+      throw new Error('no user or new password available');
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+const verifySecret = async (req, res) => {
+  try {
+    let { token, userId, time } = req.body;
+    const user = await UserSchema.findOne({ _id: userId });
+    time = Date.now();
+
+    if (user) {
+      const { base32: secret } = user.TwoFA?.secret;
+      console.log(time);
+      const timSent = speakeasy.time({
+        secret,
+        encoding: 'base32',
+        token,
+        window: 60,
+      });
+      let token2 = speakeasy.totp({
+        secret: secret,
+        encoding: 'base32',
+        token,
+        window: 60,
+      });
+      console.log(timSent);
+      console.log(token, ' recieved');
+      console.log(token2, ' expected');
+      console.log(secret);
+      const verified = speakeasy.totp.verify({
+        secret,
+        encoding: 'base32',
+        token,
+        window: 60,
+      });
+      console.log(verified);
+      if (verified) {
+        return res.status(200).json({
+          status: 'sucess',
+          message: 'TwoFa verification sucessful',
+          token,
+          verified,
+        });
+      } else {
+        throw new Error('failed to verify');
+      }
+    }
+
+    throw new Error('failed to verify');
+  } catch (error) {
+    console.log(error.message);
+    return res
+      .status(500)
+      .json({ status: 'failed', message: 'TwoFa verification failed' });
+  }
+};
+
+const getSecret = async (req, res) => {
+  try {
+    const token = req.headers['x-access-token'];
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
+
+    console.log(decodedToken.user_id);
+    const user = await UserSchema.findOne({ _id: decodedToken.user_id });
+
+    if (user) {
+      const { base32: secret } = user.TwoFA?.secret;
+      console.log(secret);
+
+      return res.status(200).json({
+        status: 'sucess',
+        message: 'Found text',
+        data: { text: secret },
+      });
+    }
+
+    throw new Error('failed to find text');
+  } catch (error) {
+    console.log(error.message);
+    return res
+      .status(500)
+      .json({ status: 'failed', message: 'error occured.' });
+  }
+};
+const emailSecret = async (req, res) => {
+  try {
+    const token = req.headers['x-access-token'];
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
+
+    console.log(decodedToken.user_id);
+    const user = await UserSchema.findOne({ _id: decodedToken.user_id });
+
+    if (user) {
+      console.log(user.email);
+      const { base32: secret } = user.TwoFA?.secret;
+      let contactObject = {
+        email: user.email,
+        name: 'psymax',
+      };
+      const code = secret;
+      console.log('email ', code);
+      const subject = 'two factor authentication';
+      let sent;
+      try {
+        sent = await sendSMTPMail(user.email, subject, code);
+      } catch (error) {
+        const mailer = new Email(contactObject);
+        sent = await mailer.send('two factor authentication', code);
+      }
+
+      // send target email
+      // console.log(sent);
+
+      if (sent?.status === 'success' || sent?.response.startsWith('250')) {
+        console.log('sent');
+        return res.status(200).json({
+          status: 'success',
+          message: 'sent',
+          data: {
+            userId: user._id,
+          },
+        });
+      } else {
+        throw new Error('failed');
+      }
+    } else {
+      throw new Error('no user found.');
+    }
+  } catch (error) {
+    console.log(error.message);
+    return res
+      .status(500)
+      .json({ status: 'failed', message: 'error occured.' });
+  }
+};
+
+const getTwoFaStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(id);
+    const user = await UserSchema.findOne({ _id: id });
+    if (user) {
+      const { permission } = user?.TwoFA;
+      return res.status(200).json({
+        status: 'success',
+        message: 'sent',
+        data: {
+          twoFaStatus: permission,
+        },
+      });
+    } else {
+      throw new Error('no user found');
+    }
+  } catch (error) {
+    console.log(error.message);
+    return res
+      .status(500)
+      .json({ status: 'failed', message: 'error occured.' });
+  }
+};
 module.exports = {
   register,
   login,
@@ -521,4 +894,11 @@ module.exports = {
   get,
   save,
   saveLogo,
+  TwoFaAuth,
+  validateRecoveryPhrase,
+  resetPassword,
+  verifySecret,
+  getSecret,
+  emailSecret,
+  getTwoFaStatus,
 };

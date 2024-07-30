@@ -1,48 +1,54 @@
-"use client";
-import { Grid, useMediaQuery } from "@mui/material";
-import { Controller, useForm } from "react-hook-form";
-import React, { useContext, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
-import { AuthContext } from "../../context/auth.context";
-import { IMAGEURL, SOMETHING_WRONG } from "../../utils/constants";
-import axiosInstance from "../../utils/axios";
-import AppLayout from "../../components/AppLayout";
-import { handleApiError } from "../../utils/apiHelpers";
-import PrivateRoute from "../../components/PrivateRoute";
-import kontoContext from "../../context/konto.context";
+'use client';
+import {
+  Grid,
+  useMediaQuery,
+  RadioGroup,
+  FormLabel,
+  FormControlLabel,
+} from '@mui/material';
+import { Controller, useForm } from 'react-hook-form';
+import React, { useContext, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
+import { AuthContext } from '../../context/auth.context';
+import { IMAGEURL, SOMETHING_WRONG } from '../../utils/constants';
+import axiosInstance from '../../utils/axios';
+import AppLayout from '../../components/AppLayout';
+import { handleApiError } from '../../utils/apiHelpers';
+import PrivateRoute from '../../components/PrivateRoute';
+import kontoContext from '../../context/konto.context';
 
 // components
-import TitleInput from "../../components/accountSetting/TitleInput";
-import DatePicker from "../../components/accountSetting/DatePicker";
-import NameInput from "../../components/accountSetting/NameInput";
-import PhoneNumberInput from "../../components/accountSetting/PhoneNumberInput";
-import Website from "../../components/accountSetting/Website";
-import JobTitle from "../../components/accountSetting/JobTitle";
+import TitleInput from '../../components/accountSetting/TitleInput';
+import DatePicker from '../../components/accountSetting/DatePicker';
+import NameInput from '../../components/accountSetting/NameInput';
+import PhoneNumberInput from '../../components/accountSetting/PhoneNumberInput';
+import Website from '../../components/accountSetting/Website';
+import JobTitle from '../../components/accountSetting/JobTitle';
 import {
   PracticeInput,
   PracticeDescInput,
-} from "../../components/accountSetting/Practice";
-import Logo from "../../components/accountSetting/Logo";
-import PrimaryColorInput from "../../components/accountSetting/PrimaryColor";
-import { Address, Location } from "../../components/accountSetting/Address";
+} from '../../components/accountSetting/Practice';
+import Logo from '../../components/accountSetting/Logo';
+import PrimaryColorInput from '../../components/accountSetting/PrimaryColor';
+import { Address, Location } from '../../components/accountSetting/Address';
 import {
   BankName_Bic,
   Iban,
-} from "../../components/accountSetting/BankDetails";
+} from '../../components/accountSetting/BankDetails';
 import {
   InvoiceEmail,
   SalesTax,
-} from "../../components/accountSetting/InvoiceEmailAndSalesTax";
+} from '../../components/accountSetting/InvoiceEmailAndSalesTax';
 
-import TaxNumAndPostCode from "./TaxNumber";
+import TaxNumAndPostCode from './TaxNumber';
 
 import {
   Email,
   Password,
-} from "../../components/accountSetting/EmailAndPassword";
-import { TwoFA } from "../../components/accountSetting/TwoFA";
-import SubmitBtn from "../../components/accountSetting/SubmitBtn";
+} from '../../components/accountSetting/EmailAndPassword';
+import { TwoFA } from '../../components/accountSetting/TwoFA';
+import SubmitBtn from '../../components/accountSetting/SubmitBtn';
 
 import {
   AccountSetting,
@@ -56,7 +62,7 @@ import {
   Kontodaten,
   TwoFaktorAuthentifizierung,
   TwoFaktorMessage,
-} from "../../components/accountSetting/SectionHeaders";
+} from '../../components/accountSetting/SectionHeaders';
 
 //
 
@@ -74,12 +80,11 @@ const AccountSettingsPage = React.memo(() => {
 
   const context = useContext(kontoContext);
   const { kontoData, setKontoData } = context.menuState;
-  const [oldPassword, setOldPassword] = useState("");
-  const [logoName, setLogoName] = useState("");
-  const [iban, setIban] = useState("");
+  const [oldPassword, setOldPassword] = useState('');
+  const [logoName, setLogoName] = useState('');
+  const [iban, setIban] = useState('');
   const router = useRouter();
   const { state, dispatch } = useContext(AuthContext);
-
   const handleChange = (e) => {
     const name = e.target.name;
     const value = e.target.value;
@@ -89,51 +94,51 @@ const AccountSettingsPage = React.memo(() => {
   /*handleChange,setKontoData, setValue*/
 
   const handleIbanChange = (e) => {
-    const value = e.target.value.replace(/\s/g, ""); // Remove spaces
+    const value = e.target.value.replace(/\s/g, ''); // Remove spaces
 
     if (value) {
-      const limit = value.replace(/\s/g, "").length;
+      const limit = value.replace(/\s/g, '').length;
       if (limit <= 22) {
-        const formattedValue = value.match(/.{1,4}/g).join(" ");
-        setValue("IBAN", formattedValue);
+        const formattedValue = value.match(/.{1,4}/g).join(' ');
+        setValue('IBAN', formattedValue);
         setIban(formattedValue);
       }
     } else {
-      setValue("IBAN", "");
-      setIban("");
+      setValue('IBAN', '');
+      setIban('');
     }
   };
 
   const handleDOBChange = (e) => {
     const date = new Date(e);
     const year = date.getFullYear().toString();
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
 
     let constfinalDate = `${year}-${month}-${day}T00:00:00.000Z`;
 
     setKontoData((prevData) => ({
       ...prevData,
-      ["Geburtsdatum"]: constfinalDate,
+      ['Geburtsdatum']: constfinalDate,
     }));
-    setValue("Geburtsdatum", constfinalDate, { shouldValidate: true });
+    setValue('Geburtsdatum', constfinalDate, { shouldValidate: true });
   };
 
   const setDefaultValues = (fieldNames, data) => {
     fieldNames.forEach((fieldName) => {
-      (fieldNames !== "_id" || fieldNames !== "Logo") &&
-        setValue(fieldName, data[fieldName] || "", { shouldValidate: true });
+      (fieldNames !== '_id' || fieldNames !== 'Logo') &&
+        setValue(fieldName, data[fieldName] || '', { shouldValidate: true });
     });
   };
 
   const handleFileUpload = async (data) => {
     if (data?.Logo?.[0]) {
       const fileRes = await axiosInstance.post(
-        "/saveLogo",
+        '/saveLogo',
         { logo: data.Logo[0], deleteFile: kontoData?.Logo },
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            'Content-Type': 'multipart/form-data',
           },
         }
       );
@@ -147,9 +152,8 @@ const AccountSettingsPage = React.memo(() => {
 
   const onSubmit = async (data) => {
     try {
-      console.log(kontoData);
       const logo =
-        typeof data?.Logo === "object"
+        typeof data?.Logo === 'object'
           ? await handleUploadLogo(data?.Logo[0])
           : false;
       let finalLogo = logoName;
@@ -161,7 +165,9 @@ const AccountSettingsPage = React.memo(() => {
         ? kontoData?.newPassword
         : oldPassword;
       data.confirmPassword = data?.password;
+
       const finalData = { ...kontoData, ...data };
+      console.log(finalData);
       delete finalData?._id;
       delete finalData?.status;
       delete finalData?.newPassword;
@@ -178,7 +184,7 @@ const AccountSettingsPage = React.memo(() => {
         Praxistitel: finalData?.Praxistitel,
         Praxisbezeichnung: finalData?.Praxisbezeichnung,
         Praxisbeschreibung: finalData?.Praxisbeschreibung,
-        Logo: finalLogo ? finalLogo : "",
+        Logo: finalLogo ? finalLogo : '',
         Primaerfarbe: finalData?.Primaerfarbe,
         Strasse_und_Hausnummer: finalData?.Strasse_und_Hausnummer,
         Ort: finalData?.Ort,
@@ -192,22 +198,23 @@ const AccountSettingsPage = React.memo(() => {
         confirmPassword: finalData?.confirmPassword,
         Authentifizierungscode: finalData?.Authentifizierungscode,
         IBAN: finalData?.IBAN,
-        password: finalData?.password,
+        TwoFaPermission: finalData?.TwoFaPermission,
+        // password: finalData?.password,
       };
-
-      const response = await axiosInstance.post("/user/save", finalDatas);
-
+      // console.log(finalDatas);
+      const response = await axiosInstance.post('/user/save', finalDatas);
+      console.log(response);
       if (response?.status === 200) {
         const responseData = response?.data?.data;
-        localStorage.setItem("psymax-loggedin", true);
-        localStorage.setItem("psymax-token", responseData?.token);
-        localStorage.setItem("psymax-user-data", JSON.stringify(responseData));
-        localStorage.setItem("psymax-is-admin", responseData?.isAdmin);
+        localStorage.setItem('psymax-loggedin', true);
+        localStorage.setItem('psymax-token', responseData?.token);
+        localStorage.setItem('psymax-user-data', JSON.stringify(responseData));
+        localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
         dispatch({
-          type: "LOGIN",
+          type: 'LOGIN',
           payload: { isLoggedin: true, userData: responseData },
         });
-        router.push("/dashboard");
+        router.push('/dashboard');
       }
     } catch (error) {
       handleApiError(error, router);
@@ -215,14 +222,14 @@ const AccountSettingsPage = React.memo(() => {
   };
 
   const handleUploadLogo = async (value) => {
-    clearErrors("Logo");
+    clearErrors('Logo');
 
     if (!value || value?.length <= 0) {
       return true; // No file selected, so no validation needed
     }
 
     // Check if the file type is allowed (png, svg)
-    const allowedTypes = ["image/png", "image/svg+xml"];
+    const allowedTypes = ['image/png', 'image/svg+xml'];
     const fileType = value?.type;
 
     if (fileType && allowedTypes.includes(fileType)) {
@@ -230,16 +237,16 @@ const AccountSettingsPage = React.memo(() => {
       const maxSize = 0.3 * 1024 * 1024; // 0.3 MB in bytes
       const fileSize = value?.size;
       if (fileSize > maxSize) {
-        setError("Logo", {
-          type: "manual",
-          message: "Ihre Datei ist zu groß (maximal 0.3 MB)",
+        setError('Logo', {
+          type: 'manual',
+          message: 'Ihre Datei ist zu groß (maximal 0.3 MB)',
         });
         return false;
       }
     } else {
-      setError("Logo", {
-        type: "manual",
-        message: "Nur PNG und SVG Dateien sind erlaubt",
+      setError('Logo', {
+        type: 'manual',
+        message: 'Nur PNG und SVG Dateien sind erlaubt',
       });
       return false;
     }
@@ -253,10 +260,10 @@ const AccountSettingsPage = React.memo(() => {
         const responseData = response?.data?.data;
         if (response?.status === 200) {
           if (responseData?.isAdmin === 1) {
-            router.push("/admin");
+            router.push('/admin');
           }
           setOldPassword(responseData.confirmPassword);
-          responseData.confirmPassword = "";
+          responseData.confirmPassword = '';
           setIban(responseData?.IBAN);
           setKontoData(responseData);
           setLogoName(responseData?.Logo);
@@ -268,15 +275,15 @@ const AccountSettingsPage = React.memo(() => {
         handleApiError(error, router);
       }
     }
-    const checkIsAdmin = localStorage.getItem("psymax-is-admin");
-    if (checkIsAdmin === "1") {
-      router.push("/admin");
+    const checkIsAdmin = localStorage.getItem('psymax-is-admin');
+    if (checkIsAdmin === '1') {
+      router.push('/admin');
     } else {
       fetchData();
     }
   }, []);
 
-  const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
 
   // Define the spacing based on the screen size
   const spacing = isMobile ? 0 : 2;
@@ -453,7 +460,7 @@ const AccountSettingsPage = React.memo(() => {
             setKontoData={setKontoData}
             register={register}
           />
-          <Password
+          {/* <Password
             spacing={spacing}
             kontoData={kontoData}
             setKontoData={setKontoData}
@@ -461,9 +468,11 @@ const AccountSettingsPage = React.memo(() => {
             register={register}
             getValues={getValues}
             errors={errors}
-          />
+          /> */}
           {/* TwoFA */}
+          {/* FIXME: 2fa has been added to login and account recovery by default */}
           <TwoFaktorAuthentifizierung spacing={spacing} />
+          <TwoFaktorMessage spacing={spacing} />
 
           <TwoFA
             spacing={spacing}
@@ -472,9 +481,9 @@ const AccountSettingsPage = React.memo(() => {
             handleChange={handleChange}
             register={register}
             errors={errors}
+            values={getValues()}
           />
           {/* TwoFA message */}
-          <TwoFaktorMessage spacing={spacing} />
 
           <SubmitBtn isSubmitting={isSubmitting} />
         </form>

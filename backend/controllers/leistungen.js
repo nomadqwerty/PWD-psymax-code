@@ -14,7 +14,10 @@ const { GlobalPointsSchema } = require('../models/globalPointsModel');
 const getAllAbrechnung = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     // Extract page, pageSize, and search from query parameters, default to 1, 10, and null if not provided
     const page = parseInt(req.query.page, PAGINATION_LIMIT) || 1;
@@ -85,7 +88,7 @@ const saveAbrechnung = async (req, res, next) => {
 
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
 
     const leistung = new AbrechnungLeistungSchema({
@@ -240,7 +243,7 @@ const abrechnungRemove = async (req, res, next) => {
 
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
 
     const abrechnungLeistung = await AbrechnungLeistungSchema.findOne({
@@ -278,7 +281,10 @@ const abrechnungRemove = async (req, res, next) => {
 const getAllTerminplanung = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     // Extract page, pageSize, and search from query parameters, default to 1, 10, and null if not provided
     const page = parseInt(req.query.page, PAGINATION_LIMIT) || 1;
@@ -296,9 +302,8 @@ const getAllTerminplanung = async (req, res, next) => {
     let list = [];
     let totalCount = 0;
     if (search !== null) {
-      let allData = await TerminplanungLeistungSchema.find(query).select(
-        '-__v'
-      );
+      let allData =
+        await TerminplanungLeistungSchema.find(query).select('-__v');
       const regex = new RegExp(search, 'i');
 
       list = allData.filter((item) => regex.test(item.Leistung));
@@ -346,7 +351,7 @@ const saveTerminplanung = async (req, res, next) => {
 
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
 
     const leistung = new TerminplanungLeistungSchema({
@@ -490,7 +495,7 @@ const terminplanungRemove = async (req, res, next) => {
 
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
 
     const terminplanungLeistung = await TerminplanungLeistungSchema.findOne({
@@ -528,7 +533,10 @@ const terminplanungRemove = async (req, res, next) => {
 const getGlobalPointValue = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const checkExist = await GlobalPointsSchema.findOne({
       userId: decodedToken?.user_id,
@@ -563,7 +571,10 @@ const updateGlobalPointValue = async (req, res, next) => {
     }
 
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
     const checkExist = await GlobalPointsSchema.findOne({
       userId: decodedToken?.user_id,
     });

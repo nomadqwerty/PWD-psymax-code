@@ -328,7 +328,10 @@ const Sidebar = () => {
           </span>
         </div>
 
-        <div className="sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]">
+        <div
+          className="sidebar-svg flex items-center pt-2.5 pb-2.5  pl-6 cursor-pointer bg-[#fff] hover:bg-[#2b86fc1a]"
+          onClick={() => router.push('/dashboard/videosprechstunde')}
+        >
           <svg
             width="24"
             height="24"

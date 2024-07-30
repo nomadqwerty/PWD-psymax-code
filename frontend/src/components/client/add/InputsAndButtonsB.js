@@ -1,5 +1,6 @@
 import { FormControl, Grid, InputLabel, MenuItem, Select } from '@mui/material';
 import CssTextField from '../../CssTextField';
+import { useRouter } from 'next/navigation';
 
 const DoctorTitle = ({
   Controller,
@@ -398,6 +399,60 @@ const Confirm = ({ isSubmitting }) => {
   );
 };
 
+const KlientAction = ({ params, router }) => {
+  const id = params.id;
+
+  return (
+    <Grid
+      item
+      xs={12}
+      md={3.5}
+      sm={7}
+      xl={3.5}
+      sx={{ textAlign: 'center', mt: 3, display: 'flex' }}
+      className="login"
+    >
+      <button
+        type="submit"
+        style={{
+          width: '100%',
+          color: '#989898',
+          fontSize: 16,
+          fontWeight: 500,
+          lineHeight: '20px',
+          marginRight: '20px',
+        }}
+        className="h-[42px] px-5 py-2 rounded-[4px] justify-center items-center text-center text-sm interFonts"
+        onClick={() => {
+          if (id) {
+            router.push(`/dashboard/brief/${id}`);
+          }
+        }}
+      >
+        <span style={{ color: '#0E0E0E' }}>Brief</span>
+      </button>
+      <button
+        type="submit"
+        style={{
+          width: '100%',
+          color: '#989898',
+          fontSize: 16,
+          fontWeight: 500,
+          lineHeight: '20px',
+        }}
+        className="h-[42px] px-5 py-2 rounded-[4px] justify-center items-center text-center text-sm interFonts"
+        onClick={() => {
+          if (id) {
+            router.push(`/dashboard/email/${id}`);
+          }
+        }}
+      >
+        <span style={{ color: '#0E0E0E' }}>Email</span>
+      </button>
+    </Grid>
+  );
+};
+
 export {
   DoctorTitle,
   DoctorSalutation,
@@ -411,4 +466,5 @@ export {
   DoctorPhoneNumber,
   Remove,
   Confirm,
+  KlientAction,
 };

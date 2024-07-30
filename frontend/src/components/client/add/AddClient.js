@@ -1,15 +1,18 @@
 'use client';
 import { Grid, useMediaQuery } from '@mui/material';
+import Worker from 'worker-loader!./clientUtils.js/clientWorker';
 import { Controller, useForm } from 'react-hook-form';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '../../../utils/axios';
 import AppLayout from '../../../components/AppLayout';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import ModelDialogue from '../../../components/Dialog/ModelDialogue';
 import { handleApiError } from '../../../utils/apiHelpers';
 import PrivateRoute from '../../../components/PrivateRoute';
+import clientContext from '../../../context/client.context';
+import { passwordGenerator } from '../../../utils/utilityFn';
 import {
   CipherHeader,
   PersonalData,
@@ -44,10 +47,35 @@ import {
   DoctorStreetAndHouseNumber,
   DoctorTitle,
   Remove,
+  KlientAction,
 } from '../../../components/client/add/InputsAndButtonsB';
+
+import vaultContext from '../../../context/vault.context';
 
 const ClientAddEdit = React.memo(() => {
   const params = useParams();
+
+  const { vaultState } = useContext(vaultContext);
+  const { clientState } = useContext(clientContext);
+  //
+  const {
+    fileVault,
+    clientVault,
+    setClientVault,
+    serverVault,
+    updateFileVault,
+    updateClientVault,
+    setUpdateClientVault,
+  } = vaultState;
+
+  const {
+    activeKlients,
+    setActiveKlients,
+    archivedKlients,
+    setArchivedKlients,
+    newKlients,
+    setNewKlients,
+  } = clientState;
 
   const {
     register,
@@ -131,6 +159,7 @@ const ClientAddEdit = React.memo(() => {
           Geburtsdatum: Geburtsdatum,
         };
         const response = await axiosInstance.post('/klient/getChiffre', data);
+
         setEditData((prevData) => ({
           ...prevData,
           ['Chiffre']: response?.data?.data,
@@ -146,19 +175,62 @@ const ClientAddEdit = React.memo(() => {
   const onSubmit = async (data) => {
     try {
       let response;
-      if (isEdit) {
-        data.id = params?.id;
-        delete data?.Chiffre;
-        delete data?.userChiffre;
-        response = await axiosInstance.put('/klient/update', data);
-      } else {
-        response = await axiosInstance.post('/klient/save', data);
-      }
+      // TODO: encrypt client data fields.
+      // perform checks if data exists.
+      // encrypt client using client password+client salt.
+      // store client password in vault.
+      let serverVaultLength = Object.keys(serverVault).length;
+      let userData = localStorage.getItem('psymax-user-data');
+      if (serverVaultLength > 0 && userData) {
+        userData = JSON.parse(userData);
+        // console.log(isEdit);
+        // console.log(params);
+        let pass;
+        if (params?.id !== 'add') {
+          if (clientVault?.data?.length >= 0) {
+            clientVault.data.forEach((vault) => {
+              let clientId = vault.clientId;
+              let clientKey = vault.clientKey;
+              if (params.id === clientId) {
+                pass = clientKey;
+              }
+            });
+          }
+        } else {
+          pass = passwordGenerator();
+        }
+        // console.log(pass);
+        const clientWorker = new Worker();
+        const psymaxToken = localStorage.getItem('psymax-token');
+        // console.log(data);
+        toast('Patientendaten verschlüsseln');
+        clientWorker.postMessage({
+          type: 'encryptClient',
+          data: JSON.stringify({
+            data: data,
+            pass,
+            userData,
+            serverVault,
+            updateClientVault,
+            clientVault,
+            psymaxToken,
+            isEdit,
+          }),
+        });
 
-      if (response?.status === 200) {
-        const responseData = response?.data;
-        toast.success(responseData?.message);
-        router.push('/dashboard/klientinnen');
+        clientWorker.onmessage = (message) => {
+          const encryptedData = JSON.parse(message.data);
+
+          if (encryptedData.response?.status === 200) {
+            toast.success('Patientendaten wurden verschlüsselt');
+            setUpdateClientVault(encryptedData.setUpdateClientVault);
+            setClientVault(encryptedData.setClientVault);
+
+            const responseData = response?.data;
+            toast.success(responseData?.message);
+            router.push('/dashboard/klientinnen');
+          }
+        };
       }
     } catch (error) {
       handleApiError(error, router);
@@ -188,10 +260,11 @@ const ClientAddEdit = React.memo(() => {
             '/klient/getById/' + params?.id
           );
           const responseData = response?.data?.data;
+          // console.log(responseData);
           const ArztData = responseData?.ArztId;
-          setDefaultValues(responseData?.ArztId, 1);
+          // setDefaultValues(responseData?.ArztId, 1);
           delete responseData?.ArztId;
-          setDefaultValues(responseData);
+          // setDefaultValues(responseData);
 
           delete ArztData?._id;
           delete ArztData?.createdAt;
@@ -203,15 +276,34 @@ const ClientAddEdit = React.memo(() => {
           for (const key in ArztData) {
             modifiedArzt[`Arzt${key}`] = ArztData[key];
           }
+          let userData = localStorage.getItem('psymax-user-data');
+          const clientWorker = new Worker();
+          toast('Patientendaten entschlüsseln');
+          clientWorker.postMessage({
+            type: 'decryptClient',
+            data: JSON.stringify({
+              clientVault,
+              params,
+              userData,
+              serverVault,
+              responseData,
+              modifiedArzt,
+            }),
+          });
 
-          setEditData({ ...responseData, ...modifiedArzt });
+          clientWorker.onmessage = (message) => {
+            const decryptedData = JSON.parse(message.data);
+            setDefaultValues(decryptedData.setDefaultValues);
+            setEditData(decryptedData.setEditData);
+            toast.success('Patientendaten wurden entschlüsselt');
+          };
         } catch (error) {
           handleApiError(error, router);
         }
       }
       fetchData();
     }
-  }, [params]);
+  }, [params, clientVault]);
 
   const agreeModel = async () => {
     try {
@@ -460,6 +552,12 @@ const ClientAddEdit = React.memo(() => {
           {/* artz email telefone */}
         </Grid>
 
+        <Grid container sx={{ mt: 4 }}>
+          <Grid container>
+            <Grid item sm={2.5} md={4.25} xl={4.25} />
+            <KlientAction params={params} router={router} />
+          </Grid>
+        </Grid>
         <Grid container sx={{ mt: 4 }}>
           <Remove isEdit={isEdit} setOpen={setOpen} />
           <Confirm isSubmitting={isSubmitting} />

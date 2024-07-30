@@ -9,7 +9,10 @@ const { UserSchema } = require('../models/userModel');
 const getActive = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     // Extract page and pageSize from query parameters, default to 1 and 10 if not provided
     const page = parseInt(req.query.page, PAGINATION_LIMIT) || 1;
@@ -57,7 +60,10 @@ const getActive = async (req, res, next) => {
 const getArchived = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     // Extract page and pageSize from query parameters, default to 1 and 10 if not provided
     const page = parseInt(req.query.page, PAGINATION_LIMIT) || 1;
@@ -105,7 +111,10 @@ const getArchived = async (req, res, next) => {
 const getNew = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     // Extract page and pageSize from query parameters, default to 1 and 10 if not provided
     const page = parseInt(req.query.page, PAGINATION_LIMIT) || 1;
@@ -153,7 +162,10 @@ const getNew = async (req, res, next) => {
 const getAll = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const list = await KlientSchema.find({
       userId: decodedToken?.user_id,
@@ -185,28 +197,29 @@ const save = async (req, res, next) => {
 
     const klientSchema = Joi.object({
       email: Joi.string().email().required(),
-      Anrede: Joi.string().required(),
-      Titel: Joi.string().allow(''),
-      Firma: Joi.string().required(),
+      Anrede: Joi.array().required(),
+      isEncrypted: Joi.boolean().required(),
+      Titel: Joi.array().allow(''),
+      Firma: Joi.array().required(),
       Chiffre: Joi.string().required(),
-      Vorname: Joi.string().required(),
-      Nachname: Joi.string().required(),
-      Strasse_und_Hausnummer: Joi.string().required(),
-      PLZ: Joi.string().required(),
-      Ort: Joi.string().required(),
-      Land: Joi.string().required(),
+      Vorname: Joi.array().required(),
+      Nachname: Joi.array().required(),
+      Strasse_und_Hausnummer: Joi.array().required(),
+      PLZ: Joi.array().required(),
+      Ort: Joi.array().required(),
+      Land: Joi.array().required(),
       Telefonnummer: Joi.string().required(),
       Diagnose: Joi.array().required(),
-      Geburtsdatum: Joi.string().required(),
-      ArztAnrede: Joi.string().required(),
-      ArztTitel: Joi.string().allow(''),
+      Geburtsdatum: Joi.array().required(),
+      ArztAnrede: Joi.array().required(),
+      ArztTitel: Joi.array().allow(''),
       ArztEmail: Joi.string().email().required(),
-      ArztVorname: Joi.string().required(),
-      ArztNachname: Joi.string().required(),
-      ArztStrasse_und_Hausnummer: Joi.string().required(),
-      ArztPLZ: Joi.string().required(),
-      ArztOrt: Joi.string().required(),
-      ArztLand: Joi.string().required(),
+      ArztVorname: Joi.array().required(),
+      ArztNachname: Joi.array().required(),
+      ArztStrasse_und_Hausnummer: Joi.array().required(),
+      ArztPLZ: Joi.array().required(),
+      ArztOrt: Joi.array().required(),
+      ArztLand: Joi.array().required(),
       ArztTelefonnummer: Joi.string().required(),
     });
 
@@ -222,7 +235,10 @@ const save = async (req, res, next) => {
     }
 
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const CheckKlientExist = await KlientSchema.findOne({
       email: requestBody?.email,
@@ -297,6 +313,7 @@ const save = async (req, res, next) => {
             Diagnose: requestBody?.Diagnose,
             Geburtsdatum: requestBody?.Geburtsdatum,
             ArztId: doctorData?._id,
+            isEncrypted: requestBody?.isEncrypted,
           });
           await newKlient.save();
 
@@ -406,28 +423,29 @@ const update = async (req, res, next) => {
     const klientSchema = Joi.object({
       id: Joi.string().required(),
       email: Joi.string().email().required(),
+      Anrede: Joi.array().required(),
+      isEncrypted: Joi.boolean().required(),
+      Titel: Joi.array().allow(''),
+      Firma: Joi.array().required(),
       // Chiffre: Joi.string().required(),
-      Anrede: Joi.string().required(),
-      Titel: Joi.string().allow(''),
-      Firma: Joi.string().required(),
-      Vorname: Joi.string().required(),
-      Nachname: Joi.string().required(),
-      Strasse_und_Hausnummer: Joi.string().required(),
-      PLZ: Joi.string().required(),
-      Ort: Joi.string().required(),
-      Land: Joi.string().required(),
+      Vorname: Joi.array().required(),
+      Nachname: Joi.array().required(),
+      Strasse_und_Hausnummer: Joi.array().required(),
+      PLZ: Joi.array().required(),
+      Ort: Joi.array().required(),
+      Land: Joi.array().required(),
       Telefonnummer: Joi.string().required(),
       Diagnose: Joi.array().required(),
-      Geburtsdatum: Joi.string().required(),
-      ArztAnrede: Joi.string().required(),
-      ArztTitel: Joi.string().allow(''),
+      Geburtsdatum: Joi.array().required(),
+      ArztAnrede: Joi.array().required(),
+      ArztTitel: Joi.array().allow(''),
       ArztEmail: Joi.string().email().required(),
-      ArztVorname: Joi.string().required(),
-      ArztNachname: Joi.string().required(),
-      ArztStrasse_und_Hausnummer: Joi.string().required(),
-      ArztPLZ: Joi.string().required(),
-      ArztOrt: Joi.string().required(),
-      ArztLand: Joi.string().required(),
+      ArztVorname: Joi.array().required(),
+      ArztNachname: Joi.array().required(),
+      ArztStrasse_und_Hausnummer: Joi.array().required(),
+      ArztPLZ: Joi.array().required(),
+      ArztOrt: Joi.array().required(),
+      ArztLand: Joi.array().required(),
       ArztTelefonnummer: Joi.string().required(),
     });
 
@@ -456,7 +474,10 @@ const update = async (req, res, next) => {
     } */
 
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const CheckKlientExist = await KlientSchema.findOne({
       _id: requestBody?.id,
@@ -604,7 +625,7 @@ const remove = async (req, res, next) => {
 
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
 
     const klient = await KlientSchema.findOne({
@@ -656,7 +677,10 @@ const getChiffre = async (req, res, next) => {
     }
 
     const token = req.headers['x-access-token'];
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const decodedToken = jwt.verify(
+      token,
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
+    );
 
     const requestBody = req.body;
 

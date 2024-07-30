@@ -34,7 +34,7 @@ const save = async (req, res, next) => {
 
     const decodedToken = jwt.verify(
       req.headers['x-access-token'],
-      process.env.TOKEN_KEY
+      '09t37e602636e2fba8da5097a35f1B20d6c032c60'
     );
 
     const user = await UserSchema.findById(decodedToken?.user_id).select(
@@ -207,6 +207,8 @@ const save = async (req, res, next) => {
               // convert binary data to base64 encoded string
               let base64Pdf = Buffer.from(bitmap).toString('base64');
 
+              let raw = Buffer.from(bitmap);
+
               if (fs.existsSync(pdfFilePath)) {
                 fs.unlinkSync(pdfFilePath);
               }
@@ -214,8 +216,10 @@ const save = async (req, res, next) => {
               let response = {
                 status_code: 200,
                 message: 'Begründung hinzugefügt',
-                data: { base64Pdf, fileName: pdf_name },
+                data: { base64Pdf, fileName: pdf_name, raw },
               };
+              console.log(newBrief._id);
+              await BriefSchema.findByIdAndDelete({ _id: newBrief._id });
               return res.status(200).send(response);
             }
           }
@@ -229,7 +233,8 @@ const save = async (req, res, next) => {
     };
     return res.status(400).send(response);
   } catch (error) {
-    next(error);
+    // next(error);
+    return res.status(400).send(error.message);
   }
 };
 

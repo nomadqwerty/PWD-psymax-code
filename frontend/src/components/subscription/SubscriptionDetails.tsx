@@ -157,6 +157,15 @@ function SubscriptionDetails() {
   }, [kontoData, subscriptionData]);
 
   useEffect(() => {
+    const userLocalStorageData = localStorage.getItem('psymax-user-data');
+    if (userLocalStorageData !== 'undefined') {
+      const userData = JSON.parse(userLocalStorageData);
+      if (!userData?.Chiffre) {
+        router.push('/dashboard/kontoeinstellungen');
+      }
+    }
+  }, []);
+  useEffect(() => {
     async function fetchData() {
       try {
         const response = await axiosInstance.get(`/user/get`);
@@ -180,7 +189,7 @@ function SubscriptionDetails() {
         `/subscriptions/${kontoData._id}/cancel`
       );
       if (response?.status === 200) {
-        toast.success('Subscription cancelled successfully');
+        toast.success('Abonnement erfolgreich gekündigt');
         localStorage.setItem('psymax-account-restricted', 'true');
         router.push('/dashboard');
       } else {
@@ -414,7 +423,9 @@ function SubscriptionDetails() {
       <ModelDialogue
         className=""
         actionTitle={'Confirm Cancellation'}
-        options={''}
+        children={() => {
+          return <></>;
+        }}
         open={isCancelDialogModalOpen}
         setOpen={setIsCancelDialogModalOpen}
         confirmationText="Bitte überprüfen Sie Ihre Aktion. Die von Ihnen beabsichtigte Aktion kann nicht rückgängig gemacht werden."
@@ -617,7 +628,7 @@ function PaymentModal({ open, setOpen, userId, initialMethod, mutate }) {
       );
 
       if (response?.status === 200) {
-        toast.success('Payment method updated successfully');
+        toast.success('Zahlungsmethode erfolgreich aktualisiert');
         await mutate();
       } else {
         toast.error(SOMETHING_WRONG);

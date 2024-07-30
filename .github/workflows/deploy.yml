@@ -1,0 +1,120 @@
+
+  name: Deploy to GCE
+  
+  on:
+    push:
+      branches:
+        - main
+  
+  jobs:
+    deploy:
+      runs-on: ubuntu-latest
+  
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+  
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+          
+      - name: Login to GAR
+        uses: docker/login-action@v3
+        with:
+          registry: europe-southwest1-docker.pkg.dev
+          username: _json_key
+          password: ${{ secrets.GCP_SA_KEY }}
+
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v2"
+        with:
+          version: ">= 363.0.0"
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+        with:
+          version: '>= 363.0.0'
+
+      - name: Add SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCE_SSH_PRIVATE_KEY }}" > ~/.ssh/google_compute_engine
+          chmod 600 ~/.ssh/google_compute_engine
+          ssh-keyscan "${{ secrets.GCE_INSTANCE_IP }}" >> ~/.ssh/known_hosts
+
+      - name: Repo name to lowercase
+        run: |
+          echo "REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Build and push Docker images(frontend)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            europe-southwest1-docker.pkg.dev/genuine-essence-428307-a9/psymax-staging/${{ env.REPO_NAME }}-frontend:${{ github.sha }}
+          cache-from: type=registry,ref=europe-southwest1-docker.pkg.dev/genuine-essence-428307-a9/psymax-staging/${{ env.REPO_NAME }}-frontend:buildcache
+          cache-to: type=registry,ref=europe-southwest1-docker.pkg.dev/genuine-essence-428307-a9/psymax-staging/${{ env.REPO_NAME }}-frontend:buildcache,mode=max
+
+      - name: Build and push Docker images(backend)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            europe-southwest1-docker.pkg.dev/genuine-essence-428307-a9/psymax-staging/${{ env.REPO_NAME }}-backend:${{ github.sha }}
+          cache-from: type=registry,ref=europe-southwest1-docker.pkg.dev/genuine-essence-428307-a9/psymax-staging/${{ env.REPO_NAME }}-backend:buildcache
+          cache-to: type=registry,ref=europe-southwest1-docker.pkg.dev/genuine-essence-428307-a9/psymax-staging/${{ env.REPO_NAME }}-backend:buildcache,mode=max
+
+      - name: Copy Docker Compose file to VM
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.GCE_INSTANCE_IP }}
+          username: GFC
+          key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+          source: docker-compose.yml
+          target: /home/GFC
+     
+      - name: Copy Update Image Names, SSL Certificate and Nginx Config Script to VM
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.GCE_INSTANCE_IP }}
+          username: GFC
+          key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+          source: .github/scripts/update_docker_compose.py,.github/scripts/create_ssl_certificate.sh,.github/scripts/nginx.conf
+          target: /home/GFC
+          strip_components: 2
+  
+      - name: Deploy to GCE 
+        env:
+          SECRETS: ${{ toJSON(secrets) }}
+        run: |
+          ssh -i ~/.ssh/google_compute_engine GFC@${{ secrets.GCE_INSTANCE_IP }} "
+          SECRETS_PROCESSED=\$(jq -n '$SECRETS')
+          # Renew SSL certificate
+          rm -f ./server.key ./server.crt
+          chmod +x create_ssl_certificate.sh
+          bash create_ssl_certificate.sh ${{ secrets.GCE_INSTANCE_IP }} ./server.key ./server.crt
+          # Update Docker Compose
+          python update_docker_compose.py docker-compose.yml ${{ secrets.GCP_PROJECT_ID }} ${{ github.sha }} europe-southwest1 psymax-staging ${{ github.event.repository.name }} ./nginx.conf ./server.crt ./server.key \$(printf '%s' \$SECRETS_PROCESSED)
+          # Install docker compose v2
+          curl https://gist.githubusercontent.com/FemiBlack/6e2f0a70fccbe0368f33f873c6a56459/raw/dde86af135e20a2d8db850a6e3cad443fce0b402/installer.sh | bash
+          # Configure Docker to use GCR
+          docker-credential-gcr configure-docker --registries=europe-southwest1-docker.pkg.dev
+          # Prune Docker images
+          docker image prune -af
+          # Pull images
+          docker compose pull
+          # Start containers
+          docker compose up --detach
+          "
+      
+      - name: Output SSH command results
+        run: |
+          echo '${{ steps.compute-ssh.outputs.stdout }}'
+          echo '${{ steps.compute-ssh.outputs.stderr }}'
+    

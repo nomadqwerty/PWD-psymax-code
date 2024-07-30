@@ -18,17 +18,45 @@ const PrivateRoute = (WrappedComponent) => {
           const responseData = response?.data?.data;
           if (response?.status === 200) {
             localStorage.setItem('psymax-token', responseData?.token);
+
+            let userSubStatus = sessionStorage.getItem('userSubcriptionStatus');
+            if (userSubStatus) {
+              userSubStatus = JSON.parse(userSubStatus);
+            } else {
+              const subRes = await axiosInstance.get(
+                `/subscriptions/${responseData._id}`
+              );
+              let subResData;
+              if (subRes.status === 200) {
+                subResData = subRes.data.data;
+                let subObj = {
+                  status: subResData?.status || 'INACTIVE',
+                  trialPeriod: responseData?.trialPeriodActive || false,
+                };
+
+                userSubStatus = { ...subObj };
+                sessionStorage.setItem(
+                  'userSubcriptionStatus',
+                  JSON.stringify({
+                    ...subObj,
+                  })
+                );
+              }
+            }
+
             localStorage.setItem(
               'psymax-user-data',
               JSON.stringify(responseData)
             );
             // FIXME: Might be preferable to use next-js server side fetch to prevent page access
-            localStorage.setItem(
-              'psymax-account-restricted',
-              responseData.trialPeriodActive
-                ? false
-                : !!response.data?.subscription_status
-            );
+
+            if (
+              userSubStatus.status !== 'ACTIVE' &&
+              userSubStatus.trialPeriod === false
+            ) {
+              localStorage.setItem('psymax-account-restricted', true);
+            }
+
             dispatch({
               type: 'LOGIN',
               payload: { isLoggedin: true, userData: responseData },

@@ -5,6 +5,9 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authenticateJWT = require('./middleware/auth');
 const routes = require('./routes');
+const routesVault = require('./routesVault');
+const fileRoutes = require('./fileRoutes');
+const meetingScheduleRoutes = require('./meetingRoutes');
 const path = require('path');
 const { saveLogo } = require('./controllers/auth');
 const seedBriefData = require('./seeders/brief');
@@ -15,6 +18,14 @@ const {
   requestLogger,
   errorMiddleware,
 } = require('./utils/logger');
+const { Server } = require('socket.io');
+const { rtcHandler } = require('./server');
+
+// const {
+//   dailyQueue,
+//   processBonusCycleReset,
+//   processNonCommittedUserDelete,
+// } = require('./payment/queues/subscription');
 
 dotenv.config({
   path: path.join(__dirname, './config.env'),
@@ -28,7 +39,23 @@ const { PORT, DB_URL } = process.env;
 
 const app = express();
 
+// Process the daily task
+// dailyQueue.process(processBonusCycleReset);
+// dailyQueue.process(processNonCommittedUserDelete);
+
 // Error handling middleware
+const server = http.createServer(app);
+const io = new Server(server, {
+  connectionStateRecovery: {},
+  debug: true,
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+});
+
+io.on('connection', rtcHandler());
+
 app.use((err, req, res, next) => {
   // Log error details using the requestLogger
   requestLogger.error(`[${req.method}] ${req.url} - Error: ${err.message}`);
@@ -37,10 +64,11 @@ app.use((err, req, res, next) => {
 
 async function connectToDatabase() {
   try {
-    await mongoose.connect(DB_URL, {
+    await mongoose.connect(process.env.DB_URL, {
       useNewUrlParser: true,
     });
-    console.log(`Connected to ${DB_URL}`);
+    console.log(DB_URL);
+
     // Run seeder after connecting to the database
     await seedBriefData();
     // Initialize the queues after the database connection is established
@@ -61,6 +89,7 @@ const allowedOrigins = [
   'http://localhost:4000',
   'https://psymax.de',
   'https://psymax.de/api/',
+  'https://34.175.225.136/',
 ];
 
 const corsOptions = {
@@ -95,7 +124,10 @@ app.use('*', (req, res, next) => {
 const publicUploadsDirectory = path.join(__dirname, 'public', 'uploads');
 app.use('/uploads', express.static(publicUploadsDirectory));
 
-app.use(authenticateJWT);
+app.use(express.json({ limit: '5000kb' }));
+app.use((req, res, next) => {
+  authenticateJWT(req, res, next);
+});
 
 // Use the setupLogoStorage function to set up multer for logo uploads
 const upload = setupLogoStorage();
@@ -105,15 +137,16 @@ app.post('/api/saveLogo', upload.single('logo'), saveLogo);
 const emailUpload = setupEmailStorage();
 app.post('/api/email/send', emailUpload.array('attachments'), send);
 
-app.use(express.json());
-
 // Use the routes with the "/api" prefix
 app.use('/api', routes);
+app.use('/api', routesVault);
+app.use('/api', fileRoutes);
+app.use('/api', meetingScheduleRoutes);
 
 // Use the request error logger middleware globally
 app.use(errorMiddleware);
 
-const server = http.createServer(app);
+// const server = http.createServer(app);
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
@@ -129,5 +162,13 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
+process.on('uncaughtException', (error) => {
+  console.log(error.message);
+});
+process.on('unhandledRejection', (error) => {
+  console.log(error.message);
+});
 
 server.listen(PORT || 4000, () => console.log(`Listening on port ${PORT}`));
+
+module.exports = { server };

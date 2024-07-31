@@ -9,7 +9,7 @@ const rtcHandler = () => {
   const createWorker = async () => {
     worker = await mediasoup.createWorker({
       rtcMinPort: 4000,
-      rtcMaxPort: 4500,
+      rtcMaxPort: 4200,
     });
     console.log(`worker pid ${worker.pid}`);
 

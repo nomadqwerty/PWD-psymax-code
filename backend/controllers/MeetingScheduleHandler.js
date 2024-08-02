@@ -1,6 +1,7 @@
 const MeetingSchedule = require('../models/MeetingSchedule');
 const { UserSchema } = require('../models/userModel');
 const Email = require('./contactUtil/contactUtil');
+const { sendSMTPMail } = require('../utils/common');
 
 const meetingHtml = `<html>
   <head>
@@ -295,8 +296,16 @@ exports.storeMeetingDetails = async (req, res) => {
       };
       patientEmail = patientEmail.replace('{{RotatedText}}', rotatedText);
       const mailer = new Email(contactObject);
-      let sent = await mailer.sendHtml('Meeting Scheduled', patientEmail);
-
+      let sent;
+      try {
+        sent = await sendSMTPMail(
+          meetingDetails.email,
+          'Meeting Scheduled',
+          patientEmail
+        );
+      } catch (error) {
+        sent = await mailer.sendHtml('Meeting Scheduled', patientEmail);
+      }
       const newMeeting = await MeetingSchedule.create(meetingDetails);
       if (newMeeting) {
         let detailObject = {

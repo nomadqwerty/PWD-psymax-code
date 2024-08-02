@@ -480,9 +480,25 @@ const save = async (req, res, next) => {
           let sent;
           try {
             sent = await sendSMTPMail(user.email, subject, code);
+            console.log('sent');
+            return res.status(200).json({
+              status: 'success',
+              message: 'sent-psymax',
+              data: {
+                userId: user._id,
+              },
+            });
           } catch (error) {
             const mailer = new Email(contactObject);
             sent = await mailer.send('two factor authentication', code);
+            console.log('sent-contact');
+            return res.status(200).json({
+              status: 'success',
+              message: 'sent',
+              data: {
+                userId: user._id,
+              },
+            });
           }
         } else if (requestBody?.TwoFaPermission === 'No') {
           user.TwoFA.permission = false;
@@ -606,16 +622,18 @@ const TwoFaAuth = async (req, res, next) => {
       let sent;
       try {
         sent = await sendSMTPMail(user.email, subject, code);
+        console.log('sent');
+        return res.status(200).json({
+          status: 'success',
+          message: 'sent-psymax',
+          data: {
+            userId: user._id,
+          },
+        });
       } catch (error) {
         const mailer = new Email(contactObject);
         sent = await mailer.send('two factor authentication', code);
-      }
-
-      // send target email
-      // console.log(sent);
-
-      if (sent?.status === 'success' || sent?.response.startsWith('250')) {
-        console.log('sent');
+        console.log('sent-contact');
         return res.status(200).json({
           status: 'success',
           message: 'sent',
@@ -623,8 +641,6 @@ const TwoFaAuth = async (req, res, next) => {
             userId: user._id,
           },
         });
-      } else {
-        throw new Error('failed');
       }
     } else {
       throw new Error('no user found.');
@@ -823,16 +839,18 @@ const emailSecret = async (req, res) => {
       let sent;
       try {
         sent = await sendSMTPMail(user.email, subject, code);
+        console.log('sent');
+        return res.status(200).json({
+          status: 'success',
+          message: 'sent-psymax',
+          data: {
+            userId: user._id,
+          },
+        });
       } catch (error) {
         const mailer = new Email(contactObject);
         sent = await mailer.send('two factor authentication', code);
-      }
-
-      // send target email
-      // console.log(sent);
-
-      if (sent?.status === 'success' || sent?.response.startsWith('250')) {
-        console.log('sent');
+        console.log('sent-contact');
         return res.status(200).json({
           status: 'success',
           message: 'sent',
@@ -840,8 +858,6 @@ const emailSecret = async (req, res) => {
             userId: user._id,
           },
         });
-      } else {
-        throw new Error('failed');
       }
     } else {
       throw new Error('no user found.');

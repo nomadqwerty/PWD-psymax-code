@@ -17,6 +17,7 @@ module.exports = {
     ];
   },
   env: {
+    accPass: 'T+kst&~N6ah$%2CsqoDzuWsE',
     NEXT_PUBLIC_PAGINATION_LIMIT: '10',
     // NEXT_PUBLIC_SIGNAL_HOST: 'http://localhost:3050',
     // NEXT_PUBLIC_SIGNAL_HOST:

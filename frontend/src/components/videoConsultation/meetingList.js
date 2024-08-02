@@ -7,8 +7,16 @@ import toast from 'react-hot-toast';
 import { useEffect, useState } from 'react';
 
 const MeetingList = ({ meetingsList, router }) => {
-  console.log(meetingsList);
+  // console.log(meetingsList);
+
   let meetings = meetingsList?.map((meeting, index) => {
+    let userData = localStorage?.getItem('psymax-user-data');
+
+    if (userData) {
+      userData = JSON.parse(userData);
+    }
+    // console.log(userData);
+    const userName = userData.Nachname;
     const day = new Date(meeting.Geburtsdatum).getDay();
     const month = new Date(meeting.Geburtsdatum).getMonth() + 1;
     const year = new Date(meeting.Geburtsdatum).getFullYear();
@@ -57,13 +65,13 @@ const MeetingList = ({ meetingsList, router }) => {
             varient="primary"
             className="radius4 xs:mr-1 sm:mr-5 xs:my-2 md:mb-1 sm:mb-0"
             onClick={() => {
-              // const accessKey = meeting?.accessKey;
-              // const user = userName;
-              // if (accessKey && user) {
-              //   // router.push(
-              //   //   `${process.env.NEXT_PUBLIC_RTC_HOST}/rtc?accessKey=${accessKey}&clientName=${user}`
-              //   // );
-              // }
+              const accessKey = meeting?.accessKey;
+              const user = userName;
+              if (accessKey && user) {
+                router.push(
+                  `${process.env.NEXT_PUBLIC_RTC_HOST}/rtc?accessKey=${accessKey}&clientName=${user}`
+                );
+              }
             }}
           >
             einleiten

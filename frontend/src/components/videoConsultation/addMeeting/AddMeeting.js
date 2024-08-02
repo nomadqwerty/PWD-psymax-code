@@ -84,8 +84,8 @@ const MeetingAdd = React.memo(() => {
         toast('scheduling email');
         const accessCode = passwordGenerator();
         const url =
-          process.env.NEXT_PUBLIC_CLIENT_HOST +
-          `/dashboard/videosprechstunde/rtc?accessKey=${accessCode}&clientName=${data.Vorname}`;
+          process.env.NEXT_PUBLIC_RTC_HOST +
+          `/rtc?accessKey=${accessCode}&clientName=${data.Vorname}`;
 
         data.url = url;
         data.accessKey = accessCode;

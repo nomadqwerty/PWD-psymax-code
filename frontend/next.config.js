@@ -31,7 +31,7 @@ module.exports = {
     NEXT_PUBLIC_MAX_FILE_SIZE: '52428800',
     NEXT_PUBLIC_CLIENT_HOST: 'https://34.175.225.136',
     // NEXT_PUBLIC_CLIENT_HOST: 'https://pwd-psymax-code.vercel.app',
-    NEXT_PUBLIC_RTC_HOST: 'http://localhost:3001',
+    NEXT_PUBLIC_RTC_HOST: 'https://rtc-final.vercel.app/',
     // NEXT_PUBLIC_RTC_HOST: 'https://video-call-app-chi-ten.vercel.app',
     NEXT_PUBLIC_PRICING_GLOBAL: '69',
     NEXT_PUBLIC_PRICING_GLOBAL_EXTENDED: '99',

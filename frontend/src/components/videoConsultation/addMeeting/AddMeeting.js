@@ -83,9 +83,7 @@ const MeetingAdd = React.memo(() => {
       if (data && timeData?.time?.hour) {
         toast('scheduling email');
         const accessCode = passwordGenerator();
-        const url =
-          process.env.NEXT_PUBLIC_RTC_HOST +
-          `/rtc?accessKey=${accessCode}&clientName=${data.Vorname}`;
+        const url = process.env.NEXT_PUBLIC_CLIENT_HOST + `/lobby`;
 
         data.url = url;
         data.accessKey = accessCode;

@@ -1,10 +1,10 @@
 const mediasoup = require('mediasoup');
 
-const rtcHandler = () => {
+const rtcHandler = (io) => {
   let connectedClients = 0;
   let roomAccessKey;
   let worker;
-  const ipAdd = '34.175.225.136';
+  const ipAdd = '127.0.0.1';
 
   const createWorker = async () => {
     worker = await mediasoup.createWorker({
@@ -23,8 +23,13 @@ const rtcHandler = () => {
   };
 
   worker = createWorker();
-  const rooms = [];
+  let rooms = [];
 
+  setInterval(() => {
+    console.log(rooms.length);
+    rooms = [];
+    console.log(rooms.length);
+  }, 7200000);
   return async (socket) => {
     //listen for roomAccesskey event on socket join and add socket to the provided acceskey
     console.log(socket.id, 'connected');

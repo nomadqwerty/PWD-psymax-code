@@ -53,7 +53,7 @@ const io = new Server(server, {
   },
 });
 
-io.on('connection', rtcHandler());
+io.on('connection', rtcHandler(io));
 
 app.use((err, req, res, next) => {
   // Log error details using the requestLogger

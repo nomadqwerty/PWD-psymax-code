@@ -4,7 +4,7 @@ const rtcHandler = (io) => {
   let connectedClients = 0;
   let roomAccessKey;
   let worker;
-  const ipAdd = '127.0.0.1';
+  const ipAdd = '34.175.225.136';
 
   const createWorker = async () => {
     worker = await mediasoup.createWorker({

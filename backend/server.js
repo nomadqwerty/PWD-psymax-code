@@ -26,10 +26,16 @@ const rtcHandler = (io) => {
   let rooms = [];
 
   setInterval(() => {
+    console.log('creating new worker...');
+    worker = createWorker();
+    console.log('created new worker');
+    console.log('clearing rooms...');
     console.log(rooms.length);
     rooms = [];
+    console.log('cleared rooms');
     console.log(rooms.length);
   }, 7200000);
+
   return async (socket) => {
     //listen for roomAccesskey event on socket join and add socket to the provided acceskey
     console.log(socket.id, 'connected');

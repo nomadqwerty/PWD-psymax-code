@@ -205,15 +205,15 @@ const AccountSettingsPage = React.memo(() => {
       const response = await axiosInstance.post('/user/save', finalDatas);
       console.log(response);
       if (response?.status === 200) {
-        // const responseData = response?.data?.data;
-        // localStorage.setItem('psymax-loggedin', true);
-        // localStorage.setItem('psymax-token', responseData?.token);
-        // localStorage.setItem('psymax-user-data', JSON.stringify(responseData));
-        // localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
-        // dispatch({
-        //   type: 'LOGIN',
-        //   payload: { isLoggedin: true, userData: responseData },
-        // });
+        const responseData = response?.data?.data;
+        localStorage.setItem('psymax-loggedin', true);
+        localStorage.setItem('psymax-token', responseData?.token);
+        localStorage.setItem('psymax-user-data', JSON.stringify(responseData));
+        localStorage.setItem('psymax-is-admin', responseData?.isAdmin);
+        dispatch({
+          type: 'LOGIN',
+          payload: { isLoggedin: true, userData: responseData },
+        });
         router.push('/dashboard');
       }
     } catch (error) {

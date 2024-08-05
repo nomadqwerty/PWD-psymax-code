@@ -4,6 +4,7 @@ const { UserSchema } = require('../models/userModel');
 const Joi = require('joi');
 const speakeasy = require('speakeasy');
 const UserVault = require('../models/UserVault');
+const Qrcode = require('qrcode');
 const ClientVault = require('../models/ClientVault');
 const {
   TimeForTokenExpire,
@@ -481,24 +482,10 @@ const save = async (req, res, next) => {
           try {
             sent = await sendSMTPMail(user.email, subject, code);
             console.log('sent');
-            return res.status(200).json({
-              status: 'success',
-              message: 'sent-psymax',
-              data: {
-                userId: user._id,
-              },
-            });
           } catch (error) {
             const mailer = new Email(contactObject);
             sent = await mailer.send('two factor authentication', code);
             console.log('sent-contact');
-            return res.status(200).json({
-              status: 'success',
-              message: 'sent',
-              data: {
-                userId: user._id,
-              },
-            });
           }
         } else if (requestBody?.TwoFaPermission === 'No') {
           user.TwoFA.permission = false;
@@ -800,10 +787,12 @@ const getSecret = async (req, res) => {
       const { base32: secret } = user.TwoFA?.secret;
       console.log(secret);
 
+      const twoFaUrl = await Qrcode.toDataURL(user.TwoFA.secret.otpauth_url);
+
       return res.status(200).json({
         status: 'sucess',
         message: 'Found text',
-        data: { text: secret },
+        data: { text: secret, url: twoFaUrl },
       });
     }
 

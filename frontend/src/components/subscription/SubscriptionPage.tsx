@@ -39,7 +39,7 @@ export default function SubscriptionPage() {
                 <p className="text-[#707070]">1 Nutzer</p>
               </div>
               <Link
-                href="/login"
+                href="/dashboard"
                 className="text-center inline-block px-2 py-4 md:px-4 hover:bg-gray-200 hover:border-slate-200 border text-sm bg-gray-100 rounded-md font-medium w-full mt-6"
               >
                 Jetzt buchen

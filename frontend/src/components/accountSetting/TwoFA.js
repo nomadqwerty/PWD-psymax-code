@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 
 const Secret = ({ show }) => {
   const [secret, setSecret] = useState(null);
+  const [twoFaQr, setTwoFaQr] = useState(null);
   useEffect(() => {
     if (show) {
       axiosInstance.get(`/user/text`).then((res) => {
@@ -20,13 +21,19 @@ const Secret = ({ show }) => {
             console.log('here');
             setSecret(res.data.data.text);
           }
+          if (res?.data?.data?.url) {
+            console.log('here');
+            setTwoFaQr(res.data.data.url);
+          }
         }
       });
     }
   }, [show]);
+  console.log(twoFaQr);
   if (show) {
     return (
       <Grid item xs={12} sm={12} md={6} xl={6} style={{ textAlign: 'center' }}>
+        <img src={twoFaQr || '#'}></img>
         <CssTextField
           name="newPassword"
           sx={{ mt: 2 }}

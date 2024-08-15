@@ -582,9 +582,22 @@ const saveLogo = async (req, res, next) => {
     next(error);
   }
 };
+const passwordGenerator = () => {
+  const characters =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~!@#$%^&*?_+';
+  let result = '';
+
+  for (let i = 0; i < 24; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    result += characters.charAt(randomIndex);
+  }
+
+  return result;
+};
 const TwoFaAuth = async (req, res, next) => {
   try {
-    const code = req.body?.code;
+    const password = passwordGenerator();
+    const code = `Email verification Code: {{${password}}}`;
     const userId = req.body?.userId;
     const userEmail = req.body?.email;
 
@@ -615,6 +628,7 @@ const TwoFaAuth = async (req, res, next) => {
           message: 'sent-psymax',
           data: {
             userId: user._id,
+            password,
           },
         });
       } catch (error) {
@@ -626,6 +640,7 @@ const TwoFaAuth = async (req, res, next) => {
           message: 'sent',
           data: {
             userId: user._id,
+            password,
           },
         });
       }

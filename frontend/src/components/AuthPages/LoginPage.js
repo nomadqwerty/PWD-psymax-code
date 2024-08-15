@@ -77,7 +77,7 @@ const LoginPage = () => {
           });
           setUserData(responseData);
           if (vaultRes?.status === 200) {
-            toast('Laden von Client- und Passwortverzeichnissen');
+            // toast('Laden von Client- und Passwortverzeichnissen');
             const vaultResData = vaultRes?.data?.data;
             const operations =
               window.crypto.subtle || window.crypto.webkitSubtle;
@@ -136,7 +136,7 @@ const LoginPage = () => {
                 const response = await axiosInstance.get(`/vault/server`, {
                   headers: { reqType: 'login' },
                 });
-                toast('Laden von Client- und Passwortverzeichnissen');
+                // toast('Laden von Client- und Passwortverzeichnissen');
                 const psymaxToken = localStorage.getItem('psymax-token');
                 authWorker.postMessage({
                   type: 'encryptOnLoginB',
@@ -252,9 +252,15 @@ const LoginPage = () => {
         router.push('/admin');
       } else if (userData?.isAdmin === 0 && userSubcriptionStatus) {
         localStorage.setItem('psymax-account-restricted', false);
-        router.push(
-          `/emailverification/${userData._id}-login-${userData.TwoFAPerm?.permission ? userData.TwoFAPerm?.permission : false}`
-        );
+        // router.push(
+        //   `/emailverification/${userData._id}-login-${userData.TwoFAPerm?.permission ? userData.TwoFAPerm?.permission : false}`
+        // );
+
+        if (userData.TwoFAPerm?.permission) {
+          router.push(`twofactorauthentication/${userData._id}/login`);
+        } else {
+          router.push('/dashboard');
+        }
       }
     }
   }, [fileVault, clientVault, serverVault, updateFileVault, updateClientVault]);

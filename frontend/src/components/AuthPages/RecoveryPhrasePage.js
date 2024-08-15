@@ -28,19 +28,23 @@ const RecoveryPhrasePage = ({ id }) => {
     // TODO: verify phrase.
     (async () => {
       // console.log(data);
-      toast('Überprüfung der Wiederherstellungsphrase');
-      const recoveryRes = await axiosInstance.post(`/user/recoveryphrase`, {
-        userId: id,
-        phrase: data.phrase,
-        reqType: 'accountReset',
-      });
+
       // console.log(recoveryRes);
-      if (recoveryRes.status === 200) {
-        toast.success('verifizierter Wiederherstellungssatz');
-        router.push(`/passwordreset/${recoveryRes.data.data.userId}`);
-      } else {
-        toast.error('Unverified Recovery phrase');
-        router.push(`/login`);
+      try {
+        toast('Überprüfung der Wiederherstellungsphrase');
+        const recoveryRes = await axiosInstance.post(`/user/recoveryphrase`, {
+          userId: id,
+          phrase: data.phrase,
+          reqType: 'accountReset',
+        });
+        if (recoveryRes.status === 200) {
+          toast.success('verifizierter Wiederherstellungssatz');
+          router.push(`/passwordreset/${recoveryRes.data.data.userId}`);
+        }
+      } catch (error) {
+        console.log(error.message);
+        toast.error('Invalid Recovery phrase');
+        // router.push(`/login`);
       }
     })();
   };

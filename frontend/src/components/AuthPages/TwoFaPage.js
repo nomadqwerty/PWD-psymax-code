@@ -93,7 +93,7 @@ const TwoFactorAuthPage = ({ id, type, TwoFA }) => {
         }
         const twoFaRes = await axiosInstance.post(`/user/twofactor`, reqObj);
         if (twoFaRes.status === 200) {
-          setCode(twoFaCode);
+          setCode(twoFaRes.data.data.password);
           setSent(true);
           setTimeSent(Date.now() + 900000);
           toast('Der Zugangsschlüssel wurde an Ihre E-Mail-Adresse gesendet');
@@ -119,7 +119,7 @@ const TwoFactorAuthPage = ({ id, type, TwoFA }) => {
                 className="text-center mt-16 interFonts text-2xl font-semibold text[#0e0e0e]"
                 style={{ marginTop: '150px' }}
               >
-                Enter Verification Key.
+                Enter Email Verification Key.
               </p>
             </Grid>
             <Grid container>

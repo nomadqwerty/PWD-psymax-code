@@ -116,14 +116,17 @@ const rtcHandler = (io) => {
       // delete screen consumers
       socket.on(
         'stoppedScreenShare',
-        onStoppedScreen(conferences, findRoom, socket)
+        onStoppedScreen(conferences, findRoom, socket, findParticipant)
       );
 
       // BC message to room
       socket.on('newMessage', onNewMessage(socket, findRoom, conferences));
 
       // media controls.
-      socket.on('toggleMedia', onToggleMedia(socket));
+      socket.on(
+        'toggleMedia',
+        onToggleMedia(socket, conferences, findRoom, findParticipant)
+      );
     } catch (error) {
       console.log(error.message);
     }

@@ -1,10 +1,10 @@
-const fs = require("node:fs/promises");
-const { join } = require("node:path");
-const { viewObject } = require("./mediaSoupUtils");
-const { webRtcTransport_options } = require("./config");
+const fs = require('node:fs/promises');
+const { join } = require('node:path');
+const { viewObject, findParticipant } = require('./mediaSoupUtils');
+const { webRtcTransport_options } = require('./config');
 
-const confObjPath = join(__dirname, "../objectView/conferenceTxt");
-const transObjPath = join(__dirname, "../objectView/transportTxt");
+const confObjPath = join(__dirname, '../objectView/conferenceTxt');
+const transObjPath = join(__dirname, '../objectView/transportTxt');
 
 const onJoinRoom = (
   findRoom,
@@ -22,7 +22,7 @@ const onJoinRoom = (
       let boolConsole = null;
 
       boolConsole?.log(
-        "is there a room for: ",
+        'is there a room for: ',
         socket.id,
         existingConference ? true : false
       );
@@ -51,6 +51,9 @@ const onJoinRoom = (
 
         // 3: add participant to conference:
         if (existingConference.participants.length <= 25) {
+          //3.3
+          let participants = [...existingConference.participants];
+
           existingConference.participants.push(newParticipant);
 
           await viewObject(confObjPath, existingConference);
@@ -70,12 +73,16 @@ const onJoinRoom = (
             existingConference.routers.audioRouter.rtpCapabilities;
 
           rtpCapabilities.messages = existingConference.messages;
-          socket.to(accessKey).emit("peerConnected", {
-            name: userName,
+
+          rtpCapabilities.participants = participants;
+
+          socket.to(accessKey).emit('peerConnected', {
+            participantName: userName,
+            participantId: participantId,
           });
           callback(rtpCapabilities);
         } else {
-          console.log("participant count exeeded");
+          console.log('participant count exeeded');
         }
       } else {
         // TODO: create conference and add participant to conference room;
@@ -136,7 +143,7 @@ const onJoinRoom = (
         callback(rtpCapabilities);
       }
     } catch (e) {
-      console.log("could not join roomAccessKey", e.message);
+      console.log('could not join roomAccessKey', e.message);
     }
   };
 };
@@ -222,12 +229,14 @@ const getProducers = (conferences, findRoom, findParticipant) => {
             if (participants[i].participantId !== socketId) {
               if (participants[i]?.producers?.video?.producer) {
                 let avlProducer = participants[i].producers.video.producer;
+                let avlProducerAction = participants[i].producers.video?.action;
 
                 avlVideoProducers[participants[i].participantId] = {
                   from: participants[i].participantId,
                   name: participants[i].participantName,
                   producerId: avlProducer.id,
-                  kind: "video",
+                  action: avlProducerAction,
+                  kind: 'video',
                   rtpCapabilities:
                     conference.routers.videoRouter.rtpCapabilities,
                 };
@@ -236,12 +245,14 @@ const getProducers = (conferences, findRoom, findParticipant) => {
               }
               if (participants[i]?.producers?.audio?.producer) {
                 let avlProducer = participants[i].producers.audio.producer;
+                let avlProducerAction = participants[i].producers.audio?.action;
 
                 avlAudioProducers[participants[i].participantId] = {
                   from: participants[i].participantId,
                   name: participants[i].participantName,
                   producerId: avlProducer.id,
-                  kind: "audio",
+                  kind: 'audio',
+                  action: avlProducerAction,
                   rtpCapabilities:
                     conference.routers.audioRouter.rtpCapabilities,
                 };
@@ -250,12 +261,15 @@ const getProducers = (conferences, findRoom, findParticipant) => {
               }
               if (participants[i]?.producers?.screen?.producer) {
                 let avlProducer = participants[i].producers.screen.producer;
+                let avlProducerAction =
+                  participants[i].producers.screen?.action;
 
                 avlScreenProducers[participants[i].participantId] = {
                   from: participants[i].participantId,
                   name: participants[i].participantName,
                   producerId: avlProducer.id,
-                  kind: "screen",
+                  action: avlProducerAction,
+                  kind: 'screen',
                   rtpCapabilities:
                     conference.routers.screenRouter.rtpCapabilities,
                 };
@@ -309,12 +323,12 @@ const transportConnect = (conferences, findRoom, findParticipant) => {
         if (participant.participantId === socketId) {
           if (isVideo === true && isAudio === false && isScreen === false) {
             tpLogger?.log(
-              "connect video producer-TransPort for : ",
+              'connect video producer-TransPort for : ',
               participant.participantId
             );
             const videoProducerTp = participant?.producers.video?.producerTP;
             if (videoProducerTp) {
-              tpLogger?.log("Video DTLS PARAMS... ", { dtlsParameters });
+              tpLogger?.log('Video DTLS PARAMS... ', { dtlsParameters });
               await videoProducerTp.connect({ dtlsParameters });
             }
           } else if (
@@ -323,13 +337,13 @@ const transportConnect = (conferences, findRoom, findParticipant) => {
             isScreen === false
           ) {
             tpLogger?.log(
-              "connect audio producer-TransPort for : ",
+              'connect audio producer-TransPort for : ',
               participant.participantId
             );
 
             const audioProducerTp = participant?.producers.audio?.producerTP;
             if (audioProducerTp) {
-              tpLogger?.log("audio DTLS PARAMS... ", { dtlsParameters });
+              tpLogger?.log('audio DTLS PARAMS... ', { dtlsParameters });
               await audioProducerTp.connect({ dtlsParameters });
             }
           } else if (
@@ -338,13 +352,13 @@ const transportConnect = (conferences, findRoom, findParticipant) => {
             isScreen === true
           ) {
             tpLogger?.log(
-              "connect screen producer-TransPort for : ",
+              'connect screen producer-TransPort for : ',
               participant.participantId
             );
 
             const screenProducerTp = participant?.producers.screen?.producerTP;
             if (screenProducerTp) {
-              tpLogger?.log("screen DTLS PARAMS... ", { dtlsParameters });
+              tpLogger?.log('screen DTLS PARAMS... ', { dtlsParameters });
               await screenProducerTp.connect({ dtlsParameters });
             }
           }
@@ -375,7 +389,7 @@ const transportProduce = (conferences, findRoom, findParticipant, socket) => {
   ) => {
     try {
       let pLogger = null;
-      pLogger?.log(isVideo, isAudio, isScreen, "producing");
+      pLogger?.log(isVideo, isAudio, isScreen, 'producing');
       if (producer === true && consumer === false) {
         // create producer rtc transport for participant based on the room routers.
         // 1: find room and participant;
@@ -389,7 +403,7 @@ const transportProduce = (conferences, findRoom, findParticipant, socket) => {
 
         if (participant.participantId === socket.id) {
           if (isVideo === true && isAudio === false && isScreen === false) {
-            pLogger?.log("produce video for : ", participant.participantId);
+            pLogger?.log('produce video for : ', participant.participantId);
             const videoProducerTp = participant?.producers.video?.producerTP;
             const videoObject = participant?.producers.video;
             if (videoProducerTp) {
@@ -399,13 +413,13 @@ const transportProduce = (conferences, findRoom, findParticipant, socket) => {
               });
               if (videoProducer) {
                 pLogger?.log(
-                  "Producer ID: ",
+                  'Producer ID: ',
                   videoProducer.id,
                   videoProducer.kind
                 );
 
-                videoProducer.on("transportclose", () => {
-                  pLogger?.log("transport for this videoProducer closed ");
+                videoProducer.on('transportclose', () => {
+                  pLogger?.log('transport for this videoProducer closed ');
                   videoProducer.close();
                 });
 
@@ -413,10 +427,11 @@ const transportProduce = (conferences, findRoom, findParticipant, socket) => {
 
                 await viewObject(confObjPath, conference);
 
-                socket.to(accessKey).emit("new-video", {
+                socket.to(accessKey).emit('new-video', {
                   from: socketId,
                   producerId: videoObject.producer.id,
-                  kind: "video",
+                  action: videoObject?.action,
+                  kind: 'video',
                   name: participant.participantName,
                   rtpCapabilities:
                     conference.routers.videoRouter.rtpCapabilities,
@@ -432,7 +447,7 @@ const transportProduce = (conferences, findRoom, findParticipant, socket) => {
             isAudio === true &&
             isScreen === false
           ) {
-            pLogger?.log("produce audio for : ", participant.participantId);
+            pLogger?.log('produce audio for : ', participant.participantId);
             const audioProducerTp = participant?.producers.audio?.producerTP;
             const audioObject = participant?.producers.audio;
             if (audioProducerTp) {
@@ -442,13 +457,13 @@ const transportProduce = (conferences, findRoom, findParticipant, socket) => {
               });
               if (audioProducer) {
                 pLogger?.log(
-                  "Producer ID: ",
+                  'Producer ID: ',
                   audioProducer.id,
                   audioProducer.kind
                 );
 
-                audioProducer.on("transportclose", () => {
-                  pLogger?.log("transport for this audioProducer closed ");
+                audioProducer.on('transportclose', () => {
+                  pLogger?.log('transport for this audioProducer closed ');
                   audioProducer.close();
                 });
 
@@ -456,10 +471,11 @@ const transportProduce = (conferences, findRoom, findParticipant, socket) => {
 
                 await viewObject(confObjPath, conference);
 
-                socket.to(accessKey).emit("new-audio", {
+                socket.to(accessKey).emit('new-audio', {
                   from: socketId,
                   producerId: audioObject.producer.id,
-                  kind: "audio",
+                  action: audioObject?.action,
+                  kind: 'audio',
                   name: participant.participantName,
                   rtpCapabilities:
                     conference.routers.audioRouter.rtpCapabilities,
@@ -475,7 +491,7 @@ const transportProduce = (conferences, findRoom, findParticipant, socket) => {
             isAudio === false &&
             isScreen === true
           ) {
-            pLogger?.log("produce screen for : ", participant.participantId);
+            pLogger?.log('produce screen for : ', participant.participantId);
             const screenProducerTp = participant?.producers.screen?.producerTP;
             const screenObject = participant?.producers.screen;
             if (screenProducerTp) {
@@ -485,24 +501,26 @@ const transportProduce = (conferences, findRoom, findParticipant, socket) => {
               });
               if (screenProducer) {
                 pLogger?.log(
-                  "Producer ID: ",
+                  'Producer ID: ',
                   screenProducer.id,
                   screenProducer.kind
                 );
 
-                screenProducer.on("transportclose", () => {
-                  pLogger?.log("transport for this screenProducer closed ");
+                screenProducer.on('transportclose', () => {
+                  pLogger?.log('transport for this screenProducer closed ');
                   screenProducer.close();
                 });
 
                 screenObject.producer = screenProducer;
+                screenObject.action = 'play';
 
                 await viewObject(confObjPath, conference);
 
-                socket.to(accessKey).emit("new-screen", {
+                socket.to(accessKey).emit('new-screen', {
                   from: socketId,
                   producerId: screenObject.producer.id,
-                  kind: "screen",
+                  action: screenObject?.action,
+                  kind: 'screen',
                   name: participant.participantName,
                   rtpCapabilities:
                     conference.routers.screenRouter.rtpCapabilities,
@@ -540,7 +558,7 @@ const createRcvTransport = (conferences, findRoom, findParticipant) => {
   ) => {
     try {
       const rcvLogger = console;
-      rcvLogger?.log("creating consumers for: ", participantId);
+      rcvLogger?.log('creating consumers for: ', participantId);
       if (producer === false && consumer === true) {
         const conference = findRoom(conferences, accessKey);
         const participant = findParticipant(
@@ -559,16 +577,16 @@ const createRcvTransport = (conferences, findRoom, findParticipant) => {
               );
 
             rcvLogger?.log(
-              "new video consumer transport id: ",
+              'new video consumer transport id: ',
               newConsumer.consumerTransport.id
             );
-            newConsumer.consumerTransport.on("dtlsstatechange", (dtlsState) => {
-              if (dtlsState === "closed") {
+            newConsumer.consumerTransport.on('dtlsstatechange', (dtlsState) => {
+              if (dtlsState === 'closed') {
                 newConsumer.consumerTransport.close();
               }
             });
-            newConsumer.consumerTransport.on("close", () => {
-              rcvLogger?.log("transport closed");
+            newConsumer.consumerTransport.on('close', () => {
+              rcvLogger?.log('transport closed');
             });
             participant.consumers.video.push(newConsumer);
 
@@ -594,16 +612,16 @@ const createRcvTransport = (conferences, findRoom, findParticipant) => {
               );
 
             rcvLogger?.log(
-              "new audio consumer transport id: ",
+              'new audio consumer transport id: ',
               newConsumer.consumerTransport.id
             );
-            newConsumer.consumerTransport.on("dtlsstatechange", (dtlsState) => {
-              if (dtlsState === "closed") {
+            newConsumer.consumerTransport.on('dtlsstatechange', (dtlsState) => {
+              if (dtlsState === 'closed') {
                 newConsumer.consumerTransport.close();
               }
             });
-            newConsumer.consumerTransport.on("close", () => {
-              rcvLogger?.log("transport closed");
+            newConsumer.consumerTransport.on('close', () => {
+              rcvLogger?.log('transport closed');
             });
             participant.consumers.audio.push(newConsumer);
 
@@ -629,16 +647,16 @@ const createRcvTransport = (conferences, findRoom, findParticipant) => {
               );
 
             rcvLogger?.log(
-              "new screen consumer transport id: ",
+              'new screen consumer transport id: ',
               newConsumer.consumerTransport.id
             );
-            newConsumer.consumerTransport.on("dtlsstatechange", (dtlsState) => {
-              if (dtlsState === "closed") {
+            newConsumer.consumerTransport.on('dtlsstatechange', (dtlsState) => {
+              if (dtlsState === 'closed') {
                 newConsumer.consumerTransport.close();
               }
             });
-            newConsumer.consumerTransport.on("close", () => {
-              rcvLogger?.log("transport closed");
+            newConsumer.consumerTransport.on('close', () => {
+              rcvLogger?.log('transport closed');
             });
             participant.consumers.screen.push(newConsumer);
 
@@ -678,7 +696,7 @@ const rcvTransportConnect = (conferences, findRoom, findParticipant) => {
   ) => {
     try {
       const rcvLogger = console;
-      rcvLogger?.log("connecting consumer for: ", participantId);
+      rcvLogger?.log('connecting consumer for: ', participantId);
       if (producer === false && consumer === true) {
         const conference = findRoom(conferences, accessKey);
         const participant = findParticipant(
@@ -759,7 +777,7 @@ const onConsume = (conferences, findRoom, findParticipant) => {
   ) => {
     try {
       const rcvLogger = console;
-      rcvLogger?.log("starting consumers for: ", participantId);
+      rcvLogger?.log('starting consumers for: ', participantId);
       if (producer === false && consumer === true) {
         const conference = findRoom(conferences, accessKey);
         const participant = findParticipant(
@@ -786,12 +804,12 @@ const onConsume = (conferences, findRoom, findParticipant) => {
                     paused: true,
                   });
 
-                  videoConsumers[i].consumer.on("transportclose", () => {
-                    rcvLogger?.log("transport close from consumer");
+                  videoConsumers[i].consumer.on('transportclose', () => {
+                    rcvLogger?.log('transport close from consumer');
                   });
 
-                  videoConsumers[i].consumer.on("producerclose", () => {
-                    rcvLogger?.log("producer of consumer closed");
+                  videoConsumers[i].consumer.on('producerclose', () => {
+                    rcvLogger?.log('producer of consumer closed');
                   });
                   await viewObject(confObjPath, conference);
 
@@ -828,12 +846,12 @@ const onConsume = (conferences, findRoom, findParticipant) => {
                     paused: true,
                   });
 
-                  audioConsumers[i].consumer.on("transportclose", () => {
-                    rcvLogger?.log("transport close from consumer");
+                  audioConsumers[i].consumer.on('transportclose', () => {
+                    rcvLogger?.log('transport close from consumer');
                   });
 
-                  audioConsumers[i].consumer.on("producerclose", () => {
-                    rcvLogger?.log("producer of consumer closed");
+                  audioConsumers[i].consumer.on('producerclose', () => {
+                    rcvLogger?.log('producer of consumer closed');
                   });
                   await viewObject(confObjPath, conference);
 
@@ -867,12 +885,12 @@ const onConsume = (conferences, findRoom, findParticipant) => {
                     paused: true,
                   });
 
-                  screenConsumers[i].consumer.on("transportclose", () => {
-                    rcvLogger?.log("transport close from consumer");
+                  screenConsumers[i].consumer.on('transportclose', () => {
+                    rcvLogger?.log('transport close from consumer');
                   });
 
-                  screenConsumers[i].consumer.on("producerclose", () => {
-                    rcvLogger?.log("producer of consumer closed");
+                  screenConsumers[i].consumer.on('producerclose', () => {
+                    rcvLogger?.log('producer of consumer closed');
                   });
                   await viewObject(confObjPath, conference);
 
@@ -900,7 +918,7 @@ const onDisconnect = (conferences, socket) => {
   return async () => {
     try {
       const disConLog = console;
-      disConLog.log("socket left id: ", socket.id);
+      disConLog.log('socket left id: ', socket.id);
       for (let i = 0; i < conferences.length; i++) {
         let participants = conferences[i].participants;
 
@@ -910,7 +928,7 @@ const onDisconnect = (conferences, socket) => {
             participants.splice(j, 1);
             disConLog.log(roomId);
             await viewObject(confObjPath, conferences[i]);
-            socket.to(roomId).emit("participantLeft", {
+            socket.to(roomId).emit('participantLeft', {
               participantId: socket.id,
             });
           }
@@ -965,7 +983,7 @@ const onResumeConsumer = (conferences, findRoom, findParticipant) => {
     try {
       const { fromId, type, accessKey, socketId, userName } = data;
       const rsConLogger = console;
-      rsConLogger.log("resume consumer for", fromId, type);
+      rsConLogger.log('resume consumer for', fromId, type);
       const conference = findRoom(conferences, accessKey);
       if (conference) {
         const participant = findParticipant(
@@ -980,7 +998,7 @@ const onResumeConsumer = (conferences, findRoom, findParticipant) => {
           for (let i = 0; i < consumerList.length; i++) {
             const consumer = consumerList[i].consumer;
             await consumer.resume();
-            rsConLogger.log("resumed ", type, " stream for: ", fromId);
+            rsConLogger.log('resumed ', type, ' stream for: ', fromId);
           }
         }
       }
@@ -996,6 +1014,14 @@ const onStoppedScreen = (conferences, findRoom, socket) => {
       const { accessKey, userName, socketId } = data;
 
       const conference = findRoom(conferences, accessKey);
+      const participant = findParticipant(
+        conference.participants,
+        socketId,
+        userName
+      );
+
+      const screenObject = participant?.producers.screen;
+      screenObject.action = 'pause';
       const screenLogger = console;
       if (conference) {
         let roomId = conference.roomId;
@@ -1013,7 +1039,7 @@ const onStoppedScreen = (conferences, findRoom, socket) => {
           }
         }
 
-        socket.to(roomId).emit("stopScreenConsumer", {
+        socket.to(roomId).emit('stopScreenConsumer', {
           participantName: userName,
           participantId: socketId,
         });
@@ -1032,7 +1058,7 @@ const onNewMessage = (socket, findRoom, conferences) => {
       if (conference) {
         console.log(`broadcast message to room ${accessKey}`);
         conference.messages.push(data);
-        socket.to(accessKey).emit("incomingMessage", data);
+        socket.to(accessKey).emit('incomingMessage', data);
       }
     } catch (error) {
       console.log(error.message);
@@ -1040,11 +1066,28 @@ const onNewMessage = (socket, findRoom, conferences) => {
   };
 };
 
-const onToggleMedia = (socket) => {
+const onToggleMedia = (socket, conferences, findRoom, findParticipant) => {
   return (data) => {
     try {
-      console.log(data, "mute");
-      socket.to(data.accessKey).emit("toggleRemoteMedia", data);
+      console.log(data, 'mute');
+      const conference = findRoom(conferences, data.accessKey);
+      if (conference) {
+        const participant = findParticipant(
+          conference.participants,
+          data.id,
+          data.name
+        );
+        if (participant) {
+          const mediaObject = participant?.producers[data.type];
+          if (mediaObject) {
+            mediaObject.action = data.action;
+            socket.to(data.accessKey).emit('toggleRemoteMedia', data);
+            viewObject(confObjPath, conference)
+              .then()
+              .catch((error) => {});
+          }
+        }
+      }
     } catch (error) {
       console.log(error.message);
     }

@@ -152,7 +152,9 @@ const onCreateRtcTransport = (
   findRoom,
   findParticipant,
   createRtcTransport,
-  conferences
+  conferences,
+  createWorker,
+  workers
 ) => {
   const transportLog = null;
   return async (
@@ -164,6 +166,7 @@ const onCreateRtcTransport = (
       if (producer === true && consumer === false && conference) {
         // create producer rtc transport for participant based on the room routers.
         // 1: find room and participant;
+
         transportLog?.log(conference.participants);
         const participant = findParticipant(
           conference.participants,
@@ -202,6 +205,24 @@ const onCreateRtcTransport = (
       }
     } catch (error) {
       console.log(error.message);
+
+      callback({
+        error: {
+          message: error.message,
+        },
+      });
+
+      console.log('creating new worker...');
+      workers = [];
+      createWorker()
+        .then((res) => workers.push(res))
+        .catch((err) => console.log(err.message));
+      console.log('created new worker');
+      console.log('clearing conferences...');
+      console.log(conferences.length);
+      conferences = [];
+      console.log('cleared conferences');
+      console.log(conferences.length);
     }
   };
 };
@@ -674,11 +695,6 @@ const createRcvTransport = (conferences, findRoom, findParticipant) => {
       }
     } catch (error) {
       console.log(error.message);
-      callback({
-        error: {
-          message: error.message,
-        },
-      });
     }
   };
 };

@@ -74,7 +74,9 @@ const rtcHandler = (io) => {
           findRoom,
           findParticipant,
           createRtcTransport,
-          conferences
+          conferences,
+          createWorker,
+          workers
         )
       );
 

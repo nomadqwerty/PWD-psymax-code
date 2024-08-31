@@ -50,7 +50,7 @@ const onJoinRoom = (
         };
 
         // 3: add participant to conference:
-        if (existingConference.participants.length <= 25) {
+        if (existingConference.participants.length <= 1) {
           //3.3
           let participants = [...existingConference.participants];
 
@@ -914,7 +914,7 @@ const onConsume = (conferences, findRoom, findParticipant) => {
   };
 };
 
-const onDisconnect = (conferences, socket) => {
+const onDisconnect = (conferences, socket, type) => {
   return async () => {
     try {
       const disConLog = console;
@@ -925,11 +925,14 @@ const onDisconnect = (conferences, socket) => {
         for (let j = 0; j < participants.length; j++) {
           let roomId = conferences[i].roomId;
           if (participants[j].participantId === socket.id) {
-            participants.splice(j, 1);
-            disConLog.log(roomId);
-            await viewObject(confObjPath, conferences[i]);
+            if (type === 'callDrop' || type === 'pageDrop') {
+              participants.splice(j, 1);
+              disConLog.log(roomId);
+              await viewObject(confObjPath, conferences[i]);
+            }
             socket.to(roomId).emit('participantLeft', {
               participantId: socket.id,
+              type,
             });
           }
         }

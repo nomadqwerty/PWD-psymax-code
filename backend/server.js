@@ -49,8 +49,18 @@ const rtcHandler = (io) => {
       let socketLog = null;
       //listen for roomAccesskey event on socket join and add socket to the provided acceskey
       socketLog?.log('some one connected', socket.id);
-      socket.on('disconnect', onDisconnect(conferences, socket));
-      socket.on('disconnected', onDisconnect(conferences, socket));
+
+      // disconnect
+      // page
+      socket.on('disconnect', onDisconnect(conferences, socket, 'pageDrop'));
+      // call
+      socket.on('disconnected', onDisconnect(conferences, socket, 'callDrop'));
+      //stream
+      socket.on(
+        'disconnectStreams',
+        onDisconnect(conferences, socket, 'streamDrop')
+      );
+
       // join room;
       socket.on(
         'joinConferenceRoom',

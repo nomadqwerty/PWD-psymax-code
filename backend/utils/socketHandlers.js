@@ -674,6 +674,11 @@ const createRcvTransport = (conferences, findRoom, findParticipant) => {
       }
     } catch (error) {
       console.log(error.message);
+      callback({
+        error: {
+          message: error.message,
+        },
+      });
     }
   };
 };

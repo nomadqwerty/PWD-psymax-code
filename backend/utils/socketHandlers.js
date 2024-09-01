@@ -50,7 +50,7 @@ const onJoinRoom = (
         };
 
         // 3: add participant to conference:
-        if (existingConference.participants.length <= 1) {
+        if (existingConference.participants.length <= 10) {
           //3.3
           let participants = [...existingConference.participants];
 

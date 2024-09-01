@@ -58,21 +58,20 @@ function MyAppWrap({ Component, pageProps, children }) {
     }
   }, []);
 
-  useEffect(() => {
-    const beforeUnloadHandler = (event) => {
-      if (!pathname.includes('login') || !pathname.includes('logout')) {
-        console.log('page reload');
-        event.preventDefault();
-        return true;
-      }
-      // show warning popup on page reload.
-    };
-    window.addEventListener('beforeunload', beforeUnloadHandler);
-
-    return () => {
-      window.removeEventListener('beforeunload', beforeUnloadHandler);
-    };
-  });
+  // useEffect(() => {
+  // const beforeUnloadHandler = (event) => {
+  //   if (!pathname.includes('login') || !pathname.includes('logout')) {
+  //     console.log('page reload');
+  //     event.preventDefault();
+  //     return true;
+  //   }
+  //   // show warning popup on page reload.
+  // };
+  // window.addEventListener('beforeunload', beforeUnloadHandler);
+  // return () => {
+  //   window.removeEventListener('beforeunload', beforeUnloadHandler);
+  // };
+  // });
 
   return (
     <ThemeProvider theme={theme}>

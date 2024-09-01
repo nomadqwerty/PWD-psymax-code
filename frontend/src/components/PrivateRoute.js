@@ -76,12 +76,12 @@ const PrivateRoute = (WrappedComponent) => {
         localStorage.getItem('psymax-account-restricted') === 'true';
 
       if (!isAuthenticated || !token) {
-        router.push('/logout');
+        // router.push('/logout');
         return;
       }
       console.log(isAccountRestricted);
       if (isAccountRestricted) {
-        return router.push('/subscription');
+        // return router.push('/subscription');
       }
 
       refreshToken();

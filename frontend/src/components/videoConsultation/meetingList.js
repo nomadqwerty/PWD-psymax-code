@@ -68,9 +68,7 @@ const MeetingList = ({ meetingsList, router }) => {
               const accessKey = meeting?.accessKey;
               const user = userName;
               if (accessKey && user) {
-                router.push(
-                  `${process.env.NEXT_PUBLIC_RTC_HOST}/rtc?accessKey=${accessKey}&clientName=${user}`
-                );
+                router.push(`${process.env.NEXT_PUBLIC_CLIENT_HOST}/lobby`);
               }
             }}
           >
